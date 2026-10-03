@@ -56,7 +56,7 @@ export default {
         <p>A <b>limiting factor</b> (anything that keeps a living thing from growing or spreading) decides where each species can live. Common ones are:</p>
         <ul><li><b>Temperature</b>: too hot or too cold.</li>
         <li><b>Water</b>: too little or too much.</li>
-        <li><b>Sunlight</b>: plants and coral need light.</li>
+        <li><b>Sunlight</b>: plants and reef-building corals need light.</li>
         <li><b>Physical barriers</b> (things that block movement), like mountains, oceans, or wide rivers.</li></ul>
         <p>On land, <b>climate</b> (the usual temperature and rainfall of a place over many years) shapes the <b>biomes</b> (huge regions with similar climate and life):</p>
         <ul><li><b>Tropical rainforest</b>: hot and very wet all year.</li>
@@ -65,7 +65,7 @@ export default {
         <li><b>Temperate forest</b>: four seasons and trees that drop their leaves in fall, like New Jersey.</li>
         <li><b>Taiga</b> (a cold forest of evergreen trees): long, snowy winters.</li>
         <li><b>Tundra</b>: freezing, with frozen ground and no trees.</li></ul>
-        <p>Water ecosystems come in two types: <b>freshwater</b> (lakes, rivers, ponds) and <b>marine</b> (the salty ocean).</p>`,
+        <p>Water ecosystems come in three types: <b>freshwater</b> (lakes, rivers, ponds), <b>marine</b> (the salty ocean), and <b>estuaries</b> (where rivers meet the sea, like Barnegat Bay in New Jersey).</p>`,
       quiz: [
         { q: 'Which two things mainly decide which biome a land area has?', c: ['Temperature and rainfall', 'Soil color and wind', 'The number of people and roads', 'Ocean waves and tides'], why: 'Climate, meaning temperature and rainfall, decides which plants can grow, and the plants shape the rest of the biome.' },
         { q: 'A range of tolerance is…', c: ['the span of conditions a living thing can survive in', 'the area where an animal hunts', 'the number of babies an animal can have', 'how far an animal can travel in a day'], why: 'Every species can only handle so much heat, cold, dryness, and so on.' },
@@ -74,7 +74,7 @@ export default {
         { q: 'New Jersey has four seasons and trees that drop their leaves in fall. Which biome is it in?', c: ['Temperate forest', 'Desert', 'Tundra', 'Tropical rainforest'], why: 'Temperate forests have warm summers, cold winters, and trees that lose their leaves.' },
         { q: 'A tall mountain range keeps a kind of lizard from spreading west. The mountains are a…', c: ['physical barrier', 'biotic factor', 'food source', 'community'], why: 'Mountains, oceans, and wide rivers can block living things from moving to new places.' },
         { q: 'Climate means…', c: ['the usual weather of a place over many years', 'the weather today', 'the type of soil in a place', 'the number of animals in a place'], why: 'Weather is one day. Climate is the pattern over many years.' },
-        { q: 'Coral reefs only grow in warm, shallow, clear water. What does this show?', c: ['Abiotic factors limit where coral can live', 'Coral can live anywhere in the ocean', 'Coral need cold, dark water', 'Only biotic factors matter to coral'], why: 'Temperature and sunlight are abiotic factors. Coral can\'t survive outside its range.' },
+        { q: 'Tropical reef-building corals only grow in warm, shallow, clear water. What does this show?', c: ['Abiotic factors limit where coral can live', 'Coral can live anywhere in the ocean', 'Coral need cold, dark water', 'Only biotic factors matter to coral'], why: 'Temperature and sunlight are abiotic factors. Coral can\'t survive outside its range.' },
         { q: 'Which pair shows one freshwater ecosystem and one marine ecosystem?', c: ['A lake and an ocean', 'An ocean and a sea', 'A river and a pond', 'A desert and a forest'], why: 'Lakes have fresh water. Oceans have salt water, which is called marine.' },
         { q: 'The taiga is best described as…', c: ['a cold forest of evergreen trees with snowy winters', 'a hot, dry land with cactuses', 'a warm grassland with few trees', 'a wet forest near the equator'], why: 'The taiga is full of pine and spruce trees that can handle long, cold winters.' },
         { q: 'Why can\'t a desert cactus survive in the tundra?', c: ['It is too cold, outside the cactus\'s range of tolerance', 'The tundra has too much sunlight', 'The tundra has too many trees', 'Cactuses can only live near the ocean'], why: 'A cactus is built for heat and dryness. Freezing cold is outside its range.' },
@@ -176,7 +176,7 @@ export default {
         <li><b>Commensalism</b>: one wins, and the other is not helped or hurt. A bird nests in a tree.</li>
         <li><b>Parasitism</b>: one wins, and the other, the host, is hurt. A tick drinks a dog's blood.</li></ul></li></ul>
         <p>A <b>food chain</b> shows one path of who eats whom: grass → rabbit → fox. The arrows point toward the eater, showing which way energy moves.</p>
-        <p><b>Producers</b> (plants and algae that make their own food from sunlight) start every chain. <b>Consumers</b> (living things that eat other living things) come next. <b>Decomposers</b> (fungi and bacteria that break down dead things) return nutrients to the soil.</p>
+        <p><b>Producers</b> (mostly plants and algae that make their own food from sunlight) start almost every chain. <b>Consumers</b> (living things that eat other living things) come next. <b>Decomposers</b> (fungi and bacteria that break down dead things) return nutrients to the soil.</p>
         <p>A <b>food web</b> (many food chains connected together) shows the whole community. Only about 10% of the energy passes from one level to the next, so there are always fewer top predators.</p>`,
       quiz: [
         { q: 'A bee drinks nectar from a flower and carries its pollen to other flowers so they can make seeds. This is…', c: ['mutualism', 'parasitism', 'commensalism', 'predation'], why: 'Both win: the bee gets food, and the flower gets help making seeds.' },

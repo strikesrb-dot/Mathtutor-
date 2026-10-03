@@ -247,7 +247,7 @@ export default {
         <p>You CAN divide zero by a number: 0 ÷ 5 = 0. If 5 friends share 0 cookies, each friend gets 0.</p>
         <p>But you CAN'T divide a number by zero. Mathematicians say 5 ÷ 0 is <b>undefined</b> (it has no answer that makes sense).</p>
         <p><b>Why?</b> Division undoes multiplication. 12 ÷ 3 = 4 because 4 · 3 = 12. So 5 ÷ 0 would need a number that, times 0, gives 5. But any number times 0 is 0. No number works.</p>
-        <p><b>What about 0 ÷ 0?</b> Now every number works: 1 · 0 = 0, 7 · 0 = 0, 100 · 0 = 0. There's no single answer, so 0 ÷ 0 is called <b>indeterminate</b> (it can't be pinned down to one value). It is still not allowed.</p>
+        <p><b>What about 0 ÷ 0?</b> Now every number works: 1 · 0 = 0, 7 · 0 = 0, 100 · 0 = 0. There's no single answer, so 0 ÷ 0 is also <b>undefined</b>. Some mathematicians call it <b>indeterminate</b> (it can't be pinned down to one value). Either way, it is not allowed.</p>
         <p><b>In algebra:</b> an expression like 6/x is undefined when x = 0. So always ask, "Which value makes the bottom zero?" A zero on top is fine.</p>
         <p><b>Worked example:</b> When is 8/(x − 3) undefined?</p>
         <ul>
