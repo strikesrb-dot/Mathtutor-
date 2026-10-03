@@ -6,18 +6,15 @@
 //  Leave firebase as null to run in DEMO mode (everything saves
 //  on this device only — good for trying it out).
 
-export const firebase = null;
-/*  After setup it will look like this (paste YOUR values):
-
 export const firebase = {
-  apiKey: "AIza...",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abc123",
+  apiKey: "AIzaSyD1RK2hFxTPc5fLjGmay2oohyTl8Ut1AaA",
+  authDomain: "study-tutor-45335.firebaseapp.com",
+  projectId: "study-tutor-45335",
+  storageBucket: "study-tutor-45335.firebasestorage.app",
+  messagingSenderId: "498316578162",
+  appId: "1:498316578162:web:93534a3cb29fdabbe8a1eb",
 };
-*/
+// To go back to DEMO mode, replace the block above with:  export const firebase = null;
 
 // The two accounts you create in Firebase → Authentication → Users.
 // Copy each account's "User UID" here.
