@@ -52,6 +52,7 @@ export default {
           <li><b>Phone plans:</b> one plan costs more up front but less each month. The equation shows the month they cost the same.</li></ul>`,
         prompt: 'Make up your own catch-up problem with two people saving or earning at different speeds. Write the equation and explain what your answer means.',
       },
+      practice: 'bothSides',
     },
     {
       key: 'a02-02',
@@ -102,6 +103,7 @@ export default {
           <li><b>Garden fence:</b> the fence around a rectangle is 2 times (length + width).</li></ul>`,
         prompt: 'Your family orders 4 plates of chicken over rice, each with a $3 drink, and pays $52 total. Write an equation with parentheses and find the price of one plate.',
       },
+      practice: 'parenEquation',
     },
     {
       key: 'a02-03',
@@ -152,6 +154,7 @@ export default {
           <li><b>Infinitely many:</b> you and your friend both start with $20 and save $5 a week. You are tied every single week, forever.</li></ul>`,
         prompt: 'Two phone plans both charge $10 per month, but one has a $40 sign-up fee and the other has none. Will they ever cost the same total? Explain why.',
       },
+      practice: 'numSolutions',
     },
     {
       key: 'a02-04',
@@ -196,6 +199,7 @@ export default {
           <p>You solved it once, and now you can plug in any price. Apps and spreadsheets do this all the time.</p>`,
         prompt: 'Explain in your own words why solving ax + 5 = 35 for x one time is faster than solving a new equation for every ticket price.',
       },
+      practice: 'unknownCoef',
     },
     {
       key: 'a02-05',
@@ -236,6 +240,7 @@ export default {
           <li><b>Weather:</b> the US uses Fahrenheit and most of the world uses Celsius. Rearranging the formula lets you switch both ways.</li></ul>`,
         prompt: 'Your family drives 180 miles to visit relatives at 60 miles per hour. Use t = d/r to find how long the trip takes, and explain each step.',
       },
+      practice: 'formulas',
     },
     {
       key: 'a02-06',
@@ -277,6 +282,7 @@ export default {
           <li><b>Grades:</b> what score do you need on the last test to keep at least a B?</li></ul>`,
         prompt: 'You have $30 at the mall. A shirt costs $18 and socks cost $3 a pair. Write an inequality and find the most pairs of socks you can buy.',
       },
+      practice: 'inequality',
     },
     {
       key: 'a02-07',
@@ -321,6 +327,7 @@ export default {
           <p>"And" keeps you inside a range. "Or" warns you when you go outside it.</p>`,
         prompt: 'Think of a rule in your life that has both a minimum and a maximum. Write it as a compound inequality and explain which numbers are allowed.',
       },
+      practice: 'compoundIneq',
     },
   ],
 };

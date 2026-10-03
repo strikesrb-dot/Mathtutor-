@@ -10,7 +10,7 @@ export default {
   id: 'a01', n: 1, title: 'Algebra foundations', nj: ['A.SSE.A.1'],
   lessons: [
     { key: 'a01-01', title: '…', videos: [{ id: 'XXXXXXXXXXX', title: '…' }], learn: `<p>…</p>`,
-      quiz: [ { q: '…', c: ['correct', 'wrong', 'wrong', 'wrong'], why: '…' } /* ×12 */ ],
+      quiz: [ { q: '…', c: ['correct', 'wrong', 'wrong', 'wrong'], why: '…' } /* ×24 */ ],
       realLife: { text: `<p>…</p>`, prompt: '…' } },
     pick('alg-5'),                              // a reused lesson keeps its old key so progress carries over
   ],
@@ -27,7 +27,7 @@ Full real examples: `content/algebra.js`, `content/biology-cells.js`.
   `site:youtube.com Khan Academy "combining like terms"`. YouTube search pages are blocked; don't try them.
 - **learn**: 120–250 words of HTML (`<p>`, `<b>`, `<ul>/<ol>/<li>` only). Plain words for a struggling 9th grader.
   Define every technical term in parentheses the first time it appears. Math lessons include one worked example.
-- **quiz**: exactly 12 items. `c[0]` is ALWAYS the correct answer (the app shuffles). The 3 wrong choices are mistakes a
+- **quiz**: 24 items (at least 12; the app draws 10 per attempt, so bigger banks make retakes differ). `c[0]` is ALWAYS the correct answer (the app shuffles). The 3 wrong choices are mistakes a
   student would really make. All 4 choices must be different. `why` is 25 words or fewer. No "all/none of the above".
   Exactly one defensible answer. Recompute every number with node before writing it.
 - **Text in quiz strings is plain text** (not HTML): use Unicode − × ÷ ² ³ √ π ≤ ≥ ≠, and write fractions as 3/4.
@@ -35,3 +35,4 @@ Full real examples: `content/algebra.js`, `content/biology-cells.js`.
   own words (15+ words). The family is Muslim: keep examples halal and age-appropriate (no alcohol, pork, gambling,
   dating; avoid interest/loan examples — use savings without interest, population, bacteria, phone battery, depreciation).
 - Check before finishing: `node --check <file>` and `node tools/validate-content.mjs <file>` must both pass.
+- **practice** (algebra, optional): name of a fresh-number generator from `js/practice.js` / `js/gen-algebra*.js` whose skill matches the lesson. Up to 5 generated questions are mixed into every attempt. Test generators with `node tests/fuzz-generators.mjs`.

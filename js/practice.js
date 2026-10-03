@@ -1,5 +1,7 @@
 // Endless practice questions. Used after a lesson is finished but the block still has time,
-// and for review. Every generator returns { q, c: [correct, wrong, wrong, wrong], why }.
+// for review, and mixed into quizzes (fresh numbers each attempt). Every generator returns
+// { q, c: [correct, wrong, wrong, wrong], why }. More generators live in gen-algebra.js.
+import { algebraGenerators } from './gen-algebra.js';
 
 const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -57,7 +59,7 @@ export const generators = {
     }
     const out = m * x + b;
     return numQ(`If f(x) = ${lin(m, b)}, which x makes f(x) = ${fmt(out)}?`, x,
-      `${lin(m, b)} = ${fmt(out)} → ${fmt(m)}x = ${fmt(out - b)} → x = ${fmt(x)}.`, [out - b, -x, out]);
+      `${lin(m, b)} = ${fmt(out)} → ${lin(m, 0)} = ${fmt(out - b)} → x = ${fmt(x)}.`, [out - b, -x, out]);
   },
 
   domainRange() {
@@ -111,7 +113,7 @@ export const generators = {
       return { q: `What is the y-intercept of y = ${lin(m, bb)}?`, c, why: `Put x = 0: y = ${fmt(bb)}.` };
     }
     return { q: `What is the x-intercept of y = ${lin(m, b)}?`, c: [`(${fmt(x0)}, 0)`, `(${fmt(-x0 || 1)}, 0)`, `(0, ${fmt(b)})`, `(${fmt(b)}, 0)`].filter((v, i, a) => a.indexOf(v) === i).concat(['(1, 1)']).slice(0, 4),
-      why: `Put y = 0: 0 = ${lin(m, b)} → ${fmt(m)}x = ${fmt(-b)} → x = ${fmt(x0)}.` };
+      why: `Put y = 0: 0 = ${lin(m, b)} → ${lin(m, 0)} = ${fmt(-b)} → x = ${fmt(x0)}.` };
   },
 
   slopeIntercept() {
@@ -120,7 +122,8 @@ export const generators = {
     if (t === 0) return numQ(`What is the slope of y = ${lin(m, b)}?`, m, 'm is the number in front of x.', [b, -m]);
     if (t === 1) return numQ(`What is the y-intercept of y = ${lin(m, b)}?`, b, 'b is the number added on (0 if nothing is added).', [m, -b]);
     const opts = [`y = ${lin(m, b)}`, `y = ${lin(b || 1, m)}`, `y = ${lin(-m, b)}`, `y = ${lin(m, -b || 2)}`];
-    const u = [...new Set(opts)]; while (u.length < 4) u.push(`y = ${lin(m + u.length, b)}`);
+    const u = [...new Set(opts)];
+    for (let k = 1; u.length < 4; k++) { const s = `y = ${lin(m + k, b)}`; if (m + k !== 0 && !u.includes(s)) u.push(s); }
     return { q: `Which line has slope ${fmt(m)} and y-intercept ${fmt(b)}?`, c: u.slice(0, 4), why: `y = mx + b with m = ${fmt(m)} and b = ${fmt(b)}.` };
   },
 
@@ -133,6 +136,8 @@ export const generators = {
     ]);
     return s();
   },
+
+  ...algebraGenerators,
 };
 
 export function practiceFor(lesson) {

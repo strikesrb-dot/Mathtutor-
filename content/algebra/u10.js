@@ -47,6 +47,7 @@ export default {
           <li><b>Stairs:</b> each step is 7 inches higher than the last: 7, 14, 21, 28 inches.</li></ul>`,
         prompt: 'Think of something in your life that goes up or down by the same amount each time. Write its first four numbers and say what the common difference is.',
       },
+      practice: 'arithSeq',
     },
     {
       key: 'a10-02',
@@ -97,6 +98,7 @@ export default {
           <p>A savings jar works the same way: $15 in week 1, then $5 more every week gives 15, 20, 25, 30, …</p>`,
         prompt: 'In the game, level 1 needs 100 XP and each level needs 50 more. Would you use the recursive or the explicit formula to find level 30? Explain why.',
       },
+      practice: 'arithNth',
     },
     {
       key: 'a10-03',
@@ -142,6 +144,7 @@ export default {
           <li><b>Bouncing ball:</b> each bounce is half as high: 8 feet, 4, 2, 1. The common ratio is 1/2.</li></ul>`,
         prompt: 'A sheet of paper has 2 layers after one fold, and each fold doubles the layers. How many layers are there after 5 folds? Explain how you got it.',
       },
+      practice: 'geoSeq',
     },
     {
       key: 'a10-04',
@@ -188,6 +191,7 @@ export default {
           <p>Doubling looks slow at first, then it explodes.</p>`,
         prompt: 'A ball bounces 16 feet high, and each bounce after that is half as high. Write the explicit formula, then explain how high the 4th bounce is.',
       },
+      practice: 'geoNth',
     },
     {
       key: 'a10-05',
@@ -231,6 +235,7 @@ export default {
           <li><b>Savings jar:</b> $10 in week 1, plus $10 more every week, gives $520 after a year (52 weeks). That is arithmetic.</li></ul>`,
         prompt: 'Make up your own word problem about something that adds the same amount or multiplies by the same number. Is it arithmetic or geometric? What is its 10th term?',
       },
+      practice: 'seqModel',
     },
   ],
 };

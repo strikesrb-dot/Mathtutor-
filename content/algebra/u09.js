@@ -49,6 +49,7 @@ export default {
           <li><b>Spreadsheets and apps</b> need y alone so they can plug in any x and give back y.</li></ul>`,
         prompt: 'You have $30 and each bus ride costs $4, so 4r + m = 30. Rewrite this as a function for the money left, m, and explain what m(5) means.',
       },
+      practice: 'toFunctionForm',
     },
     {
       key: 'a09-04',
@@ -96,6 +97,7 @@ export default {
           <p>Always say the units out loud: days, steps, degrees, seconds.</p>`,
         prompt: 'G(m) is the number of goals your team has scored after m matches, and G(6) = 14. Explain in a full sentence what this means, including the units.',
       },
+      practice: 'funcContext',
     },
     pick('alg-3'),
     {
@@ -144,6 +146,7 @@ export default {
           <li><b>School trip:</b> the number of students on a bus must be a whole number, and the bus has a seat limit.</li></ul>`,
         prompt: 'An elevator in an 18-floor building with no basement goes to any floor. Describe its domain (the allowed floor numbers) and explain why fractions and negatives are not allowed.',
       },
+      practice: 'domainOf',
     },
     pick('alg-4'),
     {
@@ -283,6 +286,7 @@ export default {
           <p>"Average" means it smooths out the fast and slow parts.</p>`,
         prompt: 'Pick something you can measure at two different times, like your phone battery or a plant. Make up two readings, find the average rate of change, and explain what it means with units.',
       },
+      practice: 'avgRate',
     },
     {
       key: 'a09-11',
@@ -325,6 +329,7 @@ export default {
           <li><b>Secret codes:</b> a code that moves each letter 3 places forward is undone by moving each letter 3 places back.</li></ul>`,
         prompt: 'Describe something in your life that you do and then undo, like packing and unpacking a bag. Explain why the undoing steps have to happen in reverse order.',
       },
+      practice: 'inverseLinear',
     },
   ],
 };

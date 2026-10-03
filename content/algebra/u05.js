@@ -145,6 +145,7 @@ export default {
           <p>Point-slope form helps you work backward to the beginning.</p>`,
         prompt: 'A candle is 18 cm tall after burning for 3 hours, and it burns 2 cm each hour. Write the point-slope equation, then explain how tall the candle was at the start.',
       },
+      practice: 'pointSlope',
     },
     {
       key: 'a05-05',
@@ -191,7 +192,7 @@ export default {
           <p>Games work the same way: 2 points per coin plus 5 points per gem = 40 points.</p>`,
         prompt: 'You have $20 to spend on $4 books and $2 notebooks. Write a standard-form equation, then find how many you could buy if you bought only books or only notebooks.',
       },
-      practice: 'intercepts',
+      practice: 'standardForm',
     },
     {
       key: 'a05-06',

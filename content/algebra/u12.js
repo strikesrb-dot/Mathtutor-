@@ -51,6 +51,7 @@ export default {
           <li><b>Tiny things:</b> a millimeter is 10⁻³ meters, which is 1/1,000 of a meter. Negative exponents write small numbers.</li></ul>`,
         prompt: "Your phone has 2⁶ GB of storage and your friend's has 2⁸ GB. Use the quotient rule to find how many times bigger your friend's storage is, and explain your steps.",
       },
+      practice: 'exponentRules',
     },
     {
       key: 'a12-02',
@@ -94,6 +95,7 @@ export default {
           <li><b>Sports:</b> a square practice area of 100 square yards is 10 yards on each side.</li></ul>`,
         prompt: 'A square garden has an area of 81 square meters. How long is one side, and how do you know? Use the words "square root" in your answer.',
       },
+      practice: 'roots',
     },
     {
       key: 'a12-03',
@@ -141,6 +143,7 @@ export default {
           <li><b>Video games:</b> moving 1 step right and 1 step up covers √2 steps, about 1.41. Game engines use roots to find distances.</li></ul>`,
         prompt: 'A square tile has an area of 50 square inches. Write its side length in simplest radical form, and explain each step you used to get there.',
       },
+      practice: 'simplifySqrt',
     },
     {
       key: 'a12-04',
@@ -185,6 +188,7 @@ export default {
           <li><b>Games and apps:</b> code often finds a distance with something like (a² + b²)^(1/2). That is just a square root written as an exponent.</li></ul>`,
         prompt: 'Explain in your own words why 9^(1/2) equals 3 and not 4.5. Use the idea of a square root in your answer.',
       },
+      practice: 'rationalExp',
     },
   ],
 };

@@ -53,6 +53,7 @@ export default {
           <li><b>Phone battery:</b> y = 100 − 10x. The point (3, 70) means after 3 hours, 70% is left.</li></ul>`,
         prompt: 'You scored 12 points using only 2-pointers and 3-pointers (2x + 3y = 12). Find two different solutions and explain what each one means in the game.',
       },
+      practice: 'pointOnLine',
     },
     pick('alg-5'),
     {
@@ -94,6 +95,7 @@ export default {
           <li><b>Walls:</b> drawn from the side, a straight-up cliff 10 feet from where you start is the line x = 10. You can't walk up it, and that is what "undefined slope" feels like.</li></ul>`,
         prompt: 'Think of something in your life that stays the same over time. Describe what its graph looks like, write its equation, and explain why its slope is 0.',
       },
+      practice: 'horizVert',
     },
     pick('alg-6'),
     {
@@ -181,6 +183,7 @@ export default {
           <p>Writing the model first makes the math the easy part.</p>`,
         prompt: 'Make up a story from your own life that has a money or time limit. Write the inequality, say what your variable means, and find one number that works.',
       },
+      practice: 'writeModel',
     },
   ],
 };

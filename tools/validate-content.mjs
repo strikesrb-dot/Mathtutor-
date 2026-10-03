@@ -5,10 +5,11 @@
 // Exit 0 = clean, 1 = problems found.
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { generators } from '../js/practice.js';
 
 const problems = [];
 const keys = new Map();
-const PRACTICE = ['isFunction', 'evaluate', 'domainRange', 'readTable', 'slope', 'intercepts', 'slopeIntercept', 'models'];
+const PRACTICE = Object.keys(generators); // every generator the app can use (practice.js + gen-algebra*.js)
 
 function checkUnit(u, file) {
   const at = (m) => problems.push(`${file} ${u && u.id ? u.id : ''}: ${m}`);

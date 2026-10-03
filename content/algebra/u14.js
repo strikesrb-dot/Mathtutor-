@@ -54,6 +54,7 @@ export default {
           <li><b>Garden:</b> a garden is x feet wide. It is x feet long plus 6 more feet. The area is x(x + 6) = x² + 6x square feet.</li></ul>`,
         prompt: 'You buy 4 packs, and each pack has x pencils and 2 erasers. Write the total as 4(x + 2), expand it, and explain what each part means.',
       },
+      practice: 'monomialTimes',
     },
     {
       key: 'a14-02',
@@ -104,6 +105,7 @@ export default {
           <li><b>Box method in your head:</b> 23 × 15 = (20 + 3)(10 + 5) = 200 + 100 + 30 + 15 = 345.</li></ul>`,
         prompt: 'Use the box method to find 21 × 14 without a calculator. Write the four boxes and explain how they add up to the answer.',
       },
+      practice: 'foil',
     },
     {
       key: 'a14-03',
@@ -151,6 +153,7 @@ export default {
           <li><b>Bigger room:</b> a square room is x feet on each side. Add 2 feet to each side and the new area is (x + 2)² = x² + 4x + 4. That is 4x + 4 more square feet, not just 4.</li></ul>`,
         prompt: 'Use a special product to work out 41 × 39 in your head. Show which pattern you used and explain why it is faster than regular multiplying.',
       },
+      practice: 'foil',
     },
     {
       key: 'a14-04',
@@ -199,6 +202,7 @@ export default {
           <li><b>Floor plans:</b> a floor with area 6x² + 9x square feet can be laid out as rows 3x feet wide: 3x(2x + 3).</li></ul>`,
         prompt: 'You have 24 pencils and 36 erasers to share into equal kits with nothing left over. What is the most kits you can make, what goes in each one, and how is this like factoring?',
       },
+      practice: 'gcfFactor',
     },
     {
       key: 'a14-05',
@@ -250,6 +254,7 @@ export default {
           <li><b>Coming up:</b> later in algebra, factoring helps you solve equations like x² + 7x + 12 = 0. Equations like these can tell you when a thrown ball lands.</li></ul>`,
         prompt: 'Find two numbers that multiply to 36 and add to 13. Explain how you searched for them and how they help you factor x² + 13x + 36.',
       },
+      practice: 'factorTrinomial',
     },
     {
       key: 'a14-06',
@@ -299,6 +304,7 @@ export default {
           <li><b>Building:</b> builders turn an area like 2x² + 7x + 3 into side lengths (2x + 1) and (x + 3).</li></ul>`,
         prompt: 'Explain the steps of factoring by grouping in your own words, as if you were teaching a friend who has never seen it. Use 2x² + 7x + 3 if it helps.',
       },
+      practice: 'factorGrouping',
     },
     {
       key: 'a14-07',
@@ -336,7 +342,7 @@ export default {
         { q: 'Factor: 4x² − 9', c: ['(2x + 3)(2x − 3)', '(4x + 3)(x − 3)', '(2x − 3)²', '(4x + 9)(x − 1)'], why: '4x² = (2x)² and 9 = 3². Difference of squares: (2x + 3)(2x − 3).' },
         { q: 'Which expression does NOT factor as a difference of squares?', c: ['x² + 16', 'x² − 16', 'x² − 1', '9x² − 4'], why: 'x² + 16 is a sum, not a difference. A difference of squares needs a minus sign.' },
         { q: 'Is x² + 8x + 16 a perfect square trinomial?', c: ['Yes — it equals (x + 4)²', 'No — 8 is not a perfect square', 'Yes — it equals (x + 8)²', 'No — it equals (x + 4)(x − 4)'], why: '16 = 4² and 8x = 2 · x · 4. So x² + 8x + 16 = (x + 4)².' },
-        { q: 'Why is x² + 10x + 9 NOT a perfect square trinomial?', c: ['The middle term would have to be 6x, since 2 · x · 3 = 6x', '9 is not a perfect square', 'It has three terms', '10 is an even number'], why: 'A perfect square ending in 9 = 3² would be x² + 6x + 9. This one is (x + 1)(x + 9).' },
+        { q: 'Why is x² + 10x + 9 NOT a perfect square trinomial?', c: ['The middle term would have to be 6x (or −6x), since 2 · x · 3 = 6x', '9 is not a perfect square', 'It has three terms', '10 is an even number'], why: 'A perfect square ending in 9 = 3² would be x² + 6x + 9. This one is (x + 1)(x + 9).' },
         { q: 'What should you ALWAYS look for first when you factor?', c: ['A GCF (greatest common factor)', 'A difference of squares', 'Two numbers that add to the constant', 'The biggest exponent'], why: 'Pulling out the GCF first makes the numbers smaller and the rest easier.' },
         { q: 'Factor completely: 3x² − 12', c: ['3(x + 2)(x − 2)', '3(x − 2)²', '3(x + 4)(x − 4)', '(3x + 2)(x − 6)'], why: 'GCF 3: 3(x² − 4). Then x² − 4 = (x + 2)(x − 2).' },
         { q: 'Factor completely: 2x² + 12x + 18', c: ['2(x + 3)²', '2(x + 9)(x + 1)', '(2x + 3)²', '2(x − 3)²'], why: 'GCF 2: 2(x² + 6x + 9). And x² + 6x + 9 = (x + 3)², a perfect square.' },
@@ -351,6 +357,7 @@ export default {
           <p>A plan like "GCF first, then count the terms" works on any problem.</p>`,
         prompt: 'Explain the steps you would follow to factor any quadratic. Which step comes first, and how do you decide which method to use next?',
       },
+      practice: 'diffSquares',
     },
   ],
 };

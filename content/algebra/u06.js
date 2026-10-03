@@ -95,6 +95,7 @@ export default {
           <li><b>Home prices:</b> news reports use the median price, because one mansion would drag the mean way up.</li></ul>`,
         prompt: 'Think of a time one weird number (a huge score or a really bad day) could make an average misleading. Would the mean or the median tell the truth better, and why?',
       },
+      practice: 'meanMedian',
     },
     {
       key: 'a06-03',
@@ -190,6 +191,7 @@ export default {
           <p>Residuals show where a prediction missed, so people can fix the plan.</p>`,
         prompt: 'Pick something you could predict with a line, like points from minutes played. What would a big positive residual mean in that situation?',
       },
+      practice: 'residual',
     },
     {
       key: 'a06-05',
@@ -286,6 +288,7 @@ export default {
           <p>Percents keep the comparison fair when the groups are different sizes.</p>`,
         prompt: 'Think of two yes-or-no questions you could ask your classmates. Describe the two-way table you would make and one thing you could compare with it.',
       },
+      practice: 'twoWay',
     },
   ],
 };

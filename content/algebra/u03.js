@@ -45,6 +45,7 @@ export default {
           <li><b>Phone:</b> 25 MB per second is 1,500 MB every minute.</li></ul>`,
         prompt: 'Pick something that moves in your life (a bike, a car, a ball, or a download). Give its speed in one unit, then explain how you would change it into a different unit.',
       },
+      practice: 'rateConvert',
     },
     {
       key: 'a03-02',
@@ -129,6 +130,7 @@ export default {
           <li><b>Phone:</b> MB per minute of video × minutes watched tells you if you will run out of data.</li></ul>`,
         prompt: 'Make up a word problem from your own life that uses at least two different units (like minutes and dollars). Then explain how the units help you solve it.',
       },
+      practice: 'unitConvert',
     },
     {
       key: 'a03-04',
@@ -172,6 +174,7 @@ export default {
           <p>In 1999, NASA lost the Mars Climate Orbiter spacecraft because one team's software used US units while another team expected metric units.</p>`,
         prompt: 'Write a chain of conversion factors that changes one week into minutes. Show which units cancel at each step, and explain how you know your final unit is right.',
       },
+      practice: 'unitConvert',
     },
   ],
 };

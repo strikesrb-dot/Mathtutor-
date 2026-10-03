@@ -45,12 +45,13 @@ export default {
         { q: 'A square rug has an area of 2 square feet, so each side is √2 feet. Is the side length rational?', c: ['No — √2 is irrational', 'Yes — it is about 1.41 feet', 'Yes — every length you can measure is rational', 'Yes — 2 is rational, so √2 is too'], why: '2 is not a perfect square, so √2 is irrational. 1.41 is only a rounded value.' },
       ],
       realLife: {
-        text: `<p>Irrational numbers show up whenever you measure circles and diagonals (slanted lines from corner to corner).</p>
+        text: `<p>Irrational numbers often show up when you measure circles and diagonals (slanted lines from corner to corner).</p>
           <ul><li><b>Bike wheel:</b> the distance around a circle is π times the distance across. A wheel 2 feet across rolls 2π ≈ 6.28 feet each turn.</li>
           <li><b>Floor tiles:</b> a square tile 1 foot on each side has a diagonal of exactly √2 feet. A tile installer cuts it at about 1.41 feet, because no tape measure can show a decimal that never ends.</li>
           <li><b>Calculators</b> round too. They show √2 as 1.414213562, but the real digits keep going forever.</li></ul>`,
         prompt: 'Why can a calculator or a tape measure never show the exact value of π or √2? Explain in your own words, using what you learned about their decimals.',
       },
+      practice: 'irrational',
     },
     {
       key: 'a16-02',
@@ -96,6 +97,7 @@ export default {
           <li><b>Phone screens</b> are measured along the diagonal, which is often irrational, so stores round to sizes like 6.1 inches.</li></ul>`,
         prompt: 'Your friend says, "If you add two irrational numbers, you always get another irrational number." Is he right? Explain using an example from this lesson.',
       },
+      practice: 'irrationalOps',
     },
     {
       key: 'a16-03',

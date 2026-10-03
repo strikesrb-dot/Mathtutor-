@@ -50,6 +50,7 @@ export default {
           <li><b>Parking a plane:</b> the plane must stop within 2 feet of the stop line. Stopping 2 feet short and 2 feet past both count as "2 feet off."</li></ul>`,
         prompt: 'Your friend says |x − 2| = 6 has only one answer, x = 8. Explain in your own words why he is missing an answer, and find it.',
       },
+      practice: 'absEquation',
     },
     {
       key: 'a11-02',
@@ -93,6 +94,7 @@ export default {
           <li><b>Guessing game:</b> the answer is 50, so a guess g is off by |g − 50|. The tip of the V is at (50, 0): a perfect guess. If the game adds 2 extra points to every guess, |g − 50| + 2 moves the V up 2.</li></ul>`,
         prompt: 'Describe something in your life where a number goes down to a lowest point and then back up. Where would the vertex of its V be, and what does it mean?',
       },
+      practice: 'absShift',
     },
     {
       key: 'a11-03',
@@ -143,6 +145,7 @@ export default {
           <li><b>Phone battery:</b> above 20% the phone runs normally. At 20% or below it switches to low power mode.</li></ul>`,
         prompt: 'Think of a price or rule in your life that changes at a cutoff, like tickets, shipping, or phone data. Write its pieces and say what happens right at the cutoff.',
       },
+      practice: 'piecewise',
     },
   ],
 };

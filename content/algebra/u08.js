@@ -49,6 +49,7 @@ export default {
           <li><b>Gift bags:</b> with $25, toy cars cost $3 and stickers cost $2, so 3x + 2y ≤ 25. Four cars and 5 sticker packs cost $22. It works.</li></ul>`,
         prompt: 'Make up a plan with two things, like two kinds of snacks and a money limit. Write the inequality, then check one combo and say if it works.',
       },
+      practice: 'ineqPoint',
     },
     {
       key: 'a08-02',
@@ -93,6 +94,7 @@ export default {
           <li><b>Water:</b> drinking at least 8 cups of water and milk is x + y ≥ 8. Shade above.</li></ul>`,
         prompt: 'Think of a rule with a limit, like a speed limit or a time limit. Would its graph use a solid line or a dashed line, and why?',
       },
+      practice: 'ineqGraph',
     },
     {
       key: 'a08-03',
@@ -138,6 +140,7 @@ export default {
           <li><b>Weekend plan:</b> at least 2 hours of study AND at most 3 hours of games. Both rules have to be true.</li></ul>`,
         prompt: 'Describe a choice you made that had two rules at once, like cost and time. Give one option that passed both rules and one that failed a rule.',
       },
+      practice: 'ineqSystem',
     },
     {
       key: 'a08-04',
@@ -183,6 +186,7 @@ export default {
           <p>Writing the model lets you test a plan before you try it.</p>`,
         prompt: 'Write an inequality for a real limit in your life, like phone data, money, or free time. Say what x and y mean and give one plan that fits.',
       },
+      practice: 'budgetIneq',
     },
   ],
 };

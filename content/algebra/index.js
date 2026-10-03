@@ -13,5 +13,8 @@ import u10 from './u10.js';
 import u11 from './u11.js';
 import u12 from './u12.js';
 import u13 from './u13.js';
+import u14 from './u14.js';
+import u15 from './u15.js';
+import u16 from './u16.js';
 
-export default { subject: 'algebra', name: 'Algebra 1', units: [u01, u02, u03, u04, u05, u06, u07, u08, u09, u10, u11, u12, u13] };
+export default { subject: 'algebra', name: 'Algebra 1', units: [u01, u02, u03, u04, u05, u06, u07, u08, u09, u10, u11, u12, u13, u14, u15, u16] };

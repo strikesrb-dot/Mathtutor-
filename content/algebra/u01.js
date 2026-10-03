@@ -143,6 +143,7 @@ export default {
           <p>Same expression, new number in, new answer out.</p>`,
         prompt: 'A phone loses 4% battery each hour, so battery = 100 − 4h. Find the battery after 10 hours and explain each step you did.',
       },
+      practice: 'evalExpr',
     },
     {
       key: 'a01-04',
@@ -189,6 +190,7 @@ export default {
           <p>In algebra, x terms go with x terms, and plain numbers go with plain numbers.</p>`,
         prompt: 'Describe a time you sorted things into groups before counting them, like clothes, coins, or game items. How is that like combining like terms?',
       },
+      practice: 'likeTerms',
     },
     {
       key: 'a01-05',
@@ -234,6 +236,7 @@ export default {
           <p>Pick whichever form makes the job easiest.</p>`,
         prompt: 'Use the distributive property to work out 7 · 102 in your head, the way 6 · 99 = 6(100 − 1). Write each step and explain why the trick works.',
       },
+      practice: 'distribute',
     },
     {
       key: 'a01-06',

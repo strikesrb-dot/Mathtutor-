@@ -52,6 +52,7 @@ export default {
           <p>Linear is a steady walk. Exponential is a rocket that starts slow.</p>`,
         prompt: 'Think of one thing that grows by adding the same amount and one thing that grows by multiplying. Describe both and explain how you can tell them apart.',
       },
+      practice: 'growthType',
     },
     {
       key: 'a13-02',
@@ -100,6 +101,7 @@ export default {
           <p>In each one, the first number is where you start. The number with the exponent is what you multiply by each step. Read those two numbers and you know the whole story.</p>`,
         prompt: 'A class garden starts with 6 plants, and the number of plants doubles every month. Write an expression for the plants after m months and explain what the 6 and the 2 mean.',
       },
+      practice: 'expValue',
     },
     {
       key: 'a13-03',
@@ -146,6 +148,7 @@ export default {
           <p>The flat part fools people. It looks like nothing is happening, but the doubling is already going on.</p>`,
         prompt: 'A video\'s view graph looks almost flat for a week and then shoots straight up. Explain in your own words why exponential growth looks like that.',
       },
+      practice: 'expValue',
     },
     {
       key: 'a13-04',
@@ -193,6 +196,7 @@ export default {
           <li><b>Hot drinks</b> cool fast at first, then slower as they get close to room temperature.</li></ul>`,
         prompt: 'Your $600 phone loses about 30% of its value every year. Explain how you would figure out what it is worth after 2 years, and why it never quite reaches $0.',
       },
+      practice: 'expDecay',
     },
     {
       key: 'a13-05',
@@ -240,6 +244,7 @@ export default {
           <li><b>Town records:</b> population counts from past years give a and b, so planners can guess how many new schools or buses they will need.</li></ul>`,
         prompt: 'A table shows a town had 1,000 people, then 2,000, then 4,000, with 10 years between counts. Explain how you would write a rule for it and what it predicts next.',
       },
+      practice: 'expTable',
     },
     {
       key: 'a13-06',
@@ -286,6 +291,7 @@ export default {
           <p>Always ask: same jump, or same multiplier?</p>`,
         prompt: 'Would you rather get 50 new followers every day, or start with 1 follower that doubles every day, for a 30-day challenge? Explain your choice using what you learned.',
       },
+      practice: 'growthType',
     },
   ],
 };

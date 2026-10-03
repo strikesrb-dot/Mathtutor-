@@ -48,6 +48,7 @@ export default {
           <p>The crossing point is where the better deal flips. That's why stores, phone companies, and gyms care about systems.</p>`,
         prompt: 'Think of two choices in your life that cost money in different ways (like two phone plans or two ways to get somewhere). Why would it help to know where they cost the same?',
       },
+      practice: 'systemCheck',
     },
     {
       key: 'a07-02',
@@ -95,6 +96,7 @@ export default {
           <li><b>Cooking:</b> 1 cup of rice is the same as 2 half-cups, so you can use either one.</li></ul>`,
         prompt: 'In your own words, explain why you are allowed to swap f for 2y in the trading card problem. What would go wrong if they were not equal?',
       },
+      practice: 'systemSub',
     },
     {
       key: 'a07-03',
@@ -140,6 +142,7 @@ export default {
           <p>Store owners, coaches comparing two games, and friends splitting snack costs all use this trick without calling it algebra.</p>`,
         prompt: 'Make up two receipts (or two food orders) where one item is the same in both. Explain how subtracting them tells you the price of the other item.',
       },
+      practice: 'systemElim',
     },
     {
       key: 'a07-04',
@@ -235,6 +238,7 @@ export default {
           <li><b>Infinitely many:</b> two phones start at 100% and drain at the same rate. Their batteries match at every moment.</li></ul>`,
         prompt: 'Describe a real situation where two things will NEVER be equal, and explain what the "same slope" is in your example.',
       },
+      practice: 'systemCount',
     },
     {
       key: 'a07-06',
@@ -285,6 +289,7 @@ export default {
           <p>Each one has two unknowns and two facts. That's a system.</p>`,
         prompt: 'Make up your own word problem with two unknowns from your life (snacks, games, or tickets). Write what each letter stands for and the two equations.',
       },
+      practice: 'systemWord',
     },
   ],
 };

@@ -58,7 +58,7 @@ export default {
         <p>Species have always gone <b>extinct</b> (died out forever), but today humans are speeding it up. Remember the biggest threats with <b>HIPPO</b>:</p>
         <ul><li><b>H — Habitat loss</b> (the place a species lives is destroyed): forests and fields are cleared for houses, roads, and stores. New Jersey has more people per square mile than any other state. Roads also cause <b>habitat fragmentation</b> (habitat broken into small, separated pieces).</li>
         <li><b>I — Invasive species</b> (living things brought to a new place where they spread and harm <b>native</b> species, the ones that already lived there): the spotted lanternfly feeds on trees and crops, and the emerald ash borer has killed huge numbers of New Jersey ash trees.</li>
-        <li><b>P — Pollution</b>: fertilizer washing into lakes can cause <b>algal blooms</b> (huge, fast growth of <b>algae</b>, simple plant-like living things). When the algae die and rot, they use up the oxygen fish need. Some poisons build up through <b>biomagnification</b> (a toxin getting more concentrated at each step up a food chain). The pesticide DDT made bald eagle eggshells so thin they broke.</li>
+        <li><b>P — Pollution</b>: fertilizer washing into lakes can cause <b>algal blooms</b> (huge, fast growth of <b>algae</b>, simple plant-like living things). When the algae die, the bacteria that break them down use up the oxygen fish need. Some poisons build up through <b>biomagnification</b> (a toxin getting more concentrated at each step up a food chain). The pesticide DDT made bald eagle eggshells so thin they broke.</li>
         <li><b>P — Population growth</b>: more people need more land, food, and water.</li>
         <li><b>O — Overharvesting</b> (taking living things faster than they can reproduce): so many horseshoe crabs were caught in Delaware Bay that New Jersey banned harvesting them in 2008.</li></ul>
         <p>Climate change is another growing threat (see Lesson 4).</p>`,
@@ -114,7 +114,7 @@ export default {
       ],
       realLife: {
         text: `<p>Look at an empty lot, a crack in a sidewalk, or the side of a highway. Weeds and grasses move in first. If no one mows, shrubs and small trees follow. That's <b>secondary succession</b> happening in your neighborhood.</p>
-          <p>Scientists from Rutgers University have watched old farm fields in Somerset County turn back into forest since 1958. It is one of the longest-running studies of succession in the world.</p>
+          <p>Scientists, starting with a team from Rutgers University, have watched old farm fields in Somerset County turn back into forest since 1958. It is one of the longest-running studies of succession in the world.</p>
           <p>After Hurricane Sandy, many shore towns rebuilt and planted dunes to protect homes from the next big storm.</p>`,
         prompt: 'Imagine a park near you burns, or a field is left alone for 50 years. Describe what would grow there first, next, and last, and say whether this is primary or secondary succession.',
       },

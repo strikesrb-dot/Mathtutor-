@@ -21,14 +21,14 @@ Master = owner (strikesrb@…), student = his brother. UIDs and keys are in `js/
 | 6 Statistics & data — NJ addition, incl. two-way tables | ✅ | 6 Inheritance and variation of traits | ✅ |
 | 7 Systems of equations | ✅ | 7 Mechanisms of evolution | ✅ |
 | 8 Inequalities (systems & graphs) | ✅ | 8 Common ancestry and phylogeny | ✅ |
-| 9 Functions (reuses alg-1…4) | ✅ | 9 Biodiversity and human impacts | ⏳ |
+| 9 Functions (reuses alg-1…4) | ✅ | 9 Biodiversity and human impacts | ✅ |
 | 10 Sequences | ✅ | | |
 | 11 Absolute value & piecewise | ✅ | | |
 | 12 Exponents & radicals | ✅ | | |
 | 13 Exponential growth & decay | ✅ | | |
-| 14 Quadratics: multiplying & factoring | ⏳ | | |
-| 15 Quadratic functions & equations | ⏳ | | |
-| 16 Irrational numbers | ⏳ | | |
+| 14 Quadratics: multiplying & factoring | ✅ | | |
+| 15 Quadratic functions & equations | ✅ | | |
+| 16 Irrational numbers | ✅ | | |
 
 Khan lesson lists for every unit came from the curriculum research done 2026-10-03. Re-fetch them from khanacademy.org/math/algebra
 and khanacademy.org/science/hs-bio if needed.
@@ -37,7 +37,7 @@ and khanacademy.org/science/hs-bio if needed.
 1. Write `content/<subject>/uNN.js` following `tools/CONTENT-SPEC.md`. Verify every video with oEmbed and recompute every number.
 2. Add it to `content/<subject>/index.js` in unit order.
 3. Run `node tools/sync-preload.mjs`, `node tools/validate-content.mjs`, and the design check. Then commit and push.
-4. Have a separate agent fact-check each batch before or soon after shipping. Waves 1–3 are checked and fixed. **Wave 4 (A10–A13, B7–B8) has not been fact-checked yet.**
+4. Have a separate agent fact-check each batch before or soon after shipping. Waves 1–5 are fact-checked and fixed, except **u15 (written with 24 items) — not fact-checked yet**.
 
 ## Flags for the owner (preview before his brother watches)
 - Two Islamic-history fun-fact videos from smaller channels: TRT World and Islamic Museum of Australia.
@@ -51,6 +51,15 @@ and khanacademy.org/science/hs-bio if needed.
 - b08-03 CrashCourse video opens with scientific theories of the origin of life; b07-03 TED-Ed ant video briefly mentions ant mating — preview.
 - Evolution units (b07, b08) are written in neutral textbook language ("scientists explain…").
 - Some helper agents ran out of web searches; remaining units may need videos found by browsing channels (WebFetch).
+
+## Anti-cheat (owner request 2026-10-03)
+- Graded quizzes hide the right answer on a miss; answers show only after passing.
+- After a fail he must review (reread Learn 40 s or watch 60 s of video), then wait `retryWaitMin` (3) minutes.
+- Passing on try 3 or later raises a `manyTries` red flag. The master's lesson row shows "Passed only on try N".
+- Fresh numbers: 66 generators (`js/practice.js`, `js/gen-algebra.js`, `js/gen-algebra-2.js`, `js/gen-util.js`) are attached to 61+ algebra
+  lessons via `practice:`. Up to 5 generated questions go into every attempt. `node tests/fuzz-generators.mjs` must pass.
+- Bigger banks (24 per lesson): **biology u01–u08 + biology-cells.js done (unchecked by a separate agent)**. Algebra lessons and b09 are still at 12. u15 already has 24.
+- TODO: `js/student.js` is about 580 lines. Split the quiz/review code into `js/quiz.js` to respect the 500-line rule.
 
 ## Not verified yet
 - Real iPhone/iPad (WebKit) run. Only Chromium was available in the build environment.
