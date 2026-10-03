@@ -91,7 +91,7 @@ export default {
         text: `<p>A horizontal line means "nothing is changing." A vertical line means "straight up."</p>
           <ul><li><b>Cruising plane:</b> a jet flying level at 35,000 feet has a height graph of y = 35,000. Its slope is 0 because the height isn't changing.</li>
           <li><b>Flat price:</b> a $20 unlimited-rides day pass costs $20 whether you ride 2 times or 12 times, so y = 20.</li>
-          <li><b>Walls:</b> on a floor plan, a wall 10 feet from the corner is the line x = 10. You can't walk up it, and that is what "undefined slope" feels like.</li></ul>`,
+          <li><b>Walls:</b> drawn from the side, a straight-up cliff 10 feet from where you start is the line x = 10. You can't walk up it, and that is what "undefined slope" feels like.</li></ul>`,
         prompt: 'Think of something in your life that stays the same over time. Describe what its graph looks like, write its equation, and explain why its slope is 0.',
       },
     },

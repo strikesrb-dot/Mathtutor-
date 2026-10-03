@@ -154,7 +154,7 @@ export default {
         { id: 'xGmef7lFc5w', title: 'Finding intercepts from an equation' },
       ],
       learn: `
-        <p><b>Standard form</b> (a way to write a line with x and y on the same side) looks like <b>Ax + By = C</b>. A, B, and C are <b>integers</b> (whole numbers, positive or negative, no fractions), and A is usually not negative. Example: 3x + 4y = 12.</p>
+        <p><b>Standard form</b> (a way to write a line with x and y on the same side) looks like <b>Ax + By = C</b>. A, B, and C are <b>integers</b> (whole numbers and their negatives, no fractions), and A is usually not negative. Example: 3x + 4y = 12.</p>
         <p>Finding the <b>intercepts</b> (the points where the line crosses the two axes) is easy in this form:</p>
         <ul>
           <li><b>x-intercept:</b> put y = 0 and solve.</li>
@@ -176,7 +176,7 @@ export default {
         { q: 'Rewrite 3x + 4y = 12 in slope-intercept form.', c: ['y = −(3/4)x + 3', 'y = (3/4)x + 3', 'y = −3x + 12', 'y = −(4/3)x + 3'], why: 'Subtract 3x: 4y = −3x + 12. Divide every term by 4.' },
         { q: 'What is the slope of 2x − 3y = 12?', c: ['2/3', '−2/3', '2', '3/2'], why: '−3y = −2x + 12. Divide by −3: y = (2/3)x − 4. The slope is 2/3.' },
         { q: 'Rewrite y = −2x + 7 in standard form.', c: ['2x + y = 7', '−2x + y = 7', '2x − y = 7', 'x + 2y = 7'], why: 'Add 2x to both sides: 2x + y = 7.' },
-        { q: 'Rewrite y = (2/3)x − 4 in standard form with whole numbers.', c: ['2x − 3y = 12', '2x − 3y = 4', '2x + 3y = 12', '3x − 2y = 12'], why: 'Times 3: 3y = 2x − 12. Move 2x over: −2x + 3y = −12. Times −1: 2x − 3y = 12.' },
+        { q: 'Rewrite y = (2/3)x − 4 in standard form with integers (no fractions).', c: ['2x − 3y = 12', '2x − 3y = 4', '2x + 3y = 12', '3x − 2y = 12'], why: 'Times 3: 3y = 2x − 12. Move 2x over: −2x + 3y = −12. Times −1: 2x − 3y = 12.' },
         { q: 'To graph 6x + 3y = 18 using intercepts, which two dots do you plot?', c: ['(3, 0) and (0, 6)', '(6, 0) and (0, 3)', '(18, 0) and (0, 18)', '(3, 0) and (0, 3)'], why: 'y = 0: 6x = 18, x = 3. x = 0: 3y = 18, y = 6.' },
         { q: 'Museum tickets cost $5 for adults and $2 for kids. You spend exactly $40. With x adults and y kids, which equation fits?', c: ['5x + 2y = 40', '2x + 5y = 40', 'x + y = 40', '5x − 2y = 40'], why: 'Adults cost 5x dollars and kids cost 2y dollars. Together they make $40.' },
         { q: 'Same tickets (5x + 2y = 40). If you buy 0 adult tickets, how many kid tickets can you buy?', c: ['20', '8', '40', '80'], why: 'Put x = 0: 2y = 40, so y = 20. This is the y-intercept.' },

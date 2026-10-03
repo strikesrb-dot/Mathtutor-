@@ -81,12 +81,12 @@ export default {
         { q: 'Data: 1, 3, 5, 6, 8, 9, 11, 14. What is the IQR?', c: ['6', '13', '10', '4'], why: 'Q1 = middle of 1, 3, 5, 6 = 4. Q3 = middle of 8, 9, 11, 14 = 10. So IQR = 6.' },
         { q: 'What does the IQR tell you?', c: ['How spread out the middle half of the data is', 'The average of the data', 'The most common value', 'The middle value'], why: 'IQR = Q3 − Q1, the width of the middle 50% of the data.' },
         { q: 'A player scored 8, 10, 12, 14, and 41 points. What is the mean?', c: ['17', '12', '85', '33'], why: '8 + 10 + 12 + 14 + 41 = 85, and 85 ÷ 5 = 17.' },
-        { q: 'Same player: 8, 10, 12, 14, 41 points. Which number better shows a typical game?', c: ['The median, 12, because the 41 pulls the mean up', 'The mean, 17, because it uses every game', 'The max, 41, because it was his best game', 'The range, 33, because it shows the spread'], why: 'The outlier 41 drags the mean above most of his games. The median stays in the middle.' },
+        { q: 'Same player: 8, 10, 12, 14, 41 points. Which number better shows a typical game?', c: ['The median, 12, because the 41 pulls the mean up', 'The mean, 17, because it uses every game', 'The max, 41, because it was his best game', 'The range, 33, because it shows the spread'], why: 'The one huge game (41) drags the mean above most of his games. The median stays in the middle.' },
         { q: 'You remove one very high outlier from a data set. What usually happens?', c: ['The mean drops a lot; the median changes a little', 'The median drops a lot; the mean changes a little', 'Both stay exactly the same', 'Both go up'], why: 'The mean uses every value, so a huge one pulls it hard. The median only depends on the middle.' },
         { q: 'Q1 = 20 and Q3 = 28. Using the 1.5 × IQR rule, values above what number are outliers?', c: ['40', '36', '42', '32'], why: 'IQR = 28 − 20 = 8. Then 1.5 × 8 = 12. Add to Q3: 28 + 12 = 40.' },
         { q: 'Five friends played a game app for 20, 30, 30, 40, and 130 minutes. What is the mean?', c: ['50 minutes', '30 minutes', '250 minutes', '110 minutes'], why: '20 + 30 + 30 + 40 + 130 = 250, and 250 ÷ 5 = 50 minutes.' },
         { q: 'Team A\'s points have an IQR of 4. Team B\'s points have an IQR of 12. What does that mean?', c: ['Team B\'s scores are more spread out', 'Team B scores more points on average', 'Team A\'s scores are more spread out', 'Team A has more outliers'], why: 'A bigger IQR means the middle half of the scores is spread wider. It says nothing about the average.' },
-        { q: 'Flight delays (minutes): 0, 5, 5, 10, 120. Which number best tells a traveler the typical delay?', c: ['The median, 5 minutes', 'The mean, 28 minutes', 'The maximum, 120 minutes', 'The minimum, 0 minutes'], why: 'The 120-minute outlier pushes the mean to 28. Most delays were 10 minutes or less, so use the median.' },
+        { q: 'Flight delays (minutes): 0, 5, 5, 10, 120. Which number best tells a traveler the typical delay?', c: ['The median, 5 minutes', 'The mean, 28 minutes', 'The maximum, 120 minutes', 'The minimum, 0 minutes'], why: 'The one 120-minute delay pushes the mean to 28. Most delays were 10 minutes or less, so use the median.' },
       ],
       realLife: {
         text: `<p>Reports pick "mean" or "median" for a reason.</p>
@@ -198,7 +198,7 @@ export default {
         { id: 'ROpbdO-gRUo', title: 'Correlation and causality' },
       ],
       learn: `
-        <p><b>Correlation</b> (two things tend to change together) is not the same as <b>causation</b> (one thing actually makes the other happen). A strong r proves a pattern, not a cause.</p>
+        <p><b>Correlation</b> (two things tend to change together) is not the same as <b>causation</b> (one thing actually makes the other happen). A strong r shows a pattern, not a cause, not a cause.</p>
         <p>Often a <b>lurking variable</b> (a hidden third thing that affects both) is behind the pattern.</p>
         <p><b>Worked example:</b> In summer, ice-cream sales and sunburns both go up. Does ice cream cause sunburns?</p>
         <ol>

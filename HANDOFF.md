@@ -17,11 +17,11 @@ Master = owner (strikesrb@…), student = his brother. UIDs and keys are in `js/
 | 2 Solving equations & inequalities (+ rearranging formulas) | ✅ | 2 From cells to organisms (reuses bio-1…7) | ✅ |
 | 3 Working with units | ✅ | 3 Cell cycle and differentiation | ✅ |
 | 4 Linear equations & graphs (reuses alg-5, alg-6) | ✅ | 4 Energy and matter (reuses bio-8) | ✅ |
-| 5 Forms of linear equations (reuses alg-7, alg-8) | ✅ | 5 Gene expression and regulation | ⏳ |
-| 6 Statistics & data — NJ addition, incl. two-way tables | ✅ | 6 Inheritance and variation of traits | ⏳ |
-| 7 Systems of equations | ⏳ | 7 Mechanisms of evolution | ⏳ |
-| 8 Inequalities (systems & graphs) | ⏳ | 8 Common ancestry and phylogeny | ⏳ |
-| 9 Functions (placeholder: alg-1…4 only; needs the full 13-lesson unit) | ⏳ | 9 Biodiversity and human impacts | ⏳ |
+| 5 Forms of linear equations (reuses alg-7, alg-8) | ✅ | 5 Gene expression and regulation | ✅ |
+| 6 Statistics & data — NJ addition, incl. two-way tables | ✅ | 6 Inheritance and variation of traits | ✅ |
+| 7 Systems of equations | ✅ | 7 Mechanisms of evolution | ⏳ |
+| 8 Inequalities (systems & graphs) | ✅ | 8 Common ancestry and phylogeny | ⏳ |
+| 9 Functions (reuses alg-1…4) | ✅ | 9 Biodiversity and human impacts | ⏳ |
 | 10 Sequences | ⏳ | | |
 | 11 Absolute value & piecewise | ⏳ | | |
 | 12 Exponents & radicals | ⏳ | | |
@@ -37,8 +37,7 @@ and khanacademy.org/science/hs-bio if needed.
 1. Write `content/<subject>/uNN.js` following `tools/CONTENT-SPEC.md`. Verify every video with oEmbed and recompute every number.
 2. Add it to `content/<subject>/index.js` in unit order.
 3. Run `node tools/sync-preload.mjs`, `node tools/validate-content.mjs`, and the design check. Then commit and push.
-4. Have a separate agent fact-check each batch before or soon after shipping. Wave 1 is checked and fixed. **Wave 2 (A4–A6, B3–B4)
-   has not been fact-checked yet.**
+4. Have a separate agent fact-check each batch before or soon after shipping. Waves 1–2 are checked and fixed. **Wave 3 (A7–A9, B5–B6) has not been fact-checked yet.**
 
 ## Flags for the owner (preview before his brother watches)
 - Two Islamic-history fun-fact videos from smaller channels: TRT World and Islamic Museum of Australia.
@@ -47,6 +46,8 @@ and khanacademy.org/science/hs-bio if needed.
 - b04-03 Amoeba Sisters respiration video may say "alcoholic fermentation".
 - a02-04 "Solving for a variable" video content not confirmed. Some algebra lessons have under 10 minutes of video because Khan's clips are short.
 - Four statistics videos (a06) are AP-level and dense.
+- b06-04 CrashCourse #32 worth a quick preview. b06 uses Unicode allele symbols (Iᴬ, Xᴺ) — confirm they render on iPhone.
+- Some helper agents ran out of web searches; remaining units may need videos found by browsing channels (WebFetch).
 
 ## Not verified yet
 - Real iPhone/iPad (WebKit) run. Only Chromium was available in the build environment.

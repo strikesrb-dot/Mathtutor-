@@ -114,7 +114,7 @@ export default {
       realLife: {
         text: `<p>Everyday choices help protect your cells' DNA. <b>Sunscreen</b>, hats, and shade block the sun's rays that can damage skin cells. Staying away from <b>cigarettes and vaping</b> keeps harmful chemicals away from your lung cells.</p>
           <p>Doctors also look for problems early, when they're easiest to treat. For example, a doctor will check a mole that changes shape or color.</p>
-          <p>Many cancer treatments use what you learned today. <b>Chemotherapy</b> (strong medicine that targets fast-dividing cells) works by stopping the cell cycle in cells that are dividing too much.</p>`,
+          <p>Many cancer treatments use what you learned today. <b>Chemotherapy</b> (strong medicine that targets fast-dividing cells) works by stopping the cell cycle in fast-dividing cells. That's why it can also make hair fall out.</p>`,
         prompt: 'A younger kid asks you why they should wear sunscreen at the beach. Explain it to them using what you learned about DNA, mutations, and cell cycle checkpoints.',
       },
     },
