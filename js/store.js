@@ -73,6 +73,8 @@ function demoAdapter() {
     roleOf(u) { return u && u.uid === DEMO_MASTER ? 'master' : 'student'; },
     studentId() { return DEMO_STUDENT; },
     async resetDemo() { save({}); notify(); },
+    exportDemo() { return JSON.stringify(mem); },
+    async importDemo(json) { try { save(JSON.parse(json)); notify(); } catch {} },
 
     watchSettings(cb) { return watch(() => cb(snap('settings') || {})); },
     async saveSettings(patch) { setAt('settings', applyMerge(get('settings'), patch)); },

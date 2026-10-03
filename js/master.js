@@ -1,7 +1,8 @@
 // Master side (you): live status, today's time, red flags, lesson progress, written answers, settings.
+// Drawn with Calm Glass: shared header, a segmented control for the three tabs, grouped lists, steppers.
 
 import { buildCurriculum, lessonStage, currentLesson, todayKey, dayStatus, videosDone } from './curriculum.js';
-import { esc, hm, toast, parseYouTubeId } from './ui.js';
+import { esc, hm, toast, parseYouTubeId, icon, refreshSegs } from './ui.js';
 import { STUDENT_NAME } from './config.js';
 import algebraDefault from '../content/algebra.js';
 import bioDefault from '../content/biology-cells.js';
@@ -13,10 +14,11 @@ const FLAG_LABEL = {
   pausedLong: 'Video paused too long',
   idle: 'Went idle',
   skipTry: 'Tried to skip ahead',
-  videoError: 'Video wouldn\'t play',
+  videoError: 'A video wouldn\'t play',
 };
 const STAGE_LABEL = { watch: 'Watching', learn: 'Reading', quiz: 'Quiz', real: 'Real-life answer', done: 'Done' };
 const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fun video 1', B1: 'Biology · Block 1', B2: 'Biology · Block 2', F2: 'Fun video 2', X: 'Extra practice' };
+const TABS = [['overview', 'Overview'], ['lessons', 'Lessons'], ['settings', 'Settings']];
 
 export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStudent }) {
   const S = { settings: {}, lessons: {}, days: {} };
@@ -26,9 +28,9 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   const unsubs = [];
   let editLesson = '';
 
-  root.innerHTML = '<div class="loading"><i class="spin"></i>Loading his progress…</div>';
+  root.innerHTML = `<div class="sc-loading"><i class="sc-spin"></i><p class="cg-meta">Loading his progress…</p></div>`;
   if (!sid) {
-    root.innerHTML = `<main class="wrap"><div class="card"><h2>One more setup step</h2><p>Put your brother's User UID in <code>js/config.js</code> as <code>STUDENT_UID</code>. See SETUP.html, step 6.</p></div></main>`;
+    root.innerHTML = `<main class="cg-content sc-main"><div class="cg-card"><h2 class="cg-title2">One more setup step</h2><p class="cg-text">Put your brother's User UID in <code>js/config.js</code> as <code>STUDENT_UID</code>.</p></div></main>`;
     return { destroy() {} };
   }
   let rendered = false;
@@ -41,82 +43,96 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   unsubs.push(store.watchDays(sid, (d) => { S.days = d || {}; rendered ? softRender() : gate('d'); }));
   const liveTimer = setInterval(() => { if (tab === 'overview') softRender(); }, 30000);
 
-
   // Don't wipe the settings form while you're typing in it.
   function softRender() { if (tab !== 'settings') render(); }
 
   function render() {
     const scrollY = window.scrollY;
     root.innerHTML = `
-      <header class="top master">
-        <div><div class="hello">Master view</div><div class="date">${esc(STUDENT_NAME)}'s study coach${isDemo ? ' · DEMO' : ''}</div></div>
-        <button class="btn btn-ghost btn-sm" id="out">Sign out</button>
+      <header class="cg-header">
+        <h1 class="cg-header-title">Master view<small>${esc(STUDENT_NAME)}'s study coach${isDemo ? ' · demo' : ''}</small></h1>
       </header>
-      <nav class="tabs">${['overview', 'lessons', 'settings'].map((t) => `<button class="tab ${t === tab ? 'on' : ''}" data-t="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</nav>
-      <main class="wrap" id="mbody"></main>`;
-    root.querySelector('#out').onclick = () => { if (confirm('Sign out?')) onSignOut(); };
-    root.querySelectorAll('.tab').forEach((b) => { b.onclick = () => { tab = b.dataset.t; render(); window.scrollTo(0, 0); }; });
+      <main class="cg-content sc-main">
+        <div class="cg-seg sc-tabs" role="group" aria-label="Section">${TABS.map(([t, label]) => `<button type="button" data-t="${t}" aria-pressed="${t === tab}">${label}</button>`).join('')}</div>
+        <div id="mbody"></div>
+      </main>`;
+    root.querySelectorAll('.sc-tabs > button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.t) return; tab = b.dataset.t; render(); window.scrollTo(0, 0); }; });
     const body = root.querySelector('#mbody');
     if (tab === 'overview') overview(body);
     if (tab === 'lessons') lessons(body);
     if (tab === 'settings') settings(body);
+    refreshSegs();
     window.scrollTo(0, scrollY);
   }
 
+  function row({ ic, label, sub = '', value = '', cls = '', tag = 'li', attrs = '' }) { return `
+    <${tag} class="cg-row ${ic ? 'has-icon' : ''} ${cls}" ${attrs}>
+      ${ic ? `<span class="cg-row-icon">${icon(ic)}</span>` : ''}
+      <span class="cg-row-text"><span class="cg-row-label">${label}</span>${sub ? `<span class="cg-row-sub">${sub}</span>` : ''}</span>
+      ${value ? `<span class="cg-row-value">${value}</span>` : ''}
+    </${tag}>`; }
+  function bar(pct) { return `<span class="sc-bar"><i style="width:${Math.min(100, Math.max(0, pct)).toFixed(1)}%"></i></span>`; }
+  function flagSum(dd) { return Object.values((dd || {}).flags || {}).reduce((a, b) => a + b, 0); }
+
   // ─────────────── Overview ───────────────
   function overview(body) {
-    const tk = todayKey();
-    const d = S.days[tk] || {};
+    const d = S.days[todayKey()] || {};
     const goal = cur.rules.blockMinutes * 60 * 4;
     const st = dayStatus(cur.rules, d);
-    const lastSeen = latestSeen();
-    const ago = lastSeen ? Math.round((Date.now() - lastSeen.t) / 60000) : null;
+    const seen = latestSeen();
+    const ago = seen ? Math.round((Date.now() - seen.t) / 60000) : null;
     const live = ago != null && ago < 2;
     const blocksDone = st.list.filter((s) => s.type === 'block' && s.done).length;
     const factsDone = st.list.filter((s) => s.type === 'fact' && s.done).length;
     const flags = d.flags || {};
-    const flagTotal = Object.values(flags).reduce((a, b) => a + b, 0);
-    const weekend = lastWeekend();
+    const flagTotal = flagSum(d);
 
     body.innerHTML = `
-      <section class="card live ${live ? 'on' : ''}">
-        <span class="live-dot"></span>
-        <div><b>${live ? 'Studying right now' : ago == null ? 'Hasn\'t started yet' : `Last active ${agoText(ago)}`}</b>
-        <small>${lastSeen && lastSeen.step ? `${STEP_LABEL[lastSeen.step] || lastSeen.step}${lastSeen.lesson ? ' · ' + esc(lessonTitle(lastSeen.lesson)) : ''}` : ''}</small></div>
-      </section>
+      <ul class="cg-group sc-live ${live ? 'is-live' : ''}">
+        <li class="cg-row has-icon"><span class="cg-row-icon"><i class="sc-live-dot"></i></span>
+          <span class="cg-row-text"><span class="cg-row-label">${live ? 'Studying right now' : ago == null ? 'Hasn\'t started yet' : `Last active ${agoText(ago)}`}</span>
+          ${seen && seen.step ? `<span class="cg-row-sub">${STEP_LABEL[seen.step] || esc(seen.step)}${seen.lesson ? ' · ' + esc(lessonTitle(seen.lesson)) : ''}</span>` : ''}</span></li>
+      </ul>
 
-      <section class="card">
-        <h2>Today</h2>
-        <div class="stat-row">
-          <div class="stat"><b>${hm(d.activeSec || 0)}</b><small>focused time (goal ${hm(goal)})</small></div>
-          <div class="stat"><b>${blocksDone}/4</b><small>blocks done</small></div>
-          <div class="stat"><b>${factsDone}/2</b><small>fun videos</small></div>
-          <div class="stat ${flagTotal ? 'warn' : ''}"><b>${flagTotal}</b><small>red flags</small></div>
-        </div>
-        <div class="bar"><i style="width:${Math.min(100, ((d.activeSec || 0) / goal) * 100)}%"></i></div>
-        <ul class="mlist">${st.list.filter((s) => s.type !== 'break').map((s) => `<li><span>${s.done ? '✅' : '⬜'} ${STEP_LABEL[s.id]}</span><span>${s.type === 'block' ? `${Math.floor(s.sec / 60)} / ${cur.rules.blockMinutes} min` : s.done ? 'watched' : ''}</span></li>`).join('')}</ul>
-        ${flagTotal ? `<h3>Red flags today</h3><ul class="mlist flags">${Object.entries(flags).filter(([, v]) => v).map(([k, v]) => `<li><span>🚩 ${FLAG_LABEL[k] || k}</span><b>×${v}</b></li>`).join('')}</ul>` : '<p class="muted">No red flags today. 👍</p>'}
-        ${d.practice ? `<p class="muted">Extra practice: ${Object.entries(d.practice).map(([k, v]) => `${k} ${v.right}/${v.total}`).join(' · ')}</p>` : ''}
-      </section>
+      <p class="cg-caption">Today</p>
+      <div class="sc-stats">
+        <div class="cg-card sc-stat"><b class="cg-num">${hm(d.activeSec || 0)}</b><span class="cg-meta">focused time</span></div>
+        <div class="cg-card sc-stat"><b class="cg-num">${blocksDone}/4</b><span class="cg-meta">blocks done</span></div>
+        <div class="cg-card sc-stat"><b class="cg-num">${factsDone}/2</b><span class="cg-meta">fun videos</span></div>
+        <div class="cg-card sc-stat"><b class="cg-num">${flagTotal}</b><span class="cg-meta">red flags</span></div>
+      </div>
+      <ul class="cg-group sc-today">
+        <li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Goal: ${hm(goal)} of focused time</span>${bar(((d.activeSec || 0) / goal) * 100)}</span></li>
+        ${st.list.filter((s) => s.type !== 'break').map((s) => row({
+          ic: s.done ? 'check' : s.type === 'fact' ? 'globe' : s.subject === 'biology' ? 'biology' : 'algebra',
+          cls: s.done ? 'sc-done' : '',
+          label: STEP_LABEL[s.id],
+          value: s.type === 'block' ? `${Math.floor(s.sec / 60)} / ${cur.rules.blockMinutes} min` : s.done ? 'Watched' : '',
+        })).join('')}
+      </ul>
 
-      <section class="card">
-        <h2>This weekend</h2>
-        <div class="grid2">${weekend.map(([key, dd]) => `<div class="mini-day"><b>${dayName(key)}</b><span>${hm((dd || {}).activeSec || 0)}</span>
-          <div class="bar"><i style="width:${Math.min(100, (((dd || {}).activeSec || 0) / goal) * 100)}%"></i></div>
-          <small>${dd ? `${Object.keys(dd.blocksDone || {}).length}/4 blocks · ${Object.values(dd.flags || {}).reduce((a, b) => a + b, 0)} flags` : 'no study'}</small></div>`).join('')}</div>
-      </section>
+      <p class="cg-caption">Red flags today</p>
+      <ul class="cg-group flags">${flagTotal
+        ? Object.entries(flags).filter(([, v]) => v).map(([k, v]) => row({ ic: 'flag', label: FLAG_LABEL[k] || esc(k), value: `×${v}` })).join('')
+        : row({ ic: 'check', label: 'No red flags today' })}</ul>
+      ${d.practice ? `<p class="cg-foot">Extra practice: ${Object.entries(d.practice).map(([k, v]) => `${esc(k)} ${v.right}/${v.total}`).join(' · ')}</p>` : ''}
 
-      <section class="card">
-        <h2>History</h2>
-        <table class="hist"><thead><tr><th>Day</th><th>Time</th><th>Blocks</th><th>Flags</th></tr></thead><tbody>
-        ${Object.keys(S.days).sort().reverse().slice(0, 21).map((k) => { const dd = S.days[k]; return `<tr><td>${dayName(k)}</td><td>${hm(dd.activeSec || 0)}</td><td>${Object.keys(dd.blocksDone || {}).length}/4</td><td>${Object.values(dd.flags || {}).reduce((a, b) => a + b, 0)}</td></tr>`; }).join('') || '<tr><td colspan="4" class="muted">Nothing yet</td></tr>'}
-        </tbody></table>
-      </section>
+      <p class="cg-caption">This weekend</p>
+      <ul class="cg-group">${lastWeekend().map(([key, dd]) => row({
+        ic: 'clock', label: dayName(key), sub: dd ? `${Object.keys(dd.blocksDone || {}).length}/4 blocks · ${flagSum(dd)} flags` : 'No study', value: hm((dd || {}).activeSec || 0),
+      })).join('')}</ul>
 
-      <section class="card">
-        <h2>Today's activity log</h2>
-        <ul class="mlist log">${(d.events || []).slice().reverse().slice(0, 40).map((e) => `<li><span>${new Date(e.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span><span>🚩 ${FLAG_LABEL[e.type] || e.type}${e.step ? ` · ${STEP_LABEL[e.step] || e.step}` : ''}</span></li>`).join('') || '<li class="muted">Nothing flagged.</li>'}</ul>
-      </section>`;
+      <p class="cg-caption">History</p>
+      <ul class="cg-group">${Object.keys(S.days).sort().reverse().slice(0, 21).map((k) => {
+        const dd = S.days[k];
+        return row({ label: dayName(k), sub: `${Object.keys(dd.blocksDone || {}).length}/4 blocks · ${flagSum(dd)} flags`, value: hm(dd.activeSec || 0) });
+      }).join('') || row({ label: 'Nothing yet' })}</ul>
+
+      <p class="cg-caption">Today's activity log</p>
+      <ul class="cg-group">${(d.events || []).slice().reverse().slice(0, 40).map((e) => row({
+        ic: 'flag', label: FLAG_LABEL[e.type] || esc(e.type), sub: e.step ? STEP_LABEL[e.step] || esc(e.step) : '',
+        value: new Date(e.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+      })).join('') || row({ label: 'Nothing flagged' })}</ul>`;
   }
 
   function latestSeen() {
@@ -125,13 +141,10 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     return best;
   }
   function lastWeekend() {
-    const d = new Date(); const out = [];
-    // most recent Saturday (today if it's Saturday or Sunday counts this weekend)
-    const back = (d.getDay() + 1) % 7; // days since Saturday
-    const sat = new Date(d); sat.setDate(d.getDate() - back);
+    const d = new Date();
+    const sat = new Date(d); sat.setDate(d.getDate() - ((d.getDay() + 1) % 7));
     const sun = new Date(sat); sun.setDate(sat.getDate() + 1);
-    for (const x of [sat, sun]) { const k = todayKey(x); out.push([k, S.days[k]]); }
-    return out;
+    return [sat, sun].map((x) => { const k = todayKey(x); return [k, S.days[k]]; });
   }
   function dayName(k) { const [y, m, dd] = k.split('-').map(Number); return new Date(y, m - 1, dd).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
   function agoText(m) { return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; }
@@ -142,31 +155,37 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     body.innerHTML = ['algebra', 'biology'].map((subj) => {
       const unit = cur[subj];
       const now = currentLesson(unit, S.lessons);
-      return `<section class="card"><h2>${subj === 'algebra' ? '📐 Algebra 1' : '🧬 Biology'} — ${esc(unit.unit)}</h2>
-        <ul class="lessons">${unit.lessons.map((l, i) => {
+      return `<p class="cg-caption">${subj === 'algebra' ? 'Algebra 1' : 'Biology'} — ${esc(unit.unit)}</p>
+        <div class="cg-group">${unit.lessons.map((l, i) => {
           const p = S.lessons[l.key] || {};
           const stage = lessonStage(l, p);
           const q = p.quiz || {};
           const isOpen = open.has(l.key);
-          return `<li class="lesson ${stage} ${now && now.key === l.key ? 'now' : ''}">
-            <button class="lesson-row" data-k="${l.key}">
-              <span class="num">${stage === 'done' ? '✓' : i + 1}</span>
-              <span class="lt"><b>${esc(l.title)}</b><small>${p.timeSec ? hm(p.timeSec) + ' · ' : ''}${videosDone(l, p)}/${l.videos.length} videos · quiz ${q.best != null ? q.best + '%' : '—'}${q.attempts ? ` (${q.attempts.length} ${q.attempts.length === 1 ? 'try' : 'tries'})` : ''}</small></span>
-              <span class="tag ${stage}">${p.timeSec || stage !== 'watch' ? STAGE_LABEL[stage] : 'Not started'}</span>
+          const status = p.timeSec || stage !== 'watch' ? STAGE_LABEL[stage] : 'Not started';
+          const sub = `${p.timeSec ? hm(p.timeSec) + ' · ' : ''}${videosDone(l, p)}/${l.videos.length} videos · quiz ${q.best != null ? q.best + '%' : '—'}${q.attempts ? ` (${q.attempts.length} ${q.attempts.length === 1 ? 'try' : 'tries'})` : ''}`;
+          return `
+            <button type="button" class="cg-row has-icon lesson-row ${now && now.key === l.key ? 'sc-current' : ''}" data-k="${l.key}" aria-expanded="${isOpen}">
+              <span class="cg-row-icon">${stage === 'done' ? `<span class="sc-on">${icon('check')}</span>` : `<span class="sc-n cg-num">${i + 1}</span>`}</span>
+              <span class="cg-row-text"><span class="cg-row-label">${esc(l.title)}</span><span class="cg-row-sub">${sub}</span></span>
+              <span class="cg-row-value">${status}</span><span class="cg-chev ${isOpen ? 'is-open' : ''}"></span>
             </button>
-            ${isOpen ? `<div class="lesson-detail">
-              ${p.realLife && p.realLife.answer ? `<h4>His real-life answer</h4><blockquote>${esc(p.realLife.answer)}</blockquote><small class="muted">Q: ${esc(l.realLife.prompt)}</small>` : '<p class="muted">No real-life answer yet.</p>'}
-              ${q.attempts && q.attempts.length ? `<h4>Quiz tries</h4><ul class="mlist">${q.attempts.map((a) => `<li><span>${new Date(a.at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span><b class="${a.pct >= cur.rules.passPct ? 'ok' : 'no'}">${a.right}/${a.total} · ${a.pct}%</b></li>`).join('')}</ul>` : ''}
-              <div class="row-end"><button class="btn btn-ghost btn-sm" data-reset="${l.key}">Reset this lesson</button></div>
-            </div>` : ''}
-          </li>`;
-        }).join('')}</ul></section>`;
+            ${isOpen ? `<div class="cg-row cg-row-tall lesson-detail"><div class="cg-row-block">
+              ${p.realLife && p.realLife.answer
+                ? `<p class="cg-meta">His real-life answer</p><blockquote class="sc-quote">${esc(p.realLife.answer)}</blockquote><p class="cg-meta">Question: ${esc(l.realLife.prompt)}</p>`
+                : '<p class="cg-meta">No real-life answer yet.</p>'}
+              ${q.attempts && q.attempts.length ? `<p class="cg-meta">Quiz tries</p><ul class="sc-tries">${q.attempts.map((a) => `<li><span>${new Date(a.at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span><b class="cg-num ${a.pct >= cur.rules.passPct ? 'sc-pass' : ''}">${a.right}/${a.total} · ${a.pct}%${a.pct >= cur.rules.passPct ? ' ✓' : ''}</b></li>`).join('')}</ul>` : ''}
+              <button type="button" class="cg-btn cg-btn-plain sc-danger-text" data-reset="${l.key}">Reset this lesson</button>
+            </div></div>` : ''}`;
+        }).join('')}</div>`;
     }).join('');
     body.querySelectorAll('.lesson-row').forEach((b) => { b.onclick = () => { const k = b.dataset.k; open.has(k) ? open.delete(k) : open.add(k); render(); }; });
+    // Destructive: do it at once, offer Undo (Calm Glass rule 12 — no confirm dialogs).
     body.querySelectorAll('[data-reset]').forEach((b) => {
       b.onclick = async () => {
-        if (!confirm('Reset this lesson? He\'ll have to redo the videos, quiz, and answer.')) return;
-        await store.resetLesson(sid, b.dataset.reset); toast('Lesson reset');
+        const key = b.dataset.reset;
+        const before = JSON.parse(JSON.stringify(S.lessons[key] || {}));
+        await store.resetLesson(sid, key);
+        toast('Lesson reset', { action: () => store.saveLesson(sid, key, before).then(() => toast('Restored')), label: 'Undo' });
       };
     });
   }
@@ -175,89 +194,104 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   function settings(body) {
     const all = [...cur.algebra.lessons, ...cur.biology.lessons];
     if (!editLesson) editLesson = all[0].key;
-    const L = all.find((l) => l.key === editLesson);
+    const L = all.find((l) => l.key === editLesson) || all[0];
     const factsText = cur.facts.map((x) => `https://youtu.be/${x.id} | ${x.title} | ${x.cat || ''} | ${x.blurb || ''}`).join('\n');
+    const stepper = (id, value, min, max, step) => `<div class="cg-stepper" data-id="${id}" data-min="${min}" data-max="${max}" data-step="${step}">
+      <button type="button" class="sc-step-btn" data-d="-1" aria-label="Less">−</button><span class="cg-stepper-value" id="${id}">${value}</span><button type="button" class="sc-step-btn" data-d="1" aria-label="More">+</button></div>`;
     body.innerHTML = `
-      <section class="card">
-        <h2>Study rules</h2>
-        <label class="field"><span>Minutes per block (focused time)</span><input type="number" id="bm" min="10" max="90" value="${cur.rules.blockMinutes}"></label>
-        <label class="field"><span>Quiz pass mark (%)</span><input type="number" id="pp" min="50" max="100" value="${cur.rules.passPct}"></label>
-        <label class="field"><span>Biology unit</span><select id="bu"><option value="cells">Cells</option></select>
-          <small class="muted">More units get added once we know what his class is on.</small></label>
-        <div class="row-end"><button class="btn" id="saveRules">Save rules</button></div>
-      </section>
+      <p class="cg-caption">Study rules</p>
+      <div class="cg-group">
+        <div class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Minutes per block</span><span class="cg-row-sub">Focused time, plus a 10-minute break</span></span>${stepper('bm', cur.rules.blockMinutes, 10, 90, 5)}</div>
+        <div class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Quiz pass mark</span><span class="cg-row-sub">Percent needed to pass a lesson</span></span>${stepper('pp', cur.rules.passPct, 50, 100, 5)}</div>
+        <label class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Biology unit</span><span class="cg-row-sub">More units are coming</span></span>
+          <select id="bu" class="sc-select"><option value="cells">Cells</option></select></label>
+      </div>
+      <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="saveRules">Save rules</button></div>
 
-      <section class="card">
-        <h2>Swap lesson videos</h2>
-        <label class="field"><span>Lesson</span><select id="ls">${all.map((l) => `<option value="${l.key}" ${l.key === editLesson ? 'selected' : ''}>${l.key.startsWith('alg') ? 'Algebra' : 'Biology'} — ${esc(l.title)}</option>`).join('')}</select></label>
-        <div id="vids">${L.videos.map((v, i) => vidRow(v, i)).join('')}</div>
-        <div class="row-between"><button class="btn btn-ghost btn-sm" id="addVid">+ Add video</button>
-          <span><button class="btn btn-ghost btn-sm" id="resetVids">Restore original</button> <button class="btn btn-sm" id="saveVids">Save videos</button></span></div>
-        <small class="muted">Paste any YouTube link. If he already finished a video you replace, he'll need to watch the new one.</small>
-      </section>
+      <p class="cg-caption">Swap lesson videos</p>
+      <div class="cg-group">
+        <label class="cg-row cg-row-tall"><span class="cg-row-text"><span class="cg-row-label">Lesson</span></span>
+          <select id="ls" class="sc-select cg-row-block">${all.map((l) => `<option value="${l.key}" ${l.key === editLesson ? 'selected' : ''}>${l.key.startsWith('alg') ? 'Algebra' : 'Biology'} — ${esc(l.title)}</option>`).join('')}</select></label>
+        <div class="cg-row cg-row-tall"><div class="cg-row-block" id="vids">${L.videos.map((v) => vidRow(v)).join('')}</div>
+          <div class="cg-btns cg-row-block"><button type="button" class="cg-btn cg-btn-glass" id="addVid">Add video</button><button type="button" class="cg-btn cg-btn-glass" id="saveVids">Save videos</button><button type="button" class="cg-btn cg-btn-plain" id="resetVids">Restore original</button></div></div>
+      </div>
+      <p class="cg-foot">Paste any YouTube link. If he already finished a video you replace, he'll need to watch the new one.</p>
 
-      <section class="card">
-        <h2>Fun-fact videos</h2>
-        <p class="muted">One per line: <code>link | title | category | short blurb</code>. They play in order, 2 per day.</p>
-        <textarea id="facts" rows="10">${esc(factsText)}</textarea>
-        <div class="row-end"><button class="btn btn-ghost btn-sm" id="resetFacts">Restore original</button> <button class="btn btn-sm" id="saveFacts">Save list</button></div>
-      </section>
+      <p class="cg-caption">Fun-fact videos</p>
+      <div class="cg-group">
+        <div class="cg-row cg-row-tall"><div class="cg-row-block"><textarea id="facts" class="sc-textarea" rows="9" aria-label="Fun-fact videos">${esc(factsText)}</textarea></div>
+          <div class="cg-btns cg-row-block"><button type="button" class="cg-btn cg-btn-glass" id="saveFacts">Save list</button><button type="button" class="cg-btn cg-btn-plain" id="resetFacts">Restore original</button></div></div>
+      </div>
+      <p class="cg-foot">One per line: link | title | category | short blurb. They play in order, two per day.</p>
 
-      ${isDemo ? `<section class="card"><h2>Demo tools</h2><p class="muted">Demo mode keeps everything on this device only.</p>
-        <div class="row-center"><button class="btn btn-ghost" id="toStudent">Switch to student view</button><button class="btn btn-ghost" id="wipe">Wipe demo data</button></div></section>` : ''}`;
+      ${isDemo ? `<p class="cg-caption">Demo tools</p>
+        <div class="cg-group">
+          <button type="button" class="cg-row cg-row-accent" id="toStudent"><span class="cg-row-text"><span class="cg-row-label">Switch to student view</span></span><span class="cg-chev"></span></button>
+        </div>
+        <div class="cg-group"><button type="button" class="cg-row cg-row-danger" id="wipe"><span class="cg-row-text"><span class="cg-row-label">Wipe demo data</span></span></button></div>` : ''}
 
-    function vidRow(v, i) { return `<div class="vid-row" data-i="${i}"><input class="v-url" placeholder="YouTube link" value="https://youtu.be/${esc(v.id)}"><input class="v-title" placeholder="Title" value="${esc(v.title)}"><button class="icon-btn sm v-del" aria-label="Remove">✕</button></div>`; }
-    const wireDel = () => body.querySelectorAll('.v-del').forEach((b) => { b.onclick = () => b.closest('.vid-row').remove(); });
+      <div class="cg-group sc-signout"><button type="button" class="cg-row cg-row-danger has-icon" id="out"><span class="cg-row-icon">${icon('out')}</span><span class="cg-row-text"><span class="cg-row-label">Sign out</span></span></button></div>`;
+
+    function vidRow(v) {
+      return `<div class="sc-vid-row"><label class="cg-field"><input class="v-url" placeholder="YouTube link" aria-label="YouTube link" value="${v.id ? `https://youtu.be/${esc(v.id)}` : ''}"></label>
+        <label class="cg-field"><input class="v-title" placeholder="Title" aria-label="Video title" value="${esc(v.title || '')}"></label>
+        <button type="button" class="cg-key v-del" aria-label="Remove video">${icon('close')}</button></div>`;
+    }
+    const wireDel = () => body.querySelectorAll('.v-del').forEach((b) => { b.onclick = () => b.closest('.sc-vid-row').remove(); });
     wireDel();
 
+    body.querySelectorAll('.cg-stepper').forEach((sp) => {
+      const out = sp.querySelector('.cg-stepper-value');
+      const min = Number(sp.dataset.min), max = Number(sp.dataset.max), stepBy = Number(sp.dataset.step);
+      const sync = () => { const v = Number(out.textContent); sp.querySelector('[data-d="-1"]').disabled = v <= min; sp.querySelector('[data-d="1"]').disabled = v >= max; };
+      sp.querySelectorAll('.sc-step-btn').forEach((b) => { b.onclick = () => { out.textContent = Math.min(max, Math.max(min, Number(out.textContent) + stepBy * Number(b.dataset.d))); sync(); }; });
+      sync();
+    });
     body.querySelector('#bu').value = S.settings.bioUnit || 'cells';
     body.querySelector('#saveRules').onclick = async () => {
-      const bm = Math.max(10, Math.min(90, Number(body.querySelector('#bm').value) || 50));
-      const pp = Math.max(50, Math.min(100, Number(body.querySelector('#pp').value) || 90));
-      await store.saveSettings({ blockMinutes: bm, passPct: pp, bioUnit: body.querySelector('#bu').value });
-      toast('Saved ✓', 'good');
+      await store.saveSettings({ blockMinutes: Number(body.querySelector('#bm').textContent), passPct: Number(body.querySelector('#pp').textContent), bioUnit: body.querySelector('#bu').value });
+      toast('Rules saved');
     };
     body.querySelector('#ls').onchange = (e) => { editLesson = e.target.value; render(); };
-    body.querySelector('#addVid').onclick = () => {
-      const wrap = body.querySelector('#vids');
-      wrap.insertAdjacentHTML('beforeend', vidRow({ id: '', title: '' }, wrap.children.length));
-      wrap.lastElementChild.querySelector('.v-url').value = '';
-      wireDel();
-    };
+    body.querySelector('#addVid').onclick = () => { body.querySelector('#vids').insertAdjacentHTML('beforeend', vidRow({ id: '', title: '' })); wireDel(); };
     body.querySelector('#saveVids').onclick = async () => {
-      const rows = [...body.querySelectorAll('.vid-row')];
       const vids = [];
-      for (const r of rows) {
-        const id = parseYouTubeId(r.querySelector('.v-url').value);
-        if (!id) { if (r.querySelector('.v-url').value.trim()) return toast('One of the links isn\'t a YouTube link', 'bad'); continue; }
+      for (const r of body.querySelectorAll('.sc-vid-row')) {
+        const raw = r.querySelector('.v-url').value;
+        const id = parseYouTubeId(raw);
+        if (!id) { if (raw.trim()) return toast('One of the links isn\'t a YouTube link'); continue; }
         vids.push({ id, title: r.querySelector('.v-title').value.trim() || 'Video' });
       }
-      if (!vids.length) return toast('Add at least one video', 'bad');
+      if (!vids.length) return toast('Add at least one video');
       await store.saveSettings({ videoOverrides: { [editLesson]: vids } });
-      toast('Videos saved ✓', 'good');
+      toast('Videos saved');
     };
     body.querySelector('#resetVids').onclick = async () => {
       const orig = [...algebraDefault.lessons, ...bioDefault.lessons].find((l) => l.key === editLesson);
       await store.saveSettings({ videoOverrides: { [editLesson]: orig ? orig.videos : [] } });
-      toast('Restored ✓', 'good'); render();
+      toast('Original videos restored'); render();
     };
     body.querySelector('#saveFacts').onclick = async () => {
-      const lines = body.querySelector('#facts').value.split('\n').map((x) => x.trim()).filter(Boolean);
       const list = [];
-      for (const ln of lines) {
+      for (const ln of body.querySelector('#facts').value.split('\n').map((x) => x.trim()).filter(Boolean)) {
         const [u, title = 'Fun video', cat = 'Fun fact', blurb = ''] = ln.split('|').map((x) => x.trim());
         const id = parseYouTubeId(u);
-        if (!id) return toast(`Not a YouTube link: ${u.slice(0, 30)}`, 'bad');
+        if (!id) return toast(`Not a YouTube link: ${u.slice(0, 30)}`);
         list.push({ id, title, cat, blurb });
       }
-      if (list.length < 2) return toast('Add at least 2 videos', 'bad');
+      if (list.length < 2) return toast('Add at least 2 videos');
       await store.saveSettings({ facts: list });
-      toast('Fun-fact list saved ✓', 'good');
+      toast('Fun-fact list saved');
     };
-    body.querySelector('#resetFacts').onclick = async () => { await store.saveSettings({ facts: factsDefault }); toast('Restored ✓', 'good'); render(); };
+    body.querySelector('#resetFacts').onclick = async () => { await store.saveSettings({ facts: factsDefault }); toast('Original list restored'); render(); };
+    body.querySelector('#out').onclick = () => onSignOut();
     if (isDemo) {
       body.querySelector('#toStudent').onclick = () => onSwitchToStudent();
-      body.querySelector('#wipe').onclick = async () => { if (confirm('Wipe all demo data?')) { await store.resetDemo(); toast('Wiped'); } };
+      body.querySelector('#wipe').onclick = async () => {
+        const backup = store.exportDemo();
+        await store.resetDemo();
+        toast('Demo data wiped', { action: () => store.importDemo(backup), label: 'Undo' });
+      };
     }
   }
 

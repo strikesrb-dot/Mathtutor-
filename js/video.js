@@ -37,8 +37,8 @@ export function mountVideo(container, opts) {
   let lastSaved = 0;
 
   container.innerHTML = `
-    <div class="video-frame"><div class="video-el"></div>
-      <div class="video-loading">Loading video…</div>
+    <div class="video-frame sc-video"><div class="video-el"></div>
+      <div class="video-loading cg-meta">Loading video…</div>
     </div>`;
   const frame = container.querySelector('.video-frame');
 
@@ -75,7 +75,7 @@ export function mountVideo(container, opts) {
     // No skipping ahead.
     if (t > maxWatched + 3 && !done) {
       player.seekTo(maxWatched, true);
-      toast('No skipping ahead — watch it through 👀');
+      toast('No skipping ahead — watch it through');
       tracker.flag('skipTry');
       tracker.setVideoOK(false);
       return;
@@ -122,12 +122,12 @@ export function mountVideo(container, opts) {
   function openCheck(pos) {
     check = { pos, left: rules.attentionReplySec };
     const el = document.createElement('button');
-    el.className = 'attn';
-    el.innerHTML = `<b>Still watching?</b><span>Tap here</span><i class="attn-count">${check.left}</i>`;
+    el.className = 'attn cg-btn cg-btn-glass sc-attn';
+    el.innerHTML = `<span class="cg-headline">Still watching? Tap here</span><span class="attn-count cg-num">${check.left}</span>`;
     el.addEventListener('click', () => {
       sinceCheck = 0; nextCheck = rand(rules.attentionMinSec, rules.attentionMaxSec);
       el.remove(); check = null;
-      toast('👍 Nice — keep going', 'good');
+      toast('Nice — keep going');
     });
     frame.appendChild(el);
     check.el = el;

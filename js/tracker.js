@@ -32,21 +32,37 @@ export function createTracker(store, sid, rules) {
     pending.events.push({ t: Date.now(), type, step: ctx.stepId || '', note });
   }
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      if (ctx.mode !== 'off') { leftAt = Date.now(); flag('leftApp'); }
-      flush();
-    } else if (leftAt) {
-      const away = Math.round((Date.now() - leftAt) / 1000);
-      leftAt = null;
-      if (ctx.mode !== 'off' && away >= 3) {
-        flash('Hey! You left the app', `You were gone ${away} seconds. Time outside the app doesn't count.`);
-      }
+  // Away time. iOS can fire "hidden" late or more than once, so the leave moment is the earlier of
+  // the first "hidden" event and the last second we saw the app on screen (accurate to about 1 second).
+  let lastVisibleBeat = Date.now();
+  const awayText = (sec) => (sec < 60 ? `${sec} second${sec === 1 ? '' : 's'}` : `${Math.floor(sec / 60)} min ${sec % 60} sec`);
+  function markLeft() {
+    if (ctx.mode === 'off' || leftAt != null) return;
+    leftAt = Math.min(Date.now(), lastVisibleBeat + 1000);
+    flag('leftApp');
+  }
+  function cameBack(fromTs) {
+    const away = Math.max(0, Math.round((Date.now() - fromTs) / 1000));
+    leftAt = null;
+    lastVisibleBeat = Date.now();
+    if (ctx.mode !== 'off' && away >= 3) {
+      flash('Hey! You left the app', `You were gone ${awayText(away)}. Time outside the app doesn't count.`);
     }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { markLeft(); flush(); }
+    else if (leftAt != null) cameBack(leftAt);
   });
-  window.addEventListener('pagehide', () => flush());
+  window.addEventListener('pagehide', () => { markLeft(); flush(); });
+  window.addEventListener('pageshow', () => { if (leftAt != null && document.visibilityState === 'visible') cameBack(leftAt); });
 
   const timer = setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      // Timers freeze while the app is in the background. A big gap with no "hidden" event = he left anyway.
+      const gap = Date.now() - lastVisibleBeat;
+      if (gap > 4000 && leftAt == null && ctx.mode !== 'off') { leftAt = lastVisibleBeat + 1000; flag('leftApp'); cameBack(leftAt); }
+      lastVisibleBeat = Date.now();
+    }
     const on = counting();
     if (on) {
       pending.sec += 1;

@@ -36,7 +36,7 @@ try:
     page.clock.run_for(10_000)
     print('state while hidden', page.evaluate('window.__players[0].getPlayerState()'))
     page.evaluate("Object.defineProperty(document,'visibilityState',{value:'visible',configurable:true}); document.dispatchEvent(new Event('visibilitychange'))")
-    page.wait_for_selector('.flash'); shot(page,'04-flash-left'); page.click('.flash button')
+    page.wait_for_selector('.sc-flash'); print('away message:', page.inner_text('.sc-flash p')); shot(page,'04-flash-left'); page.click('.sc-flash button')
     page.evaluate('window.__players[0].playVideo()')
     # wait for attention check
     for i in range(500):
@@ -44,19 +44,19 @@ try:
       if page.query_selector('.attn'): break
     print('attn appeared after ~', i, 's'); shot(page,'05-attn')
     page.clock.run_for(16_000)
-    print('flash after missed check:', bool(page.query_selector('.flash')), 'player state', page.evaluate('window.__players[0].getPlayerState()'))
-    shot(page,'06-missed'); page.click('.flash button')
+    print('flash after missed check:', bool(page.query_selector('.sc-flash')), 'player state', page.evaluate('window.__players[0].getPlayerState()'))
+    shot(page,'06-missed'); page.click('.sc-flash button')
     # now watch through, tapping checks
     page.evaluate('window.__players[0].playVideo()')
     for i in range(700):
       page.clock.run_for(1000)
       a = page.query_selector('.attn')
       if a: a.click()
-      if page.query_selector('.flash'): page.click('.flash button'); page.evaluate('window.__players[0].playVideo()')
+      if page.query_selector('.sc-flash'): page.click('.sc-flash button'); page.evaluate('window.__players[0].playVideo()')
       if not page.eval_on_selector('#nextVid','e=>e.disabled'): break
     print('video1 done after', i, 's; clock', page.inner_text('#clockT'))
     page.click('#nextVid')
-    print('stage now:', page.inner_text('.stages'))
+    print('stage now:', page.inner_text('.sc-stages'))
     shot(page,'07-learn')
     for i in range(45): page.mouse.move(10, 10+i); page.touchscreen.tap(5,400); page.clock.run_for(1000)
     page.click('#gotIt'); page.wait_for_selector('#start'); shot(page,'08-quizstart')
@@ -68,26 +68,26 @@ try:
       opts = page.query_selector_all('.opt')
       pick = [o for o in opts if (o.inner_text()==right) != (qn<2)][0]
       pick.click(); page.click('#nx')
-    print('attempt1:', page.inner_text('.card.center h2')); shot(page,'09-fail')
+    print('attempt1:', page.inner_text('.sc-result h3')); shot(page,'09-fail')
     page.click('#retry')
     for qn in range(10):
       qt = page.inner_text('.q'); right = answers[qt]
       [o for o in page.query_selector_all('.opt') if o.inner_text()==right][0].click()
       if qn==0: shot(page,'10-quiz-q')
       page.click('#nx')
-    print('attempt2:', page.inner_text('.card.center h2'))
+    print('attempt2:', page.inner_text('.sc-result h3'))
     page.click('#cont'); page.wait_for_selector('#ans')
     page.fill('#ans', 'My input is the button I press on the vending machine and the output is the snack that comes out every single time I press it.')
     shot(page,'11-real')
-    page.click('#send'); print(page.inner_text('.card.center'))
+    page.click('#send'); print(page.inner_text('.sc-center'))
     page.clock.run_for(20_000)
-    page.click('#nextL'); print('next lesson:', page.inner_text('.lesson-head h1'))
+    page.click('#nextL'); print('next lesson:', page.inner_text('.sc-lesson-head h2'))
     page.click('#home'); page.wait_for_selector('#go'); shot(page,'12-home-after')
     # master view
     page.click('#out') if False else None
-    page.evaluate("sessionStorage.setItem('sc-demo-role','master')"); page.reload(); page.wait_for_selector('.tabs')
+    page.evaluate("sessionStorage.setItem('sc-demo-role','master')"); page.reload(); page.wait_for_selector('.sc-tabs')
     shot(page,'13-master')
-    print('ERRS SO FAR', errs[-5:]); print('master today text:', page.inner_text('.stat-row').replace('\n',' | '))
+    print('ERRS SO FAR', errs[-5:]); print('master today text:', page.inner_text('.sc-stats').replace('\n',' | '))
     print('flags:', page.inner_text('.flags') if page.query_selector('.flags') else 'none')
     page.click('[data-t=lessons]'); page.click('[data-k=alg-1]'); shot(page,'14-master-lessons')
     print(page.inner_text('.lesson-detail')[:300])

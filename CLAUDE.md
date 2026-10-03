@@ -2,6 +2,12 @@
 
 Weekend study app for the owner's younger brother. **Student** = the brother (phone and iPad). **Master** = the owner, who checks progress from his phone. Static site hosted on **Netlify** (auto-deploys every push to `main`; `netlify.toml` = no build, publish root), plus Firebase Auth and Firestore (project `study-tutor-45335`). Read `HANDOFF.md` first for current status.
 
+## Design language: Calm Glass
+- `css/calm-glass.css` + `js/calm-glass.js` are the owner's design kit (rules: `tools/DESIGN-LANGUAGE.md`). Don't edit them; app styles live in `css/app.css` and use only `--cg-*` tokens and `.cg-*` components.
+- Text ≥ 16, corners 8/14/26/32/capsule/circle only, one accent for state only, one `.cg-btn-strong` per screen, no `confirm()`/`alert()` (do it + Undo toast).
+- Run `node tools/check-design.mjs css/app.css js index.html --allow tools/calm-glass.allow.json` before every push; it must say clean.
+- Deliberate exception: the red "you left / missed the check" flash uses `--cg-danger` because the owner asked for a bright red alert.
+
 ## Hard constraints
 - **No build step.** Plain ES modules loaded by `index.html`. No bundler, no npm runtime deps, no TypeScript. Netlify serves the repo as-is.
 - **Safari/WebKit first.** Both devices are Apple (iOS/iPadOS Safari, often added to the Home Screen). Check every change for WebKit issues: no `navigator.vibrate` reliance, audio only after a user tap, 16px+ inputs (prevents iOS zoom), `env(safe-area-inset-*)`, `playsinline` on video, and no APIs newer than Safari 15.4.
