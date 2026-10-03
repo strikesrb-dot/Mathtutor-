@@ -90,7 +90,7 @@ export default {
       realLife: {
         text: `<p>A V-shaped graph shows up when something goes <b>down to a lowest point, then back up</b> at the same speed.</p>
           <ul><li><b>Walking past home:</b> you walk down a straight street at 1 block per minute and pass your house at minute 4. Your distance from home is d = |t − 4|. It drops to 0 at minute 4, then grows again. The vertex is (4, 0).</li>
-          <li><b>Guessing game:</b> the answer is 50, so a guess g is off by |g − 50|. The tip of the V is at (50, 0): a perfect guess. If the game adds 2 extra points to every miss, |g − 50| + 2 moves the V up 2.</li></ul>`,
+          <li><b>Guessing game:</b> the answer is 50, so a guess g is off by |g − 50|. The tip of the V is at (50, 0): a perfect guess. If the game adds 2 extra points to every guess, |g − 50| + 2 moves the V up 2.</li></ul>`,
         prompt: 'Describe something in your life where a number goes down to a lowest point and then back up. Where would the vertex of its V be, and what does it mean?',
       },
     },

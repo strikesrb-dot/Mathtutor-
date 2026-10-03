@@ -202,7 +202,7 @@ export default {
           <li><b>Add or multiply?</b> The same amount added (or taken away) each time means arithmetic. Multiplied by the same number each time means geometric.</li>
           <li><b>Find the pieces:</b> the first term a₁, plus d (arithmetic) or r (geometric).</li>
           <li><b>Write the formula</b> and plug in the term number n.</li>
-          <li><b>Check that n makes sense.</b> n counts things like rows, days, or weeks, so it must be a whole number: 1, 2, 3, … The <b>domain</b> (all the inputs that make sense) is whole numbers, not fractions or negatives.</li>
+          <li><b>Check that n makes sense.</b> n counts things like rows, days, or weeks, so it must be a counting number (a positive whole number): 1, 2, 3, … The <b>domain</b> (all the inputs that make sense) is counting numbers, not 0, fractions, or negatives.</li>
         </ol>
         <p><b>Worked example:</b> a theater has 12 seats in row 1. Each row has 3 more seats than the row in front of it. How many seats are in row 15?</p>
         <ol>
@@ -220,7 +220,7 @@ export default {
         { q: 'A stadium has 20 seats in row 1, and each row has 4 more than the row before. Which explicit formula fits?', c: ['aₙ = 20 + (n − 1) · 4', 'aₙ = 4 + (n − 1) · 20', 'aₙ = 20 · 4ⁿ⁻¹', 'aₙ = 20 + 4n'], why: 'Adding 4 each row makes it arithmetic, with a₁ = 20 and d = 4.' },
         { q: 'Plan A gives you 2 pennies on day 1, then 10 more each day. Plan B gives 2 pennies on day 1, then doubles each day. How many does each give on day 8?', c: ['A: 72, B: 256', 'A: 82, B: 512', 'A: 72, B: 128', 'A: 80, B: 16'], why: 'A: 2 + (8 − 1) · 10 = 72. B: 2 · 2⁷ = 256. Doubling wins in the long run.' },
         { q: 'A video gets 30 views on day 1, and the views triple each day. How many views does it get on day 4?', c: ['810', '2,430', '120', '39'], why: '30, 90, 270, 810. Or 30 · 3³ = 30 · 27 = 810.' },
-        { q: 'In the theater problem (row n has 12 + (n − 1) · 3 seats), which values of n make sense?', c: ['Whole numbers 1, 2, 3, … up to the last row', 'Any number, including 2.5 and −3', 'Only even numbers', 'Only numbers bigger than 12'], why: 'n counts rows. There is no row 2.5 and no row −3.' },
+        { q: 'In the theater problem (row n has 12 + (n − 1) · 3 seats), which values of n make sense?', c: ['Counting numbers 1, 2, 3, … up to the last row', 'Any number, including 2.5 and −3', 'Only even numbers', 'Only numbers bigger than 12'], why: 'n counts rows. There is no row 2.5 and no row −3.' },
         { q: 'A ball\'s first bounce is 81 cm high, and each bounce is 1/3 as high as the one before. How high is the 4th bounce?', c: ['3 cm', '1 cm', '9 cm', '27 cm'], why: '81, 27, 9, 3. Divide by 3 three times to go from bounce 1 to bounce 4.' },
         { q: 'Zayd has $25 in week 1 and adds $5 each week. In which week will he have $100?', c: ['Week 16', 'Week 15', 'Week 20', 'Week 4'], why: 'Solve 25 + (n − 1) · 5 = 100: (n − 1) · 5 = 75, n − 1 = 15, n = 16.' },
       ],

@@ -17,7 +17,7 @@ export default {
         <p><b>1. Comparing bodies</b> (<b>comparative anatomy</b>):</p>
         <ul><li><b>Homologous structures</b> (body parts with the same basic bones but different jobs): a human arm, a cat's front leg, a whale's flipper, and a bat's wing all have one upper arm bone, two forearm bones, wrist bones, and finger bones. Scientists explain this as coming from a shared ancestor.</li>
         <li><b>Analogous structures</b> (same job, different build): a bird wing and a butterfly wing both fly but are built in totally different ways. They do NOT show close relationship.</li>
-        <li><b>Vestigial structures</b> (body parts that are small and have little or no use): whales have tiny hip bones but no back legs.</li></ul>
+        <li><b>Vestigial structures</b> (body parts that are reduced and have lost most of their original job): whales have tiny hip bones but no back legs.</li></ul>
         <p><b>2. Comparing embryos</b> (<b>embryology</b>, the study of how living things develop before birth or hatching): early embryos of fish, chickens, and humans all have a tail and folds near the neck.</p>
         <p><b>3. Comparing DNA</b> (<b>molecular evidence</b>): almost all living things use the same genetic code. The fewer DNA differences two species have, the more closely related they are.</p>
         <p><b>4. Watching it happen</b>: bacteria can become <b>resistant</b> (no longer killed) to <b>antibiotics</b> (medicines that kill bacteria) in just a few years.</p>`,

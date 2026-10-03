@@ -68,7 +68,7 @@ export default {
           <li><b>b</b> is the <b>growth factor</b> (the number you multiply by each step). The videos call it the <b>common ratio</b>.</li>
           <li><b>x</b> is the number of steps, like days, hours, or years.</li>
         </ul>
-        <p>Why is a the start? Any number to the 0 power is 1, so a · b⁰ = a · 1 = a.</p>
+        <p>Why is a the start? Any number (except 0) to the 0 power is 1, so a · b⁰ = a · 1 = a.</p>
         <p><b>Order of operations:</b> do the exponent first, then multiply. 3 · 2⁴ = 3 · 16 = 48. It is NOT 6⁴.</p>
         <p><b>Percent growth:</b> growing 10% means you keep all you had (100%) plus 10% more. That is 110%, so you multiply by <b>1.10</b>. Growing 30% means you multiply by 1.30.</p>
         <p><b>Worked example:</b> A town has 2,000 people and grows 10% each year. How many people live there after 2 years?</p>
@@ -281,7 +281,7 @@ export default {
       realLife: {
         text: `<p>Picking the right model matters, because the two kinds of growth give very different predictions.</p>
           <ul><li><b>Disease spread:</b> early on, the number of sick people can double every few days. Health workers use exponential models to plan hospital beds.</li>
-          <li><b>Followers:</b> 50 new followers a day gives 1,500 in 30 days. Starting with 1 and doubling daily gives over a billion.</li>
+          <li><b>Followers:</b> 50 new followers a day gives 1,500 in 30 days. Starting with 1 and doubling every day for 30 days gives 2³⁰, over a billion.</li>
           <li><b>Plant height</b> or a <b>candle burning down</b> changes by about the same amount each day, so a linear model fits.</li></ul>
           <p>Always ask: same jump, or same multiplier?</p>`,
         prompt: 'Would you rather get 50 new followers every day, or start with 1 follower that doubles every day, for a 30-day challenge? Explain your choice using what you learned.',
