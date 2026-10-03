@@ -1,11 +1,9 @@
 // Master side (you): live status, today's time, red flags, lesson progress, written answers, settings.
 // Drawn with Calm Glass: shared header, a segmented control for the three tabs, grouped lists, steppers.
 
-import { buildCurriculum, lessonStage, currentLesson, todayKey, dayStatus, videosDone } from './curriculum.js';
+import { buildCurriculum, lessonStage, currentLesson, todayKey, dayStatus, videosDone, doneCount, originalVideos } from './curriculum.js';
 import { esc, hm, toast, parseYouTubeId, icon, refreshSegs } from './ui.js';
 import { STUDENT_NAME } from './config.js';
-import algebraDefault from '../content/algebra.js';
-import bioDefault from '../content/biology-cells.js';
 import factsDefault from '../content/facts.js';
 
 const FLAG_LABEL = {
@@ -25,6 +23,8 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   let cur = buildCurriculum({});
   let tab = 'overview';
   const open = new Set();
+  const openUnits = new Set();
+  let unitsSeeded = false;
   const unsubs = [];
   let editLesson = '';
 
@@ -148,36 +148,33 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   }
   function dayName(k) { const [y, m, dd] = k.split('-').map(Number); return new Date(y, m - 1, dd).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
   function agoText(m) { return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; }
-  function lessonTitle(key) { return [...cur.algebra.lessons, ...cur.biology.lessons].find((l) => l.key === key)?.title || key; }
+  function allLessons() { return [...cur.algebra.units, ...cur.biology.units].flatMap((u) => u.lessons); }
+  function lessonTitle(key) { return allLessons().find((l) => l.key === key)?.title || key; }
 
   // ─────────────── Lessons ───────────────
   function lessons(body) {
+    if (!unitsSeeded) {   // open the unit he is working in
+      unitsSeeded = true;
+      for (const subj of ['algebra', 'biology']) { const L = currentLesson(cur[subj], S.lessons); if (L) openUnits.add(L.u.id); }
+    }
     body.innerHTML = ['algebra', 'biology'].map((subj) => {
-      const unit = cur[subj];
-      const now = currentLesson(unit, S.lessons);
-      return `<p class="cg-caption">${subj === 'algebra' ? 'Algebra 1' : 'Biology'} — ${esc(unit.unit)}</p>
-        <div class="cg-group">${unit.lessons.map((l, i) => {
-          const p = S.lessons[l.key] || {};
-          const stage = lessonStage(l, p);
-          const q = p.quiz || {};
-          const isOpen = open.has(l.key);
-          const status = p.timeSec || stage !== 'watch' ? STAGE_LABEL[stage] : 'Not started';
-          const sub = `${p.timeSec ? hm(p.timeSec) + ' · ' : ''}${videosDone(l, p)}/${l.videos.length} videos · quiz ${q.best != null ? q.best + '%' : '—'}${q.attempts ? ` (${q.attempts.length} ${q.attempts.length === 1 ? 'try' : 'tries'})` : ''}`;
+      const course = cur[subj];
+      const now = currentLesson(course, S.lessons);
+      const done = doneCount(course.lessons, S.lessons);
+      return `<p class="cg-caption">${esc(course.name)} — ${done} of ${course.lessons.length} lessons done</p>
+        <div class="cg-group">${course.units.map((u) => {
+          const uDone = doneCount(u.lessons, S.lessons);
+          const isOpen = openUnits.has(u.id);
+          const skipped = course.startUnit && u.n < course.startUnit;
           return `
-            <button type="button" class="cg-row has-icon lesson-row ${now && now.key === l.key ? 'sc-current' : ''}" data-k="${l.key}" aria-expanded="${isOpen}">
-              <span class="cg-row-icon">${stage === 'done' ? `<span class="sc-on">${icon('check')}</span>` : `<span class="sc-n cg-num">${i + 1}</span>`}</span>
-              <span class="cg-row-text"><span class="cg-row-label">${esc(l.title)}</span><span class="cg-row-sub">${sub}</span></span>
-              <span class="cg-row-value">${status}</span><span class="cg-chev ${isOpen ? 'is-open' : ''}"></span>
+            <button type="button" class="cg-row unit-row ${now && now.u.id === u.id ? 'sc-current' : ''}" data-u="${u.id}" aria-expanded="${isOpen}">
+              <span class="cg-row-text"><span class="cg-row-label">Unit ${u.n}: ${esc(u.title)}</span><span class="cg-row-sub">${skipped ? 'Skipped (before the start unit)' : `${uDone} of ${u.lessons.length} lessons done`}</span>${skipped ? '' : bar((uDone / u.lessons.length) * 100)}</span>
+              <span class="cg-chev ${isOpen ? 'is-open' : ''}"></span>
             </button>
-            ${isOpen ? `<div class="cg-row cg-row-tall lesson-detail"><div class="cg-row-block">
-              ${p.realLife && p.realLife.answer
-                ? `<p class="cg-meta">His real-life answer</p><blockquote class="sc-quote">${esc(p.realLife.answer)}</blockquote><p class="cg-meta">Question: ${esc(l.realLife.prompt)}</p>`
-                : '<p class="cg-meta">No real-life answer yet.</p>'}
-              ${q.attempts && q.attempts.length ? `<p class="cg-meta">Quiz tries</p><ul class="sc-tries">${q.attempts.map((a) => `<li><span>${new Date(a.at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span><b class="cg-num ${a.pct >= cur.rules.passPct ? 'sc-pass' : ''}">${a.right}/${a.total} · ${a.pct}%${a.pct >= cur.rules.passPct ? ' ✓' : ''}</b></li>`).join('')}</ul>` : ''}
-              <button type="button" class="cg-btn cg-btn-plain sc-danger-text" data-reset="${l.key}">Reset this lesson</button>
-            </div></div>` : ''}`;
+            ${isOpen ? u.lessons.map((l) => lessonRows(l, now)).join('') : ''}`;
         }).join('')}</div>`;
     }).join('');
+    body.querySelectorAll('.unit-row').forEach((b) => { b.onclick = () => { const k = b.dataset.u; openUnits.has(k) ? openUnits.delete(k) : openUnits.add(k); render(); }; });
     body.querySelectorAll('.lesson-row').forEach((b) => { b.onclick = () => { const k = b.dataset.k; open.has(k) ? open.delete(k) : open.add(k); render(); }; });
     // Destructive: do it at once, offer Undo (Calm Glass rule 12 — no confirm dialogs).
     body.querySelectorAll('[data-reset]').forEach((b) => {
@@ -190,9 +187,31 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     });
   }
 
+  function lessonRows(l, now) {
+    const p = S.lessons[l.key] || {};
+    const stage = lessonStage(l, p);
+    const q = p.quiz || {};
+    const isOpen = open.has(l.key);
+    const status = p.timeSec || stage !== 'watch' ? STAGE_LABEL[stage] : 'Not started';
+    const sub = `${p.timeSec ? hm(p.timeSec) + ' · ' : ''}${videosDone(l, p)}/${l.videos.length} videos · quiz ${q.best != null ? q.best + '%' : '—'}${q.attempts ? ` (${q.attempts.length} ${q.attempts.length === 1 ? 'try' : 'tries'})` : ''}`;
+    return `
+      <button type="button" class="cg-row has-icon lesson-row ${now && now.key === l.key ? 'sc-current' : ''}" data-k="${l.key}" aria-expanded="${isOpen}">
+        <span class="cg-row-icon">${stage === 'done' ? `<span class="sc-on">${icon('check')}</span>` : `<span class="sc-n cg-num">${l.i}</span>`}</span>
+        <span class="cg-row-text"><span class="cg-row-label">${esc(l.title)}</span><span class="cg-row-sub">${sub}</span></span>
+        <span class="cg-row-value">${status}</span><span class="cg-chev ${isOpen ? 'is-open' : ''}"></span>
+      </button>
+      ${isOpen ? `<div class="cg-row cg-row-tall lesson-detail"><div class="cg-row-block">
+        ${p.realLife && p.realLife.answer
+          ? `<p class="cg-meta">His real-life answer</p><blockquote class="sc-quote">${esc(p.realLife.answer)}</blockquote><p class="cg-meta">Question: ${esc(l.realLife.prompt)}</p>`
+          : '<p class="cg-meta">No real-life answer yet.</p>'}
+        ${q.attempts && q.attempts.length ? `<p class="cg-meta">Quiz tries</p><ul class="sc-tries">${q.attempts.map((a) => `<li><span>${new Date(a.at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span><b class="cg-num ${a.pct >= cur.rules.passPct ? 'sc-pass' : ''}">${a.right}/${a.total} · ${a.pct}%${a.pct >= cur.rules.passPct ? ' ✓' : ''}</b></li>`).join('')}</ul>` : ''}
+        <button type="button" class="cg-btn cg-btn-plain sc-danger-text" data-reset="${l.key}">Reset this lesson</button>
+      </div></div>` : ''}`;
+  }
+
   // ─────────────── Settings ───────────────
   function settings(body) {
-    const all = [...cur.algebra.lessons, ...cur.biology.lessons];
+    const all = allLessons();
     if (!editLesson) editLesson = all[0].key;
     const L = all.find((l) => l.key === editLesson) || all[0];
     const factsText = cur.facts.map((x) => `https://youtu.be/${x.id} | ${x.title} | ${x.cat || ''} | ${x.blurb || ''}`).join('\n');
@@ -203,15 +222,15 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       <div class="cg-group">
         <div class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Minutes per block</span><span class="cg-row-sub">Focused time, plus a 10-minute break</span></span>${stepper('bm', cur.rules.blockMinutes, 10, 90, 5)}</div>
         <div class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Quiz pass mark</span><span class="cg-row-sub">Percent needed to pass a lesson</span></span>${stepper('pp', cur.rules.passPct, 50, 100, 5)}</div>
-        <label class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Biology unit</span><span class="cg-row-sub">More units are coming</span></span>
-          <select id="bu" class="sc-select"><option value="cells">Cells</option></select></label>
+        ${['algebra', 'biology'].map((subj) => `<label class="cg-row cg-row-tall"><span class="cg-row-text"><span class="cg-row-label">Start ${esc(cur[subj].name)} at</span><span class="cg-row-sub">Earlier units are skipped</span></span>
+          <select id="start-${subj}" class="sc-select cg-row-block"><option value="0">Unit ${cur[subj].units[0] ? cur[subj].units[0].n : 1} (the beginning)</option>${cur[subj].units.slice(1).map((u) => `<option value="${u.n}" ${cur[subj].startUnit === u.n ? 'selected' : ''}>Unit ${u.n}: ${esc(u.title)}</option>`).join('')}</select></label>`).join('')}
       </div>
       <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="saveRules">Save rules</button></div>
 
       <p class="cg-caption">Swap lesson videos</p>
       <div class="cg-group">
         <label class="cg-row cg-row-tall"><span class="cg-row-text"><span class="cg-row-label">Lesson</span></span>
-          <select id="ls" class="sc-select cg-row-block">${all.map((l) => `<option value="${l.key}" ${l.key === editLesson ? 'selected' : ''}>${l.key.startsWith('alg') ? 'Algebra' : 'Biology'} — ${esc(l.title)}</option>`).join('')}</select></label>
+          <select id="ls" class="sc-select cg-row-block">${['algebra', 'biology'].map((subj) => cur[subj].units.map((u) => `<optgroup label="${esc(cur[subj].name)} · Unit ${u.n}: ${esc(u.title)}">${u.lessons.map((l) => `<option value="${l.key}" ${l.key === editLesson ? 'selected' : ''}>${esc(l.title)}</option>`).join('')}</optgroup>`).join('')).join('')}</select></label>
         <div class="cg-row cg-row-tall"><div class="cg-row-block" id="vids">${L.videos.map((v) => vidRow(v)).join('')}</div>
           <div class="cg-btns cg-row-block"><button type="button" class="cg-btn cg-btn-glass" id="addVid">Add video</button><button type="button" class="cg-btn cg-btn-glass" id="saveVids">Save videos</button><button type="button" class="cg-btn cg-btn-plain" id="resetVids">Restore original</button></div></div>
       </div>
@@ -247,9 +266,9 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       sp.querySelectorAll('.sc-step-btn').forEach((b) => { b.onclick = () => { out.textContent = Math.min(max, Math.max(min, Number(out.textContent) + stepBy * Number(b.dataset.d))); sync(); }; });
       sync();
     });
-    body.querySelector('#bu').value = S.settings.bioUnit || 'cells';
     body.querySelector('#saveRules').onclick = async () => {
-      await store.saveSettings({ blockMinutes: Number(body.querySelector('#bm').textContent), passPct: Number(body.querySelector('#pp').textContent), bioUnit: body.querySelector('#bu').value });
+      await store.saveSettings({ blockMinutes: Number(body.querySelector('#bm').textContent), passPct: Number(body.querySelector('#pp').textContent),
+        startUnit: { algebra: Number(body.querySelector('#start-algebra').value), biology: Number(body.querySelector('#start-biology').value) } });
       toast('Rules saved');
     };
     body.querySelector('#ls').onchange = (e) => { editLesson = e.target.value; render(); };
@@ -267,8 +286,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       toast('Videos saved');
     };
     body.querySelector('#resetVids').onclick = async () => {
-      const orig = [...algebraDefault.lessons, ...bioDefault.lessons].find((l) => l.key === editLesson);
-      await store.saveSettings({ videoOverrides: { [editLesson]: orig ? orig.videos : [] } });
+      await store.saveSettings({ videoOverrides: { [editLesson]: originalVideos(editLesson) } });
       toast('Original videos restored'); render();
     };
     body.querySelector('#saveFacts').onclick = async () => {

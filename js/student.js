@@ -2,7 +2,7 @@
 // Drawn with Calm Glass (css/calm-glass.css): one shared header, grouped lists, one dark main button per screen,
 // and a floating glass island that holds the block timer.
 
-import { buildCurriculum, lessonStage, currentLesson, STAGES, todayKey, dayStatus } from './curriculum.js';
+import { buildCurriculum, lessonStage, currentLesson, STAGES, todayKey, dayStatus, doneCount } from './curriculum.js';
 import { createTracker } from './tracker.js';
 import { mountVideo } from './video.js';
 import { applyMerge, inc, union } from './store.js';
@@ -62,7 +62,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
     if (view.name === 'step') return renderStep();
   }
 
-  function pctOf(unit) { return (unit.lessons.filter((l) => lessonStage(l, S.lessons[l.key]) === 'done').length / unit.lessons.length) * 100; }
+  function pctOf(subject) { return subject.lessons.length ? (doneCount(subject.lessons, S.lessons) / subject.lessons.length) * 100 : 0; }
   function bar(pct) { return `<span class="sc-bar"><i style="width:${Math.min(100, Math.max(0, pct)).toFixed(1)}%"></i></span>`; }
 
   // ─────────────────────────── HOME ───────────────────────────
@@ -89,13 +89,14 @@ export function startStudent(root, { store, sid, onSignOut }) {
         ${s.done ? `<span class="cg-check sc-on">${icon('check')}</span>` : isCur ? '<span class="cg-row-value">Next</span>' : ''}
       </li>`;
     };
-    const courseRow = (unit, subj) => {
-      const L = currentLesson(unit, S.lessons);
-      const n = L ? unit.lessons.indexOf(L) + 1 : unit.lessons.length;
+    const courseRow = (subject, subj) => {
+      const L = currentLesson(subject, S.lessons);
+      const done = doneCount(subject.lessons, S.lessons);
       return `<li class="cg-row has-icon">
         <span class="cg-row-icon">${icon(SUBJECT[subj].icon)}</span>
-        <span class="cg-row-text"><span class="cg-row-label">${SUBJECT[subj].name} — ${esc(unit.unit)}</span>
-          <span class="cg-row-sub">${L ? `Lesson ${n} of ${unit.lessons.length}: ${esc(L.title)}` : 'Unit finished'}</span>${bar(pctOf(unit))}</span>
+        <span class="cg-row-text"><span class="cg-row-label">${SUBJECT[subj].name}${L ? ` — Unit ${L.u.n}: ${esc(L.u.title)}` : ''}</span>
+          <span class="cg-row-sub">${L ? `Lesson ${L.i} of ${L.of}: ${esc(L.title)}` : 'Course finished'}</span>
+          ${bar(pctOf(subject))}<span class="cg-row-sub cg-num">${done} of ${subject.lessons.length} lessons done</span></span>
       </li>`;
     };
 
@@ -211,8 +212,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
     const unit = cur[step.subject];
     const lesson = currentLesson(unit, S.lessons);
     const blockNo = step.id.endsWith('1') ? 1 : 2;
-    const n = lesson ? unit.lessons.indexOf(lesson) + 1 : 0;
-    const body = shell(step, '', { title: `${SUBJECT[step.subject].name} · Block ${blockNo} of 2`, sub: lesson ? `Lesson ${n} of ${unit.lessons.length}` : 'Review' });
+    const body = shell(step, '', { title: `${SUBJECT[step.subject].name} · Block ${blockNo} of 2`, sub: lesson ? `Unit ${lesson.u.n} · Lesson ${lesson.i} of ${lesson.of}` : 'Review' });
     if (!lesson) return renderPractice(step, body, unit);
     renderLesson(step, body, unit, lesson, view.stage);
   }
@@ -420,7 +420,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       patchLesson(lesson.key, { realLife: { answer: ta.value.trim(), at: Date.now() }, ...(wasDone ? {} : { completedAt: Date.now() }) });
       const next = currentLesson(unit, S.lessons);
       el.innerHTML = `<div class="cg-card sc-center"><h3 class="cg-title1">Lesson complete</h3>
-        <p class="cg-text">${next ? `Up next: ${esc(next.title)}` : 'You finished the whole unit.'}</p>
+        <p class="cg-text">${next ? (next.u.id !== lesson.u.id ? `Unit ${lesson.u.n} finished! Next: Unit ${next.u.n} — ${esc(next.u.title)}` : `Up next: ${esc(next.title)}`) : 'You finished the whole course.'}</p>
         <button class="cg-btn cg-btn-strong cg-btn-block" id="nextL">${next ? 'Start next lesson' : 'Practice'}</button></div>`;
       window.scrollTo(0, 0);
       el.querySelector('#nextL').onclick = () => { clean(); view.stage = null; view.videoIdx = null; renderStep(); };
@@ -436,7 +436,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       const item = practiceFor(l) || (() => { const b = l.quiz[Math.floor(Math.random() * l.quiz.length)]; return { q: b.q, c: b.c, why: b.why }; })();
       const opts = shuffle(item.c.map((text, i) => ({ text, ok: i === 0 })));
       body.innerHTML = questionHTML(item, opts, `Review · ${esc(l.title)} · ${right} of ${total} right`)
-        + '<p class="cg-meta sc-hint">You finished every lesson in this unit. Keep practicing until the block time is done.</p>';
+        + '<p class="cg-meta sc-hint">You finished every lesson in this course. Keep practicing until the block time is done.</p>';
       wireAnswer(body, item, opts, (ok) => {
         total += 1; if (ok) right += 1;
         patchDay({ practice: { [step.subject]: { right: inc(ok ? 1 : 0), total: inc(1) } } });

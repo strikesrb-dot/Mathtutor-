@@ -1,24 +1,35 @@
-// Builds the live curriculum (content files + any video swaps the master saved)
+// Builds the live curriculum (course units + any video swaps / start-unit choices the master saved)
 // and works out where the student is in each subject.
 
-import algebra from '../content/algebra.js';
-import bioCells from '../content/biology-cells.js';
+import algebraCourse from '../content/algebra/index.js';
+import biologyCourse from '../content/biology/index.js';
 import facts from '../content/facts.js';
 import schedule from '../content/schedule.js';
 
-// Add future biology units here, e.g. import bioGenetics from '../content/biology-genetics.js'
-export const BIO_UNITS = { cells: bioCells };
+export const COURSES = { algebra: algebraCourse, biology: biologyCourse };
 
+// Each subject comes back as { name, units, lessons }. `lessons` is every lesson he still has to do, in order,
+// starting at the master's chosen start unit. Every lesson carries `u` (its unit), `i` (number in the unit) and `of`.
 export function buildCurriculum(settings = {}) {
   const ov = settings.videoOverrides || {};
-  const apply = (unit) => ({
-    ...unit,
-    lessons: unit.lessons.map((l) => (ov[l.key] && ov[l.key].length ? { ...l, videos: ov[l.key] } : l)),
-  });
-  const bio = BIO_UNITS[settings.bioUnit] || bioCells;
+  const startAt = settings.startUnit || {};
+  const prep = (course, subj) => {
+    const units = course.units.map((u) => {
+      const meta = { id: u.id, n: u.n, title: u.title };
+      const lessons = u.lessons.map((l, idx) => ({
+        ...l,
+        videos: ov[l.key] && ov[l.key].length ? ov[l.key] : l.videos,
+        u: meta, i: idx + 1, of: u.lessons.length,
+      }));
+      return { ...u, lessons };
+    });
+    const start = Number(startAt[subj]) || 0;
+    const active = units.filter((u) => u.n >= start);
+    return { subject: subj, name: course.name, units, lessons: active.flatMap((u) => u.lessons), startUnit: start };
+  };
   return {
-    algebra: apply(algebra),
-    biology: apply(bio),
+    algebra: prep(algebraCourse, 'algebra'),
+    biology: prep(biologyCourse, 'biology'),
     facts: settings.facts && settings.facts.length ? settings.facts : facts,
     rules: {
       ...schedule,
@@ -26,6 +37,12 @@ export function buildCurriculum(settings = {}) {
       passPct: Number(settings.passPct) || schedule.passPct,
     },
   };
+}
+
+// The original videos for a lesson (before any swap), for "Restore original".
+export function originalVideos(key) {
+  for (const c of Object.values(COURSES)) for (const u of c.units) for (const l of u.lessons) if (l.key === key) return l.videos;
+  return [];
 }
 
 // Stage of one lesson: 'watch' → 'learn' → 'quiz' → 'real' → 'done'
@@ -43,9 +60,13 @@ export function videosDone(lesson, prog = {}) {
   return lesson.videos.filter((vid) => v[vid.id] && v[vid.id].done).length;
 }
 
-// The first lesson in a subject that isn't finished (or null if the unit is complete).
-export function currentLesson(unit, lessonsProg) {
-  return unit.lessons.find((l) => lessonStage(l, lessonsProg[l.key]) !== 'done') || null;
+// The first lesson in a subject that isn't finished (or null if the course is complete).
+export function currentLesson(subject, lessonsProg) {
+  return subject.lessons.find((l) => lessonStage(l, lessonsProg[l.key]) !== 'done') || null;
+}
+
+export function doneCount(lessons, lessonsProg) {
+  return lessons.filter((l) => lessonStage(l, lessonsProg[l.key]) === 'done').length;
 }
 
 export const STAGES = [
