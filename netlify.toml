@@ -3,6 +3,11 @@
   publish = "."
   command = ""
 
+# The Firebase web API key in js/config.js is public by design (Firebase rules protect the data),
+# so tell Netlify's secret scanner it's safe. Otherwise the deploy fails with "Exposed secrets detected".
+[build.environment]
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyD1RK2hFxTPc5fLjGmay2oohyTl8Ut1AaA"
+
 # Always fetch fresh app code so updates show up right away.
 [[headers]]
   for = "/*"
