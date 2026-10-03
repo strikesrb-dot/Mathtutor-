@@ -21,8 +21,8 @@ export const firebase = {
 
 // The two accounts you create in Firebase → Authentication → Users.
 // Copy each account's "User UID" here.
-export const MASTER_UID = '';   // you
-export const STUDENT_UID = '';  // your brother
+export const MASTER_UID = 'Fzz1e3x7FAdkanqvVTiHtdGgEqh2';   // you
+export const STUDENT_UID = 'm6gnU0H4lkTvPjSzLAHxD7lBOP32';  // your brother
 
 // What the app calls him on screen.
 export const STUDENT_NAME = 'Champ';

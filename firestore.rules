@@ -1,13 +1,12 @@
 rules_version = '2';
 // Study Coach — database rules.
 // Paste this into Firebase → Firestore Database → Rules, then press Publish.
-// Replace PASTE_MASTER_UID_HERE with YOUR User UID (keep the quotes).
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    function isMaster() { return signedIn() && request.auth.uid == 'PASTE_MASTER_UID_HERE'; }
+    function isMaster() { return signedIn() && request.auth.uid == 'Fzz1e3x7FAdkanqvVTiHtdGgEqh2'; }
 
     // Each student's own progress: he can read/write his own; you can read/write everything.
     match /students/{uid}/{rest=**} {
