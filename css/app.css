@@ -12,7 +12,7 @@
   :root { --bg: #0e1220; --card: #171c2e; --ink: #eef1f8; --muted: #9aa3ba; --line: #283049;
     --alg-soft: #1c2650; --bio-soft: #123526; --fact-soft: #3a2a10; --bad-soft: #3d1419; --shadow: none; }
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; touch-action: manipulation; } /* no double-tap zoom on iPhone/iPad */
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
 body { font: 17px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; min-height: 100vh; }
 h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; }
@@ -21,7 +21,9 @@ p { margin: 0 0 .8em; }
 code { background: var(--accent-soft); padding: .1em .35em; border-radius: 6px; font-size: .9em; }
 .muted { color: var(--muted); }
 .hidden { display: none !important; }
-.loading { display: grid; place-items: center; min-height: 60vh; color: var(--muted); }
+.loading { display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center; min-height: 70vh; color: var(--muted); font-weight: 600; }
+.spin { width: 34px; height: 34px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--alg); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .wrap { max-width: 860px; margin: 0 auto; padding: 16px 16px calc(40px + env(safe-area-inset-bottom)); }
 .card { background: var(--card); border-radius: var(--r); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--line); }

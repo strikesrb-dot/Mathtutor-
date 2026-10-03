@@ -90,7 +90,6 @@ async function firebaseAdapter() {
   ]);
   const app = initializeApp(CFG.firebase);
   const auth = A.getAuth(app);
-  await A.setPersistence(auth, A.browserLocalPersistence).catch(() => {});
   let db;
   try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
   catch { db = F.getFirestore(app); }

@@ -2,16 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2f5bea">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Study Coach">
   <title>Study Coach</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   <link rel="stylesheet" href="css/app.css">
+  <!-- Download every module at once instead of one level at a time -->
+  <link rel="modulepreload" href="js/app.js">
+  <link rel="modulepreload" href="js/store.js">
+  <link rel="modulepreload" href="js/config.js">
+  <link rel="modulepreload" href="js/ui.js">
+  <link rel="modulepreload" href="js/student.js">
+  <link rel="modulepreload" href="js/master.js">
+  <link rel="modulepreload" href="js/curriculum.js">
+  <link rel="modulepreload" href="js/tracker.js">
+  <link rel="modulepreload" href="js/video.js">
+  <link rel="modulepreload" href="js/practice.js">
+  <link rel="modulepreload" href="content/algebra.js">
+  <link rel="modulepreload" href="content/biology-cells.js">
+  <link rel="modulepreload" href="content/facts.js">
+  <link rel="modulepreload" href="content/schedule.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 </head>
 <body>
-  <div id="app"><div class="loading">Loading…</div></div>
+  <div id="app">
+    <div style="min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font:600 17px -apple-system,BlinkMacSystemFont,sans-serif;color:#667089">
+      <div style="font-size:3rem">📚</div><div>Study Coach</div>
+      <div style="width:34px;height:34px;border-radius:50%;border:4px solid #e3e7f0;border-top-color:#2f5bea;animation:sc-spin .8s linear infinite"></div>
+      <style>@keyframes sc-spin{to{transform:rotate(360deg)}}</style>
+    </div>
+  </div>
   <noscript>Study Coach needs JavaScript turned on.</noscript>
   <script type="module" src="js/app.js"></script>
 </body>

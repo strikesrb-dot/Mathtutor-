@@ -19,23 +19,26 @@ const STAGE_LABEL = { watch: 'Watching', learn: 'Reading', quiz: 'Quiz', real: '
 const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fun video 1', B1: 'Biology · Block 1', B2: 'Biology · Block 2', F2: 'Fun video 2', X: 'Extra practice' };
 
 export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStudent }) {
-  const S = { settings: {}, lessons: {}, days: {}, n: 0 };
+  const S = { settings: {}, lessons: {}, days: {} };
   let cur = buildCurriculum({});
   let tab = 'overview';
   const open = new Set();
   const unsubs = [];
   let editLesson = '';
 
-  root.innerHTML = '<div class="loading">Loading…</div>';
+  root.innerHTML = '<div class="loading"><i class="spin"></i>Loading his progress…</div>';
   if (!sid) {
     root.innerHTML = `<main class="wrap"><div class="card"><h2>One more setup step</h2><p>Put your brother's User UID in <code>js/config.js</code> as <code>STUDENT_UID</code>. See SETUP.html, step 6.</p></div></main>`;
     return { destroy() {} };
   }
-  const ready = () => { S.n += 1; if (S.n >= 3) render(); };
-  let f = [true, true, true];
-  unsubs.push(store.watchSettings((s) => { S.settings = s; cur = buildCurriculum(s); f[0] ? (f[0] = false, ready()) : softRender(); }));
-  unsubs.push(store.watchLessons(sid, (l) => { S.lessons = l || {}; f[1] ? (f[1] = false, ready()) : softRender(); }));
-  unsubs.push(store.watchDays(sid, (d) => { S.days = d || {}; f[2] ? (f[2] = false, ready()) : softRender(); }));
+  let rendered = false;
+  const have = { l: false, d: false };
+  const gate = (k) => { have[k] = true; if (!rendered && have.l && have.d) { rendered = true; render(); } };
+  const slow = setTimeout(() => { if (!rendered) { rendered = true; render(); } }, 6000);
+  unsubs.push(() => clearTimeout(slow));
+  unsubs.push(store.watchSettings((s) => { S.settings = s; cur = buildCurriculum(s); if (rendered) softRender(); }));
+  unsubs.push(store.watchLessons(sid, (l) => { S.lessons = l || {}; rendered ? softRender() : gate('l'); }));
+  unsubs.push(store.watchDays(sid, (d) => { S.days = d || {}; rendered ? softRender() : gate('d'); }));
   const liveTimer = setInterval(() => { if (tab === 'overview') softRender(); }, 30000);
 
 

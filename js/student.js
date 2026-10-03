@@ -15,7 +15,7 @@ const SUBJECT = {
 };
 
 export function startStudent(root, { store, sid, onSignOut }) {
-  const S = { settings: {}, lessons: {}, days: {}, meta: {}, ready: 0 };
+  const S = { settings: {}, lessons: {}, days: {}, meta: {} };
   let cur = buildCurriculum({});
   let tracker = createTracker(store, sid, cur.rules);
   let cleanups = [];
@@ -35,24 +35,25 @@ export function startStudent(root, { store, sid, onSignOut }) {
     return store.saveLesson(sid, key, patch).catch((e) => toast('Saving failed — check Wi-Fi', 'bad') || console.warn(e));
   }
 
-  root.innerHTML = '<div class="loading">Loading…</div>';
+  root.innerHTML = '<div class="loading"><i class="spin"></i>Loading your plan…</div>';
   // ── data subscriptions ──
-  const gate = () => { S.ready += 1; if (S.ready === 4) render(); };
-  let first = { s: true, l: true, d: true, m: true };
+  // Render as soon as his progress (lessons + today) is here. Settings/meta update the screen when they land.
+  let rendered = false;
+  const have = { l: false, d: false };
+  const gate = (k) => { have[k] = true; if (!rendered && have.l && have.d) { rendered = true; render(); } };
+  const slow = setTimeout(() => { if (!rendered) { rendered = true; render(); toast('Slow connection — showing saved progress'); } }, 6000);
+  unsubs.push(() => clearTimeout(slow));
   unsubs.push(store.watchSettings((s) => {
     S.settings = s; cur = buildCurriculum(s);
-    if (first.s) { first.s = false; gate(); } else if (view.name === 'home') render();
+    if (rendered && view.name === 'home') render();
   }));
-  unsubs.push(store.watchLessons(sid, (l) => {
-    S.lessons = l || {};
-    if (first.l) { first.l = false; gate(); }
-  }));
+  unsubs.push(store.watchLessons(sid, (l) => { S.lessons = l || {}; gate('l'); }));
   unsubs.push(store.watchDays(sid, (d) => {
     S.days = d || {};
     tracker.setDay(day());
-    if (first.d) { first.d = false; gate(); } else if (view.name === 'home') render();
+    if (!rendered) gate('d'); else if (view.name === 'home') render();
   }));
-  unsubs.push(store.watchMeta(sid, (m) => { S.meta = m; if (first.m) { first.m = false; gate(); } }));
+  unsubs.push(store.watchMeta(sid, (m) => { S.meta = m || {}; }));
 
 
   function clean() { cleanups.forEach((fn) => { try { fn(); } catch {} }); cleanups = []; tracker.off(); }
