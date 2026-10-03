@@ -17,7 +17,7 @@
 - e2e tests pass in Chromium (demo mode, fake YouTube, fake clock).
 
 ## Not verified yet — do these first
-1. **Real Firebase has never run.** Test the full login → study → master sync on the live GitHub Pages URL. Watch for persistent-cache errors in Safari private mode, which should fall back to `getFirestore` automatically.
+1. **Real Firebase has never run.** Test the full login → study → master sync on the live Netlify URL. (Firebase project `study-tutor-45335`; config + UIDs are in `js/config.js`. GitHub Pages was dropped — Safari showed a Safe Browsing warning on strikesrb-dot.github.io.) Watch for persistent-cache errors in Safari private mode, which should fall back to `getFirestore` automatically.
 2. **WebKit was not tested.** Only Chromium was available in the build environment. Run the tests with `p.webkit.launch()` and check on a real iPhone:
    - The YouTube iframe gets `playsinline`.
    - The "Still watching?" button sits above the iframe.

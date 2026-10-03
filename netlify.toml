@@ -1,0 +1,10 @@
+# Netlify: plain static site, no build step. Publishes the repo root.
+[build]
+  publish = "."
+  command = ""
+
+# Always fetch fresh app code so updates show up right away.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

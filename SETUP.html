@@ -33,13 +33,14 @@
 </div>
 
 <div class="part">
-  <span class="tag">Part 1 · GitHub</span>
-  <h2>Turn on the website (2 minutes)</h2>
-  <p>The code is already in your repo <code>strikesrb-dot/Mathtutor-</code>.</p>
+  <span class="tag">Part 1 · Netlify</span>
+  <h2>Put the website online (free)</h2>
+  <p>The code is already in your GitHub repo <code>strikesrb-dot/Mathtutor-</code>. Netlify publishes it and re-publishes on every update.</p>
   <ol>
-    <li>On github.com, open the <b>Mathtutor-</b> repo → <b>Settings</b> → <b>Pages</b> (left menu).</li>
-    <li>Under "Build and deployment," set Source to <b>Deploy from a branch</b>. Then set Branch to <b>main</b> and the folder to <b>/ (root)</b>, and press <b>Save</b>.</li>
-    <li>Wait 1–2 minutes. Your site is <code>https://strikesrb-dot.github.io/Mathtutor-/</code>. Open it. You should see the demo.</li>
+    <li>Go to <b>app.netlify.com</b> and sign up with <b>GitHub</b>.</li>
+    <li>Tap <b>Add new project</b>, then <b>Import an existing project</b>, then <b>GitHub</b>. Allow access, then pick <b>Mathtutor-</b>.</li>
+    <li>Leave Build command <b>empty</b> and set Publish directory to <code>.</code>. The repo's <code>netlify.toml</code> already sets both. Tap <b>Deploy</b>.</li>
+    <li>Rename the site: <b>Project configuration → Change project name</b>, for example <code>study-tutor</code>. The address becomes <code>https://study-tutor.netlify.app</code>.</li>
   </ol>
 </div>
 
@@ -56,7 +57,7 @@
     <li><b>Database:</b> <b>Build → Firestore Database</b> → <b>Create database</b> → pick a US location → <b>Start in production mode</b> → <b>Create</b>.</li>
     <li><b>Lock it down:</b> Firestore → <b>Rules</b> tab. Delete what's there and paste everything from the <code>firestore.rules</code> file. Replace <code>PASTE_MASTER_UID_HERE</code> with your MASTER UID (keep the quotes), then press <b>Publish</b>.</li>
     <li><b>Get the web keys:</b> gear icon ⚙ → <b>Project settings</b> → scroll to "Your apps" → tap the <b>&lt;/&gt;</b> (Web) icon → nickname <code>study-coach</code> → <b>Register app</b> (skip Hosting). Copy the <code>firebaseConfig</code> block it shows.</li>
-    <li><b>Allow your site:</b> Authentication → <b>Settings</b> → <b>Authorized domains</b> → <b>Add domain</b> → <code>strikesrb-dot.github.io</code>.</li>
+    <li><b>Allow your site:</b> Authentication → <b>Settings</b> → <b>Authorized domains</b> → <b>Add domain</b> → your Netlify address (e.g. <code>study-tutor.netlify.app</code>).</li>
   </ol>
 </div>
 
@@ -72,7 +73,7 @@
   <span class="tag">Part 4 · Devices</span>
   <h2>Set up his phone and iPad, and your phone</h2>
   <ol>
-    <li>Open <code>https://strikesrb-dot.github.io/Mathtutor-/</code> in Safari.</li>
+    <li>Open <code>https://study-tutor.netlify.app</code> in Safari.</li>
     <li>Sign in with <b>his</b> email and password on his devices, and <b>yours</b> on your phone.</li>
     <li>Share button → <b>Add to Home Screen</b>. Now it opens like an app.</li>
     <li>Quick test: on his device, start Block 1 and play the video for a minute. On your phone, the master view should say <b>"Studying right now."</b></li>

@@ -1,9 +1,9 @@
 # Study Coach — rules for Claude Code sessions
 
-Weekend study app for the owner's younger brother. **Student** = the brother (phone and iPad). **Master** = the owner, who checks progress from his phone. Static site on GitHub Pages, plus Firebase Auth and Firestore. Read `HANDOFF.md` first for current status.
+Weekend study app for the owner's younger brother. **Student** = the brother (phone and iPad). **Master** = the owner, who checks progress from his phone. Static site hosted on **Netlify** (auto-deploys every push to `main`; `netlify.toml` = no build, publish root), plus Firebase Auth and Firestore (project `study-tutor-45335`). Read `HANDOFF.md` first for current status.
 
 ## Hard constraints
-- **No build step.** Plain ES modules loaded by `index.html`. No bundler, no npm runtime deps, no TypeScript. GitHub Pages serves the repo as-is.
+- **No build step.** Plain ES modules loaded by `index.html`. No bundler, no npm runtime deps, no TypeScript. Netlify serves the repo as-is.
 - **Safari/WebKit first.** Both devices are Apple (iOS/iPadOS Safari, often added to the Home Screen). Check every change for WebKit issues: no `navigator.vibrate` reliance, audio only after a user tap, 16px+ inputs (prevents iOS zoom), `env(safe-area-inset-*)`, `playsinline` on video, and no APIs newer than Safari 15.4.
 - **Demo mode must keep working** when `js/config.js` has `firebase = null`. It's the test harness.
 - **Keep files small and single-purpose.** If a file passes about 500 lines, split it by responsibility. Don't let the app grow into one giant file.
