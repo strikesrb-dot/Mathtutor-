@@ -200,7 +200,7 @@ export default {
         { id: 'VtBRkjRua0I', title: 'Graph interpretation word problem: temperature' },
       ],
       learn: `
-        <p>An <b>interval</b> (a stretch of x-values, like −2 &lt; x &lt; 3 or x &gt; 2, like −2 &lt; x &lt; 3) lets you describe what a graph does over one section. Read the graph from left to right, and always answer with <b>x-values</b>.</p>
+        <p>An <b>interval</b> (a stretch of x-values, like −2 &lt; x &lt; 3 or x &gt; 2) lets you describe what a graph does over one section. Read the graph from left to right, and always answer with <b>x-values</b>.</p>
         <ul>
           <li><b>Positive:</b> the graph is above the x-axis (y &gt; 0).</li>
           <li><b>Negative:</b> the graph is below the x-axis (y &lt; 0).</li>
