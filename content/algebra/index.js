@@ -9,5 +9,9 @@ import u06 from './u06.js';
 import u07 from './u07.js';
 import u08 from './u08.js';
 import u09 from './u09.js';
+import u10 from './u10.js';
+import u11 from './u11.js';
+import u12 from './u12.js';
+import u13 from './u13.js';
 
-export default { subject: 'algebra', name: 'Algebra 1', units: [u01, u02, u03, u04, u05, u06, u07, u08, u09] };
+export default { subject: 'algebra', name: 'Algebra 1', units: [u01, u02, u03, u04, u05, u06, u07, u08, u09, u10, u11, u12, u13] };

@@ -94,7 +94,7 @@ export default {
         <p><b>Gene expression</b> (using a gene to make its protein) happens in 2 steps.</p>
         <p><b>1. Transcription</b> (copying a gene into RNA) happens in the <b>nucleus</b>. An enzyme reads the gene and builds <b>mRNA</b> (messenger RNA, a single-strand copy of the gene). RNA uses <b>U</b> (uracil) instead of T, so A pairs with U. DNA TAC becomes mRNA AUG. Then the mRNA leaves the nucleus.</p>
         <p><b>2. Translation</b> (reading mRNA to build a protein) happens at a <b>ribosome</b> (the cell's protein-building machine).</p>
-        <ul><li>The ribosome reads mRNA 3 bases at a time. Each group of 3 is a <b>codon</b>, and each codon stands for one amino acid.</li>
+        <ul><li>The ribosome reads mRNA 3 bases at a time. Each group of 3 is a <b>codon</b>. Most codons stand for one amino acid, and a few mean "stop."</li>
         <li><b>tRNA</b> (transfer RNA) brings the right amino acid for each codon.</li>
         <li><b>AUG</b> is the start codon. UAA, UAG, and UGA are stop codons.</li>
         <li>The amino acid chain folds into a working protein.</li></ul>
@@ -105,7 +105,7 @@ export default {
         { q: 'What is the job of mRNA?', c: ['To carry a copy of a gene from the nucleus to a ribosome', 'To carry oxygen through the blood', 'To unzip DNA during copying', 'To store energy for the cell'], why: '"Messenger" RNA carries the gene\'s message out of the nucleus to the protein builders.' },
         { q: 'RNA uses U instead of which DNA base?', c: ['T (thymine)', 'A (adenine)', 'C (cytosine)', 'G (guanine)'], why: 'RNA has A, U, C, and G. U takes the place of T and pairs with A.' },
         { q: 'The DNA strand being read is TAC. What mRNA is made?', c: ['AUG', 'ATG', 'TAC', 'UAC'], why: 'Pair each base: T→A, A→U, C→G. Remember RNA uses U, not T.' },
-        { q: 'What is a codon?', c: ['A group of 3 mRNA bases that stands for one amino acid', 'A single base in DNA', 'A whole gene', 'A finished protein'], why: 'The ribosome reads mRNA 3 letters at a time. Each 3-letter "word" is a codon.' },
+        { q: 'What is a codon?', c: ['A group of 3 mRNA bases that stands for one amino acid (or "stop")', 'A single base in DNA', 'A whole gene', 'A finished protein'], why: 'The ribosome reads mRNA 3 letters at a time. Each 3-letter "word" is a codon.' },
         { q: 'An mRNA has 30 bases. How many codons does it have?', c: ['10', '30', '90', '15'], why: 'Each codon is 3 bases. 30 ÷ 3 = 10 codons.' },
         { q: 'What does tRNA do?', c: ['Brings the matching amino acid to the ribosome', 'Copies DNA into mRNA', 'Unzips the double helix', 'Carries finished proteins out of the body'], why: 'Each tRNA matches one codon and carries its amino acid, like a delivery truck.' },
         { q: 'Which codon tells the ribosome to START?', c: ['AUG', 'UAA', 'UGA', 'UAG'], why: 'AUG is the start codon. UAA, UGA, and UAG are the 3 stop codons.' },
@@ -154,7 +154,7 @@ export default {
       ],
       realLife: {
         text: `<p>Sunscreen and hats do more than stop sunburn. <b>UV light</b> can damage the DNA in your skin cells. Your cells repair most of it, but too much sun over many years raises the chance of skin cancer.</p>
-          <p>When you get an X-ray, the technician steps behind a wall. One X-ray is safe for you, but they would get exposed dozens of times a day.</p>
+          <p>When you get an X-ray, the technician steps behind a wall. One X-ray is a tiny, low-risk dose for you, but they would get exposed dozens of times a day.</p>
           <p>Mutations also explain why some bacteria survive antibiotics. One random mutation can help a bacterium survive, and it passes that mutation to all of its offspring.</p>`,
         prompt: 'Your friend says, "All mutations are bad." Do you agree? Explain using at least one harmful example and one helpful or neutral example.',
       },

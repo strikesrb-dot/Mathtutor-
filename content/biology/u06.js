@@ -110,7 +110,7 @@ export default {
         <li>Type AB: IᴬIᴮ</li>
         <li>Type O: ii</li></ul>
         <p><b>4. Polygenic traits</b> (traits controlled by many genes): height and skin color come in a smooth range of in-between values, not just 2 or 3 types.</p>
-        <p><b>5. Sex-linked traits</b> (genes carried on the X chromosome): females are XX and males are XY. A male has only 1 X, so one recessive allele is enough to show the trait. A female with one copy is a <b>carrier</b> (she has the allele but doesn't show the trait). That's why <b>red-green colorblindness</b> (trouble telling red from green) is much more common in boys.</p>
+        <p><b>5. Sex-linked traits</b> (genes carried on a sex chromosome, usually the X): females are XX and males are XY. A male has only 1 X, so one recessive allele is enough to show the trait. A female with one copy is a <b>carrier</b> (she has the allele but doesn't show the trait). That's why <b>red-green colorblindness</b> (trouble telling red from green) is much more common in boys.</p>
         <p>Colorblindness alleles: Xᴺ = normal vision, Xⁿ = colorblind.</p>`,
       quiz: [
         { q: 'Red snapdragons are crossed with white snapdragons, and all the babies are pink. What pattern is this?', c: ['Incomplete dominance', 'Codominance', 'A sex-linked trait', 'A polygenic trait'], why: 'In incomplete dominance, neither allele fully wins, so the phenotype is a blend in between.' },
