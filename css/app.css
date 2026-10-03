@@ -165,3 +165,8 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-vid-row + .sc-vid-row { margin-top: var(--cg-sp); }
 @media (max-width: 560px) { .sc-vid-row { grid-template-columns: minmax(0, 1fr) var(--cg-key); } .sc-vid-row .cg-field:nth-child(2) { grid-column: 1; } .sc-vid-row .v-del { grid-row: 1 / span 2; grid-column: 2; } }
 .sc-signout { margin-top: var(--cg-sp-4); }
+
+/* a lesson passed only after many tries */
+.sc-flagged { display: flex; align-items: center; gap: var(--cg-in-6); color: var(--cg-ink); font-weight: var(--cg-w-semi); }
+.sc-flagged svg { width: var(--cg-icon-size); height: var(--cg-icon-size); color: var(--cg-ink2); }
+.sc-answers .cg-row-sub { color: var(--cg-accent); }

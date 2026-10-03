@@ -60,7 +60,7 @@ export function createTracker(store, sid, rules) {
     if (document.visibilityState === 'visible') {
       // Timers freeze while the app is in the background. A big gap with no "hidden" event = he left anyway.
       const gap = Date.now() - lastVisibleBeat;
-      if (gap > 4000 && leftAt == null && ctx.mode !== 'off') { leftAt = lastVisibleBeat + 1000; flag('leftApp'); cameBack(leftAt); }
+      if (gap > 8000 && leftAt == null && ctx.mode !== 'off') { leftAt = lastVisibleBeat + 1000; flag('leftApp'); cameBack(leftAt); }
       lastVisibleBeat = Date.now();
     }
     const on = counting();

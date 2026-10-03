@@ -13,6 +13,7 @@ const FLAG_LABEL = {
   idle: 'Went idle',
   skipTry: 'Tried to skip ahead',
   videoError: 'A video wouldn\'t play',
+  manyTries: 'Passed a quiz only after 3+ tries',
 };
 const STAGE_LABEL = { watch: 'Watching', learn: 'Reading', quiz: 'Quiz', real: 'Real-life answer', done: 'Done' };
 const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fun video 1', B1: 'Biology · Block 1', B2: 'Biology · Block 2', F2: 'Fun video 2', X: 'Extra practice' };
@@ -194,10 +195,11 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     const isOpen = open.has(l.key);
     const status = p.timeSec || stage !== 'watch' ? STAGE_LABEL[stage] : 'Not started';
     const sub = `${p.timeSec ? hm(p.timeSec) + ' · ' : ''}${videosDone(l, p)}/${l.videos.length} videos · quiz ${q.best != null ? q.best + '%' : '—'}${q.attempts ? ` (${q.attempts.length} ${q.attempts.length === 1 ? 'try' : 'tries'})` : ''}`;
+    const many = q.passed && (q.passedOnTry || (q.attempts || []).length) >= cur.rules.manyTries;
     return `
       <button type="button" class="cg-row has-icon lesson-row ${now && now.key === l.key ? 'sc-current' : ''}" data-k="${l.key}" aria-expanded="${isOpen}">
         <span class="cg-row-icon">${stage === 'done' ? `<span class="sc-on">${icon('check')}</span>` : `<span class="sc-n cg-num">${l.i}</span>`}</span>
-        <span class="cg-row-text"><span class="cg-row-label">${esc(l.title)}</span><span class="cg-row-sub">${sub}</span></span>
+        <span class="cg-row-text"><span class="cg-row-label">${esc(l.title)}</span><span class="cg-row-sub">${sub}</span>${many ? `<span class="cg-row-sub sc-flagged">${icon('flag')} Passed only on try ${q.passedOnTry || q.attempts.length} — check his written answer</span>` : ''}</span>
         <span class="cg-row-value">${status}</span><span class="cg-chev ${isOpen ? 'is-open' : ''}"></span>
       </button>
       ${isOpen ? `<div class="cg-row cg-row-tall lesson-detail"><div class="cg-row-block">

@@ -19,6 +19,8 @@ export default {
   breakMinutes: 10,
   passPct: 90,              // quiz score needed to pass a lesson
   quizSize: 10,             // questions per quiz attempt, drawn from the lesson's bank
+  retryWaitMin: 3,          // after a failed quiz: review, then wait this long before retrying
+  manyTries: 3,             // passing only on this try or later raises a red flag for the master
   videoDonePct: 90,         // % of a video that must be watched (no skipping ahead)
   maxPlaybackRate: 1.5,     // faster than this gets reset to 1x
   attentionMinSec: 240,     // "Still there?" check every 4–7 minutes of video
