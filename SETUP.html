@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Coach Setup</title>
+<style>
+  :root { --bg:#f4f6fb; --card:#fff; --ink:#141a2b; --muted:#667089; --line:#e3e7f0; --acc:#2f5bea; --soft:#e8eeff; --warn:#fff3df; --warnInk:#8a4b00; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e1220; --card:#171c2e; --ink:#eef1f8; --muted:#9aa3ba; --line:#283049; --soft:#1c2650; --warn:#3a2a10; --warnInk:#ffcf8a; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 1.8rem; margin: 0 0 4px; } h2 { margin: 0 0 10px; font-size: 1.25rem; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  .part { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; margin: 16px 0; }
+  .tag { display:inline-block; background:var(--soft); color:var(--acc); font-weight:700; font-size:.8rem; padding:3px 10px; border-radius:999px; margin-bottom:8px; }
+  ol { padding-left: 1.3em; } li { margin: .55em 0; }
+  code, .k { background: var(--soft); padding: .1em .4em; border-radius: 6px; font-size: .92em; word-break: break-all; }
+  .note { background: var(--warn); color: var(--warnInk); border-radius: 12px; padding: 10px 14px; margin: 12px 0; }
+  pre { background: var(--soft); padding: 12px; border-radius: 12px; overflow-x: auto; font-size: .85rem; white-space: pre-wrap; }
+  b { font-weight: 700; }
+</style>
+</head>
+<body><main>
+<h1>Study Coach Setup</h1>
+<div class="sub">About 20–30 minutes on your iPad, done once. You'll end up with a website your brother signs into on his phone or iPad, and a master login you can check from your phone.</div>
+
+<div class="part">
+  <span class="tag">Before you start</span>
+  <h2>Try the demo first</h2>
+  <p>Open <code>index.html</code> from the zip, or the GitHub link once Part 1 is done. It runs in <b>demo mode</b>: tap "Open as student" to go through a lesson, then "Open as master" to see the report. Demo data stays on that one device.</p>
+  <p class="note">Opening <code>index.html</code> straight from the Files app may not work, because Safari blocks some features on local files. If it shows a blank page, do Part 1 first and use the GitHub link.</p>
+</div>
+
+<div class="part">
+  <span class="tag">Part 1 · GitHub</span>
+  <h2>Put the site online (free)</h2>
+  <ol>
+    <li>Go to <b>github.com</b> → <b>+</b> → <b>New repository</b>.</li>
+    <li>Name it <code>study-coach</code>. Choose <b>Public</b>, because free GitHub Pages needs that. Tick <b>Add a README</b>. Press <b>Create repository</b>.
+      <div class="note">Public only means the <i>code</i> is visible. Your brother's progress lives in the database (Part 2), which is locked to your two accounts.</div></li>
+    <li>Open <b>Claude Code</b> (claude.ai/code) on that repo. Attach <code>study-coach-v1.zip</code> and say:
+      <pre>Unzip this into the repo root (keep the folders), commit, and push to main.</pre></li>
+    <li>Back on GitHub: the repo → <b>Settings</b> → <b>Pages</b>. Under "Branch," pick <b>main</b> and <b>/ (root)</b>, then <b>Save</b>.</li>
+    <li>Wait 1–2 minutes. Your site is <code>https://strikesrb-dot.github.io/study-coach/</code>. Open it. You should see the demo.</li>
+  </ol>
+</div>
+
+<div class="part">
+  <span class="tag">Part 2 · Firebase</span>
+  <h2>Create the database (free Google account)</h2>
+  <ol>
+    <li>Go to <b>console.firebase.google.com</b> → <b>Create a project</b> → name it <code>study-coach</code>. Turn <b>off</b> Google Analytics → <b>Create</b>.</li>
+    <li><b>Logins:</b> left menu → <b>Build → Authentication</b> → <b>Get started</b> → <b>Email/Password</b>. Turn on the first switch → <b>Save</b>.</li>
+    <li><b>Make the two accounts:</b> Authentication → <b>Users</b> tab → <b>Add user</b>.
+      <ul><li>Yours: your email and a password.</li>
+      <li>His: any email (it doesn't have to be real, for example <code>brother@example.com</code>) and a password he can remember.</li></ul></li>
+    <li>In the Users list, copy each account's <b>User UID</b> (the long code). Save both in Notes, labeled <b>MASTER</b> (you) and <b>STUDENT</b> (him).</li>
+    <li><b>Database:</b> <b>Build → Firestore Database</b> → <b>Create database</b> → pick a US location → <b>Start in production mode</b> → <b>Create</b>.</li>
+    <li><b>Lock it down:</b> Firestore → <b>Rules</b> tab. Delete what's there and paste everything from the <code>firestore.rules</code> file. Replace <code>PASTE_MASTER_UID_HERE</code> with your MASTER UID (keep the quotes), then press <b>Publish</b>.</li>
+    <li><b>Get the web keys:</b> gear icon ⚙ → <b>Project settings</b> → scroll to "Your apps" → tap the <b>&lt;/&gt;</b> (Web) icon → nickname <code>study-coach</code> → <b>Register app</b> (skip Hosting). Copy the <code>firebaseConfig</code> block it shows.</li>
+    <li><b>Allow your site:</b> Authentication → <b>Settings</b> → <b>Authorized domains</b> → <b>Add domain</b> → <code>strikesrb-dot.github.io</code>.</li>
+  </ol>
+</div>
+
+<div class="part">
+  <span class="tag">Part 3 · Connect them</span>
+  <h2>Paste the keys into the app</h2>
+  <p>Easiest: in Claude Code on the repo, paste the <code>firebaseConfig</code> block and both UIDs, and say:</p>
+  <pre>Put this firebaseConfig into js/config.js (replace the null), set MASTER_UID and STUDENT_UID, set STUDENT_NAME to his name, and put the MASTER UID into firestore.rules. Commit and push.</pre>
+  <p>Or edit it yourself on GitHub: open <code>js/config.js</code> → pencil ✏️ → change <code>export const firebase = null;</code> to your block, fill in the two UIDs → <b>Commit changes</b>.</p>
+</div>
+
+<div class="part">
+  <span class="tag">Part 4 · Devices</span>
+  <h2>Set up his phone and iPad, and your phone</h2>
+  <ol>
+    <li>Open <code>https://strikesrb-dot.github.io/study-coach/</code> in Safari.</li>
+    <li>Sign in with <b>his</b> email and password on his devices, and <b>yours</b> on your phone.</li>
+    <li>Share button → <b>Add to Home Screen</b>. Now it opens like an app.</li>
+    <li>Quick test: on his device, start Block 1 and play the video for a minute. On your phone, the master view should say <b>"Studying right now."</b></li>
+  </ol>
+</div>
+
+<div class="part">
+  <span class="tag">How it holds him to it</span>
+  <h2>What counts and what doesn't</h2>
+  <ul>
+    <li>Each day has 4 blocks of 50 focused minutes (2 Algebra, 2 Biology), a 10-minute break between them, and a fun-fact video after each subject.</li>
+    <li>Time only counts while the video is <b>playing</b> and the app is <b>on screen</b>. Leaving the app pauses the video and flashes red when he comes back.</li>
+    <li>Every 4–7 minutes a <b>"Still watching?"</b> button appears. If he misses it, the video rewinds to that point and the screen flashes red.</li>
+    <li>He can't skip ahead in a video, and the speed is capped at 1.5×.</li>
+    <li>Quizzes need <b>90%</b> to pass, and he can retry as many times as he needs. Then he writes a real-life answer in his own words (typed, since pasting is blocked). You can read every answer in Master → Lessons.</li>
+    <li>Every slip shows up as a <b>red flag</b> with the time it happened in your master view.</li>
+  </ul>
+</div>
+
+<div class="part">
+  <span class="tag">Changing things later</span>
+  <h2>From your master view → Settings</h2>
+  <ul>
+    <li>Swap any lesson video (paste a YouTube link).</li>
+    <li>Edit the fun-fact video list.</li>
+    <li>Change the block length or the pass mark.</li>
+    <li>Reset a lesson if you want him to redo it (Master → Lessons → tap the lesson).</li>
+  </ul>
+</div>
+</main></body>
+</html>
