@@ -237,7 +237,7 @@ export default {
       ],
       realLife: {
         text: `<p>Vertex form is perfect when the top or the bottom is what you care about.</p>
-          <ul><li><b>Basketball:</b> h = −0.5(x − 6)² + 14 says the ball's highest point is 14 feet up, 6 feet out from the shooter.</li>
+          <ul><li><b>Basketball:</b> h = −0.2(x − 6)² + 14 says the ball's highest point is 14 feet up, 6 feet out from the shooter.</li>
           <li><b>Skate ramp:</b> a half-pipe shaped like y = 0.25(x − 4)² has its lowest point at (4, 0), right in the middle.</li>
           <li><b>Fountains:</b> designers pick where the water should peak first. That is the vertex. Then they choose a to make the arc wide or narrow.</li></ul>
           <p>Read the vertex, and you know the most important point.</p>`,
@@ -480,7 +480,7 @@ export default {
         { q: 'For y = ax² + bx + c, the axis of symmetry is…', c: ['x = −b / (2a)', 'x = b / (2a)', 'x = −2a / b', 'x = c'], why: 'This formula gives the x-value of the vertex, which is where the axis of symmetry is.' },
         { q: 'Ana wants the highest point of h = −16t² + 32t + 5. Which form shows it directly?', c: ['Vertex form', 'Factored form', 'Standard form, as written', 'Slope-intercept form'], why: 'Vertex form shows the vertex, and the vertex is the highest point of a parabola that opens down.' },
         { q: 'Find the highest point of h = −16t² + 32t + 5 (feet, seconds).', c: ['21 feet at t = 1 second', '5 feet at t = 0 seconds', '53 feet at t = 1 second', '21 feet at t = 2 seconds'], why: 't = −32 / (2 · −16) = 1. Then h = −16 + 32 + 5 = 21.' },
-        { q: 'Which equation does NOT describe the same parabola as y = x² − 6x + 5?', c: ['y = (x + 1)(x + 5)', 'y = (x − 1)(x − 5)', 'y = (x − 3)² − 4', 'y = x² − 6x + 5'], why: '(x + 1)(x + 5) = x² + 6x + 5. The middle sign is wrong. The other two expand back correctly.' },
+        { q: 'Which equation does NOT describe the same parabola as y = x² − 6x + 5?', c: ['y = (x + 1)(x + 5)', 'y = (x − 1)(x − 5)', 'y = (x − 3)² − 4', 'y = x² − 6x + 5'], why: '(x + 1)(x + 5) = x² + 6x + 5. The middle sign is wrong. The other choices all match: the factored and vertex forms expand back to x² − 6x + 5.' },
         { q: 'What are the zeros of y = x² − 8x + 12?', c: ['x = 2 and x = 6', 'x = −2 and x = −6', 'x = 4 and x = 3', 'x = 12 and x = 1'], why: '−2 and −6 multiply to 12 and add to −8: (x − 2)(x − 6). So x = 2 and x = 6.' },
         { q: 'What is the vertex of y = x² − 8x + 12?', c: ['(4, −4)', '(−4, 60)', '(4, 12)', '(8, 12)'], why: 'x = 8 / 2 = 4. Then y = 16 − 32 + 12 = −4.' },
         { q: 'A parabola opens down and its vertex is (2, −3). How many real solutions does y = 0 have?', c: ['None — the top is below the x-axis', 'Two', 'One', 'It depends on c'], why: 'The highest point is at y = −3, so the parabola never reaches the x-axis.' },

@@ -37,7 +37,7 @@ and khanacademy.org/science/hs-bio if needed.
 1. Write `content/<subject>/uNN.js` following `tools/CONTENT-SPEC.md`. Verify every video with oEmbed and recompute every number.
 2. Add it to `content/<subject>/index.js` in unit order.
 3. Run `node tools/sync-preload.mjs`, `node tools/validate-content.mjs`, and the design check. Then commit and push.
-4. Have a separate agent fact-check each batch before or soon after shipping. Waves 1–5 are fact-checked and fixed, except **u15 (written with 24 items) — not fact-checked yet**.
+4. Have a separate agent fact-check each batch before or soon after shipping. All 25 units are fact-checked and fixed (the original 12-item banks + u15). **The 12 added items per lesson (bank growth) were math-checked by their writers but not by a separate checker.**
 
 ## Flags for the owner (preview before his brother watches)
 - Two Islamic-history fun-fact videos from smaller channels: TRT World and Islamic Museum of Australia.
@@ -58,7 +58,7 @@ and khanacademy.org/science/hs-bio if needed.
 - Passing on try 3 or later raises a `manyTries` red flag. The master's lesson row shows "Passed only on try N".
 - Fresh numbers: 66 generators (`js/practice.js`, `js/gen-algebra.js`, `js/gen-algebra-2.js`, `js/gen-util.js`) are attached to 61+ algebra
   lessons via `practice:`. Up to 5 generated questions go into every attempt. `node tests/fuzz-generators.mjs` must pass.
-- Bigger banks (24 per lesson): **biology u01–u08 + biology-cells.js done (unchecked by a separate agent)**. Algebra lessons and b09 are still at 12. u15 already has 24.
+- Bigger banks: every one of the 139 lessons has 24 questions (3,336 total).
 - TODO: `js/student.js` is about 580 lines. Split the quiz/review code into `js/quiz.js` to respect the 500-line rule.
 
 ## Not verified yet
