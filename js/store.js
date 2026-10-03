@@ -14,6 +14,14 @@ const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 
 export const isDemo = !CFG.firebase;
 
+// Startup timing marks — shown on screen when the page is opened with ?debug=1
+const T0 = performance.now();
+export const marks = [];
+export function mark(label) {
+  marks.push(`${((performance.now() - T0) / 1000).toFixed(1)}s  ${label}`);
+  window.dispatchEvent(new Event('sc-mark'));
+}
+
 // ───────────────────────── helpers ─────────────────────────
 export function applyMerge(target, patch) {
   const out = { ...(target || {}) };
@@ -88,11 +96,15 @@ async function firebaseAdapter() {
     import(FB + 'firebase-auth.js'),
     import(FB + 'firebase-firestore.js'),
   ]);
+  mark('firebase code loaded');
   const app = initializeApp(CFG.firebase);
   const auth = A.getAuth(app);
   let db;
-  try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
+  // iOS Safari: IndexedDB-backed persistence and streaming connections can stall for minutes.
+  // Memory cache + long polling is slower in theory but reliable on iPhone/iPad.
+  try { db = F.initializeFirestore(app, { localCache: F.memoryLocalCache(), experimentalForceLongPolling: true }); }
   catch { db = F.getFirestore(app); }
+  mark('database ready');
 
   // Convert our {__inc}/{__union} markers into Firestore field values.
   const toFs = (obj) => {
@@ -106,32 +118,43 @@ async function firebaseAdapter() {
     return out;
   };
   const merge = (ref, patch) => F.setDoc(ref, toFs(patch), { merge: true });
-  const watchCol = (path, cb, q) => F.onSnapshot(q || F.collection(db, path), (snap) => {
-    const out = {}; snap.forEach((d) => { out[d.id] = d.data(); }); cb(out);
-  }, (err) => console.warn('watch failed', path, err));
+  const watchCol = (name, path, cb, q) => {
+    let first = true;
+    return F.onSnapshot(q || F.collection(db, path), (snap) => {
+      if (first) { first = false; mark(`${name} loaded (${snap.size})`); }
+      const out = {}; snap.forEach((d) => { out[d.id] = d.data(); }); cb(out);
+    }, (err) => { mark(`${name} FAILED: ${err.code}`); console.warn('watch failed', name, err); cb({}); });
+  };
+  const watchDoc = (name, path, cb) => {
+    let first = true;
+    return F.onSnapshot(F.doc(db, path), (s) => {
+      if (first) { first = false; mark(`${name} loaded`); }
+      cb(s.data() || {});
+    }, (err) => { mark(`${name} FAILED: ${err.code}`); cb({}); });
+  };
 
   return {
     mode: 'firebase',
-    onAuth(cb) { A.onAuthStateChanged(auth, cb); },
+    onAuth(cb) { A.onAuthStateChanged(auth, (u) => { mark(u ? 'signed in' : 'signed out'); cb(u); }); },
     async signIn(email, pw) { await A.signInWithEmailAndPassword(auth, email, pw); },
     async signOut() { await A.signOut(auth); },
     roleOf(u) { return u && u.uid === CFG.MASTER_UID ? 'master' : 'student'; },
     studentId() { return CFG.STUDENT_UID; },
 
-    watchSettings(cb) { return F.onSnapshot(F.doc(db, 'settings/main'), (s) => cb(s.data() || {}), () => cb({})); },
+    watchSettings(cb) { return watchDoc('settings', 'settings/main', cb); },
     async saveSettings(patch) { await merge(F.doc(db, 'settings/main'), patch); },
 
-    watchLessons(sid, cb) { return watchCol(`students/${sid}/lessons`, cb); },
+    watchLessons(sid, cb) { return watchCol('lessons', `students/${sid}/lessons`, cb); },
     async saveLesson(sid, key, patch) { await merge(F.doc(db, `students/${sid}/lessons/${key}`), patch); },
     async resetLesson(sid, key) { await F.deleteDoc(F.doc(db, `students/${sid}/lessons/${key}`)); },
 
     watchDays(sid, cb) {
       const col = F.collection(db, `students/${sid}/days`);
-      return watchCol(null, cb, F.query(col, F.orderBy(F.documentId(), 'desc'), F.limit(60)));
+      return watchCol('days', null, cb, F.query(col, F.orderBy(F.documentId(), 'desc'), F.limit(60)));
     },
     async saveDay(sid, date, patch) { await merge(F.doc(db, `students/${sid}/days/${date}`), patch); },
 
-    watchMeta(sid, cb) { return F.onSnapshot(F.doc(db, `students/${sid}/meta/state`), (s) => cb(s.data() || {}), () => cb({})); },
+    watchMeta(sid, cb) { return watchDoc('meta', `students/${sid}/meta/state`, cb); },
     async saveMeta(sid, patch) { await merge(F.doc(db, `students/${sid}/meta/state`), patch); },
   };
 }

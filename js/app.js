@@ -1,6 +1,6 @@
 // Boot: pick the data store, sign in, then open the student or master side.
 
-import { createStore, isDemo } from './store.js';
+import { createStore, isDemo, marks, mark } from './store.js';
 import { startStudent } from './student.js';
 import { startMaster } from './master.js';
 import { MASTER_UID, STUDENT_UID } from './config.js';
@@ -71,4 +71,12 @@ async function boot() {
 }
 
 if (!isDemo && (!MASTER_UID || !STUDENT_UID)) console.warn('Set MASTER_UID and STUDENT_UID in js/config.js');
+if (/[?&]debug/.test(location.search)) {
+  const box = document.createElement('pre');
+  box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:2000;background:rgba(0,0,0,.82);color:#7CFC9A;font:12px/1.4 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:10px;max-width:92vw;white-space:pre-wrap;pointer-events:none';
+  document.body.appendChild(box);
+  const draw = () => { box.textContent = 'STARTUP TIMING\n' + marks.join('\n'); };
+  window.addEventListener('sc-mark', draw); draw();
+}
+mark('app started');
 boot();
