@@ -59,7 +59,14 @@ and khanacademy.org/science/hs-bio if needed.
 - Fresh numbers: 66 generators (`js/practice.js`, `js/gen-algebra.js`, `js/gen-algebra-2.js`, `js/gen-util.js`) are attached to 61+ algebra
   lessons via `practice:`. Up to 5 generated questions go into every attempt. `node tests/fuzz-generators.mjs` must pass.
 - Bigger banks: every one of the 139 lessons has 24 questions (3,336 total).
-- TODO: `js/student.js` is about 580 lines. Split the quiz/review code into `js/quiz.js` to respect the 500-line rule.
+- Quiz code lives in `js/quiz.js` (split from student.js on 2026-10-03).
+
+## Live session + time on app (owner request 2026-10-03)
+- His app writes `students/{uid}/meta/live` right away on every new screen and every 10–30 s: which block, lesson, stage, what he's doing
+  (video position, quiz question, break countdown…), whether time is counting, and this session's on-app/focused time.
+  A new session starts when the app opens or after 10+ minutes away.
+- `days/{date}.openSec` = seconds the app was open on screen (focused time is `activeSec`). Only tracked from 2026-10-03 on; older days show focused time only.
+- Master Overview: "Right now" card at the top (online = saved in the last 50 s and on screen), tiles for on-app vs focused time, focus rate, and on-app time in the weekend/history rows.
 
 ## Not verified yet
 - Real iPhone/iPad (WebKit) run. Only Chromium was available in the build environment.

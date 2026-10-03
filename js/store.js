@@ -88,6 +88,9 @@ function demoAdapter() {
 
     watchMeta(sid, cb) { return watch(() => cb(snap(`students/${sid}/meta`) || {})); },
     async saveMeta(sid, patch) { setAt(`students/${sid}/meta`, applyMerge(get(`students/${sid}/meta`), patch)); },
+
+    watchLive(sid, cb) { return watch(() => cb(snap(`students/${sid}/live`) || {})); },
+    async saveLive(sid, obj) { setAt(`students/${sid}/live`, obj); },
   };
 }
 
@@ -158,6 +161,9 @@ async function firebaseAdapter() {
 
     watchMeta(sid, cb) { return watchDoc('meta', `students/${sid}/meta/state`, cb); },
     async saveMeta(sid, patch) { await merge(F.doc(db, `students/${sid}/meta/state`), patch); },
+
+    watchLive(sid, cb) { return watchDoc('live', `students/${sid}/meta/live`, cb); },
+    async saveLive(sid, obj) { await F.setDoc(F.doc(db, `students/${sid}/meta/live`), obj); },
   };
 }
 

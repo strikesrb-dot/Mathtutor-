@@ -68,6 +68,7 @@ export function mountVideo(container, opts) {
     const state = player.getPlayerState(); // 1 playing, 2 paused, 0 ended, 3 buffering
     const t = player.getCurrentTime() || 0;
     if (!dur) dur = player.getDuration() || 0;
+    if (opts.onTime) opts.onTime(t, dur, state);
 
     // Leaving the app: pause the video.
     if (document.visibilityState !== 'visible') { if (state === 1) player.pauseVideo(); tracker.setVideoOK(false); return; }

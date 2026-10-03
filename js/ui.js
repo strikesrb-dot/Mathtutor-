@@ -17,6 +17,8 @@ export function hm(sec) {
   if (m < 60) return `${m}m`;
   return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`;
 }
+// Thin progress bar (pct 0–100).
+export function bar(pct) { return `<span class="sc-bar"><i style="width:${Math.min(100, Math.max(0, pct)).toFixed(1)}%"></i></span>`; }
 
 export function shuffle(arr) {
   const a = [...arr];

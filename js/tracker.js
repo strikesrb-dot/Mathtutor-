@@ -15,8 +15,30 @@ export function createTracker(store, sid, rules) {
   let idleFlagged = false;
   let leftAt = null;
   let day = {};                       // latest saved day record (kept fresh by the caller)
-  let pending = { sec: 0, steps: {}, subj: {}, lessons: {}, flags: {}, events: [] };
+  let pending = { sec: 0, open: 0, steps: {}, subj: {}, lessons: {}, flags: {}, events: [] };
   const listeners = new Set();
+
+  // ── Live status for the master's "right now" card (students/{uid}/meta/live) ──
+  // view/title/lesson/sub/stage/detail/pos are plain text set by the student screens (see student.js).
+  let live = { view: 'home', title: '', lesson: '', sub: '', stage: '', detail: '', pos: '' };
+  let session = { start: Date.now(), open: 0, focus: 0 };
+  let lastCounting = false, liveDirty = true, lastLiveWrite = 0, liveTimer = null, dead = false;
+  function writeLive(extra = {}) {
+    if (dead) return Promise.resolve();
+    if (liveTimer) { clearTimeout(liveTimer); liveTimer = null; }
+    lastLiveWrite = Date.now(); liveDirty = false;
+    return store.saveLive(sid, { ...live, at: Date.now(), counting: lastCounting, flashing: isFlashing(),
+      visible: document.visibilityState === 'visible', sessionStart: session.start, sessionOpen: session.open, sessionFocus: session.focus, ...extra })
+      .catch(() => { liveDirty = true; });
+  }
+  // major = a new screen or step: saved within ~1.5 s (calls in the same moment are merged into one write).
+  // Small changes (video position, countdowns) ride along with the next regular save, every 10 s.
+  function setLive(patch, major = false) {
+    const next = { ...live, ...patch };
+    if (Object.keys(next).every((k) => next[k] === live[k])) return;
+    live = next; liveDirty = true;
+    if (major && !liveTimer) liveTimer = setTimeout(writeLive, Math.max(300, 1500 - (Date.now() - lastLiveWrite)));
+  }
 
   const counting = () => {
     if (ctx.mode === 'off' || document.visibilityState !== 'visible' || isFlashing()) return false;
@@ -43,6 +65,7 @@ export function createTracker(store, sid, rules) {
   }
   function cameBack(fromTs) {
     const away = Math.max(0, Math.round((Date.now() - fromTs) / 1000));
+    if (away > 600) session = { start: Date.now(), open: 0, focus: 0 };   // gone 10+ minutes = a new session
     leftAt = null;
     lastVisibleBeat = Date.now();
     if (ctx.mode !== 'off' && away >= 3) {
@@ -50,10 +73,10 @@ export function createTracker(store, sid, rules) {
     }
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') { markLeft(); flush(); }
-    else if (leftAt != null) cameBack(leftAt);
+    if (document.visibilityState === 'hidden') { markLeft(); flush(); writeLive({ visible: false }); }
+    else { if (leftAt != null) cameBack(leftAt); writeLive(); }
   });
-  window.addEventListener('pagehide', () => { markLeft(); flush(); });
+  window.addEventListener('pagehide', () => { markLeft(); flush(); writeLive({ visible: false }); });
   window.addEventListener('pageshow', () => { if (leftAt != null && document.visibilityState === 'visible') cameBack(leftAt); });
 
   const timer = setInterval(() => {
@@ -64,6 +87,10 @@ export function createTracker(store, sid, rules) {
       lastVisibleBeat = Date.now();
     }
     const on = counting();
+    lastCounting = on;
+    if (document.visibilityState === 'visible') { pending.open += 1; session.open += 1; }
+    if (on) session.focus += 1;
+    if (Date.now() - lastLiveWrite > (liveDirty ? 10000 : 30000)) writeLive();
     if (on) {
       pending.sec += 1;
       if (ctx.stepId) pending.steps[ctx.stepId] = (pending.steps[ctx.stepId] || 0) + 1;
@@ -89,12 +116,13 @@ export function createTracker(store, sid, rules) {
   async function flush() {
     if (flushing) return;
     const p = pending;
-    const hasData = p.sec || Object.keys(p.flags).length;
-    pending = { sec: 0, steps: {}, subj: {}, lessons: {}, flags: {}, events: [] };
+    const hasData = p.sec || p.open || Object.keys(p.flags).length;
+    pending = { sec: 0, open: 0, steps: {}, subj: {}, lessons: {}, flags: {}, events: [] };
     const date = todayKey();
     const patch = { lastSeen: Date.now(), lastStep: ctx.stepId || null, lastLesson: ctx.lessonKey || null };
     if (hasData) {
       patch.activeSec = inc(p.sec);
+      patch.openSec = inc(p.open);
       patch.steps = Object.fromEntries(Object.entries(p.steps).map(([k, v]) => [k, inc(v)]));
       patch.bySubject = Object.fromEntries(Object.entries(p.subj).map(([k, v]) => [k, inc(v)]));
       patch.flags = Object.fromEntries(Object.entries(p.flags).map(([k, v]) => [k, inc(v)]));
@@ -110,7 +138,7 @@ export function createTracker(store, sid, rules) {
     } catch (e) {
       console.warn('save failed, will retry', e);
       // put it back so nothing is lost
-      pending.sec += p.sec;
+      pending.sec += p.sec; pending.open += p.open;
       for (const k of ['steps', 'subj', 'lessons', 'flags']) for (const [kk, v] of Object.entries(p[k])) pending[k][kk] = (pending[k][kk] || 0) + v;
       pending.events.push(...p.events);
       for (const [k, v] of Object.entries(p.steps)) day.steps[k] -= v;
@@ -122,10 +150,11 @@ export function createTracker(store, sid, rules) {
     off() { ctx = { mode: 'off' }; videoOK = false; },
     setVideoOK(ok) { videoOK = ok; },
     setDay(d) { day = d || {}; },
+    setLive,
     stepSec,
     flag,
     flush,
     onTick(fn) { listeners.add(fn); return () => listeners.delete(fn); },
-    destroy() { clearInterval(timer); clearInterval(flushTimer); flush(); },
+    destroy() { clearInterval(timer); clearInterval(flushTimer); flush(); writeLive({ visible: false }); dead = true; },
   };
 }

@@ -22,9 +22,10 @@ css/app.css           all styles (light/dark tokens at the top)
 js/config.js          Firebase keys + MASTER_UID / STUDENT_UID / STUDENT_NAME (the only setup file)
 js/app.js             boot, sign-in, role routing
 js/store.js           data layer: Firebase adapter + localStorage demo adapter (same interface; inc()/union() markers)
-js/tracker.js         focused-time meter, red flags, 15s flush to Firestore
+js/tracker.js         focused-time + on-app meter, red flags, 15s flush, live "right now" status (setLive)
 js/video.js           YouTube IFrame API wrapper: no-skip, speed cap, "Still watching?" checks, pause nag
 js/student.js         student screens: home plan → blocks (Watch → Learn → Quiz → Real life) → breaks → fact videos
+js/quiz.js            graded quiz (anti-cheat lock, review, retry wait) + the question widget practice reuses
 js/master.js          master screens: Overview / Lessons / Settings
 js/curriculum.js      merges content + master overrides; lesson stage + day status logic
 js/practice.js        endless algebra practice generators (biology reuses quiz banks)
@@ -47,8 +48,9 @@ tests/                Playwright e2e tests in demo mode with a fake YouTube play
 ```
 settings/main                      { blockMinutes, passPct, bioUnit, videoOverrides{lessonKey:[{id,title}]}, facts[] }
 students/{uid}/lessons/{key}       { videos{id:{max,dur,done}}, learnDone, quiz{attempts[],best,passed}, realLife{answer,at}, timeSec, completedAt }
-students/{uid}/days/{YYYY-MM-DD}   { activeSec, steps{A1..F2:sec}, bySubject{}, blocksDone{}, breaks{}, factsDone{}, factPick{}, factProg{}, flags{}, events[], practice{}, lastSeen, lastStep, lastLesson }
+students/{uid}/days/{YYYY-MM-DD}   { activeSec, openSec, steps{A1..F2:sec}, bySubject{}, blocksDone{}, breaks{}, factsDone{}, factPick{}, factProg{}, flags{}, events[], practice{}, lastSeen, lastStep, lastLesson }
 students/{uid}/meta/state          { factIdx }
+students/{uid}/meta/live           { view, title, lesson, sub, stage, detail, pos, at, visible, counting, flashing, sessionStart, sessionOpen, sessionFocus }
 ```
 
 ## Testing
