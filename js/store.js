@@ -82,6 +82,7 @@ function demoAdapter() {
     watchLessons(sid, cb) { return watch(() => cb(snap(`students/${sid}/lessons`) || {})); },
     async saveLesson(sid, key, patch) { setAt(`students/${sid}/lessons/${key}`, applyMerge(get(`students/${sid}/lessons/${key}`), patch)); },
     async resetLesson(sid, key) { const all = { ...(get(`students/${sid}/lessons`) || {}) }; delete all[key]; setAt(`students/${sid}/lessons`, all); },
+    async replaceLesson(sid, key, obj) { setAt(`students/${sid}/lessons/${key}`, obj); },
 
     watchDays(sid, cb) { return watch(() => cb(snap(`students/${sid}/days`) || {})); },
     async saveDay(sid, date, patch) { setAt(`students/${sid}/days/${date}`, applyMerge(get(`students/${sid}/days/${date}`), patch)); },
@@ -159,6 +160,7 @@ async function firebaseAdapter() {
     watchLessons(sid, cb) { return watchCol('lessons', `students/${sid}/lessons`, cb); },
     async saveLesson(sid, key, patch) { await merge(F.doc(db, `students/${sid}/lessons/${key}`), patch); },
     async resetLesson(sid, key) { await F.deleteDoc(F.doc(db, `students/${sid}/lessons/${key}`)); },
+    async replaceLesson(sid, key, obj) { await F.setDoc(F.doc(db, `students/${sid}/lessons/${key}`), toFs(obj)); },   // whole doc, no merge
 
     // Plain collection read (one small doc per study day). Don't add orderBy(documentId(), 'desc') here:
     // a descending sort on the doc ID needs an index Firestore doesn't make by default, and the read fails.

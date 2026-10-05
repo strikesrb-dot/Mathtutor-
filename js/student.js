@@ -2,7 +2,7 @@
 // Drawn with Calm Glass (css/calm-glass.css): one shared header, grouped lists, one dark main button per screen,
 // and a floating glass island that holds the block timer.
 
-import { buildCurriculum, lessonStage, currentLesson, STAGES, todayKey, dayStatus } from './curriculum.js';
+import { buildCurriculum, lessonStage, currentLesson, focusLesson, STAGES, todayKey, dayStatus } from './curriculum.js';
 import { createTracker } from './tracker.js';
 import { mountVideo } from './video.js';
 import { applyMerge, inc } from './store.js';
@@ -45,7 +45,17 @@ export function startStudent(root, { store, sid, onSignOut }) {
   const gate = (k) => { have[k] = true; if (!rendered && have.l && have.d) { rendered = true; render(); } };
   const slow = setTimeout(() => { if (!rendered) { rendered = true; render(); toast('Slow connection — showing saved progress'); } }, 6000);
   unsubs.push(() => clearTimeout(slow));
-  unsubs.push(store.watchSettings((s) => { S.settings = s; cur = buildCurriculum(s); if (rendered && view.name === 'home') render(); }));
+  let focusKey = null;   // the lesson his brother sent (settings.focus)
+  unsubs.push(store.watchSettings((s) => {
+    S.settings = s; cur = buildCurriculum(s);
+    const fk = cur.focus ? cur.focus.key : null, changed = fk !== focusKey; focusKey = fk;
+    if (!rendered) return;
+    if (view.name === 'home') return render();
+    // A lesson sent while he's in a study block opens right away (his place in the other lesson is saved).
+    if (changed && fk && view.name === 'step' && /^([AB]\d|X)$/.test(view.stepId)) {
+      clean(); view.stage = null; view.videoIdx = null; render(); toast('Your brother sent you a lesson. It\'s up now.');
+    }
+  }));
   unsubs.push(store.watchLessons(sid, (l) => { S.lessons = l || {}; gate('l'); }));
   unsubs.push(store.watchDays(sid, (d, err) => {
     if (err) toast('Couldn\'t load today\'s progress — check the Wi-Fi');
@@ -67,7 +77,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
   // ─────────────────────────── HOME ─────────────────────────── (drawn by home.js)
   function renderHome() {
     clean();
-    drawHome(root, { cur, lessons: S.lessons, day: day(), chat, tracker, onSignOut,
+    drawHome(root, { cur, lessons: S.lessons, day: day(), chat, tracker, onSignOut, focus: focusLesson(cur, S.lessons),
       start: (id) => go({ name: 'step', stepId: id }), extra: () => go({ name: 'step', stepId: 'X', extra: true }) });
   }
 
@@ -158,9 +168,10 @@ export function startStudent(root, { store, sid, onSignOut }) {
 
   // ── BLOCK: the current lesson for this subject ──
   function renderBlock(step) {
-    const unit = cur[step.subject];
-    const lesson = currentLesson(unit, S.lessons);
-    const body = shell(step, '', { title: blockTitle(step), sub: lesson ? `Unit ${lesson.u.n} · Lesson ${lesson.i} of ${lesson.of}` : 'Review' });
+    const focus = focusLesson(cur, S.lessons);   // a lesson his brother sent comes first, whatever this block's subject
+    const unit = cur[focus ? focus.subject : step.subject];
+    const lesson = focus ? focus.lesson : currentLesson(unit, S.lessons);
+    const body = shell(step, '', { title: blockTitle(step), sub: focus ? 'Sent by your brother' : lesson ? `Unit ${lesson.u.n} · Lesson ${lesson.i} of ${lesson.of}` : 'Review' });
     if (!lesson) return renderPractice(step, body, unit);
     renderLesson(step, body, unit, lesson, view.stage);
   }
@@ -181,6 +192,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
       <div class="sc-lesson-head">
         <h2 class="cg-title1">${esc(lesson.title)}</h2>
       </div>
+      ${cur.focus && cur.focus.key === lesson.key ? `<div class="cg-card sc-notice"><p class="cg-headline">Your brother sent you this lesson</p>
+        <p class="cg-meta">It's your only focus until you finish it: the videos, the Learn page, the quiz and the real-life answer. Then you go back to your normal lessons.</p></div>` : ''}
       <div class="cg-seg sc-stages" role="group" aria-label="Lesson steps">${STAGES.map((s) => {
         const i = order.indexOf(s.key);
         const finished = i < ri || realStage === 'done';
@@ -193,7 +206,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
     refreshSegs();
     const el = body.querySelector('#stage');
     const ctx = { step, unit, lesson, el, advance: () => { clean(); view.stage = null; renderStep(); } };
-    tracker.set({ mode: stage === 'watch' ? 'video' : 'active', stepId: step.id, subject: step.subject, lessonKey: lesson.key });
+    tracker.set({ mode: stage === 'watch' ? 'video' : 'active', stepId: step.id, subject: unit.subject || step.subject, lessonKey: lesson.key });
     tracker.setLive({ view: 'block', title: blockTitle(step), lesson: lesson.title, sub: `Unit ${lesson.u.n}: ${lesson.u.title} · Lesson ${lesson.i} of ${lesson.of}`,
       stage: STAGES.find((s) => s.key === stage).label, detail: '', pos: '' }, true);
     if (stage === 'watch') stageWatch(ctx);
@@ -329,9 +342,12 @@ export function startStudent(root, { store, sid, onSignOut }) {
       const wasDone = lessonStage(lesson, S.lessons[lesson.key]) === 'done';
       patchLesson(lesson.key, { realLife: { answer: ta.value.trim(), at: Date.now() }, realDraft: null, ...(wasDone ? {} : { completedAt: Date.now() }) });
       const next = currentLesson(unit, S.lessons);
-      tracker.setLive({ detail: 'Finished the lesson — on the "Lesson complete" screen', pos: '' }, true);
+      const wasSent = !!(cur.focus && cur.focus.key === lesson.key);
+      if (wasSent) tracker.log('focus', `finished the lesson his brother sent: ${lesson.title}`);
+      tracker.setLive({ detail: wasSent ? 'Finished the lesson you sent him' : 'Finished the lesson — on the "Lesson complete" screen', pos: '' }, true);
       tracker.screen({ cap: cur.rules.capScreenSec, label: 'Lesson complete screen' });
       el.innerHTML = `<div class="cg-card sc-center"><h3 class="cg-title1">Lesson complete</h3>
+        ${wasSent ? '<p class="cg-text">That was the lesson your brother sent. Nice work. Now you\'re back on your normal lessons.</p>' : ''}
         <p class="cg-text">${next ? (next.u.id !== lesson.u.id ? `Unit ${lesson.u.n} finished! Next: Unit ${next.u.n} — ${esc(next.u.title)}` : `Up next: ${esc(next.title)}`) : 'You finished the whole course.'}</p>
         <button class="cg-btn cg-btn-strong cg-btn-block" id="nextL">${next ? 'Start next lesson' : 'Practice'}</button></div>`;
       window.scrollTo(0, 0);
@@ -365,6 +381,11 @@ export function startStudent(root, { store, sid, onSignOut }) {
   // ── Extra practice after the day is done (bonus, still tracked) ──
   function renderExtra() {
     const step = { id: 'X', type: 'extra', subject: 'algebra' };
+    const focus = focusLesson(cur, S.lessons);
+    if (focus) {   // the day is done but the sent lesson isn't: bonus time goes to it
+      const body = shell(step, '', { title: 'The lesson your brother sent', sub: 'Bonus time' });
+      return renderLesson(step, body, cur[focus.subject], focus.lesson, view.stage);
+    }
     const body = shell(step, '', { title: 'Extra practice', sub: 'Bonus' });
     const finished = [...cur.algebra.lessons, ...cur.biology.lessons].filter((l) => lessonStage(l, S.lessons[l.key]) === 'done');
     renderPractice(step, body, { lessons: finished.length ? finished : cur.algebra.lessons.slice(0, 1) });

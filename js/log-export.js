@@ -49,7 +49,8 @@ export function buildLogText({ cur, days, lessons, logs, msgs, dates }) {
     '- A block ends when its counted minutes are done, wherever he is in the lesson; the next block picks up where he stopped.',
     '- Red flags: leftApp, missedCheck (missed "Still watching?"), pausedLong, idle (no taps 90 s), skipTry (tried to skip ahead), videoError, manyTries (passed only on try 3+), stalled (hit a time limit).',
     '- Log kinds: app (open/leave/return), screen (where he is), clock (started/stopped, why, and for how long), video (play/pause/replay at a position), check ("Still watching?"), answer (each quiz or practice answer: right/WRONG, seconds taken, the question, what he picked), quiz (start/finish and score), learn, real, block, chat, flag, game.', '');
-  p(`SETTINGS: block ${r.blockMinutes} min · break ${r.breakMinutes} min · pass ${r.passPct}% · quiz ${r.quizSize} questions · retry wait ${r.retryWaitMin} min`, '');
+  const sentL = cur.focus ? ['algebra', 'biology'].flatMap((s) => cur[s].units.flatMap((u) => u.lessons)).find((l) => l.key === cur.focus.key) : null;
+  p(`SETTINGS: block ${r.blockMinutes} min · break ${r.breakMinutes} min · pass ${r.passPct}% · quiz ${r.quizSize} questions · retry wait ${r.retryWaitMin} min${sentL ? ` · lesson I sent him (his only focus until done): "${sentL.title}" (${lessonStage(sentL, lessons[sentL.key])})` : ''}`, '');
 
   p('DAY TOTALS');
   for (const k of dates) {

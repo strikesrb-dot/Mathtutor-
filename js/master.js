@@ -106,6 +106,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       <div class="cg-btns sc-live-btns"><button type="button" class="cg-btn cg-btn-glass" id="nudgeBtn">Nudge him</button><button type="button" class="cg-btn cg-btn-glass" id="msgBtn">Message him</button></div>
       <div class="cg-group sc-log-row"><button type="button" class="cg-row has-icon" id="logBtn"><span class="cg-row-icon">${icon('list')}</span>
         <span class="cg-row-text"><span class="cg-row-label">Activity log for Claude</span><span class="cg-row-sub">Every screen, clock stop and quiz answer. Export it and paste it into Claude for feedback.</span></span><span class="cg-chev"></span></button></div>
+      ${focusCard()}
 
       <p class="cg-caption">Today</p>
       <div class="sc-stats">
@@ -149,6 +150,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
         value: new Date(e.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
       })).join('') || row({ label: 'Nothing flagged' })}</ul>`;
     body.querySelector('#nudgeBtn').onclick = () => chat.nudge();
+    wireFocus(body);
     body.querySelector('#logBtn').onclick = () => openLogSheet({ store, sid, state: () => ({ cur, days: S.days, lessons: S.lessons, msgs: chat.messages() }) });
     body.querySelector('#msgBtn').onclick = () => { tab = 'chat'; render(); window.scrollTo(0, 0); };
   }
@@ -199,6 +201,41 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     if (box) box.innerHTML = liveCard();
   }
 
+  // ── A lesson sent to him (settings.focus = { key, at }): his only study until he finishes it (curriculum.js focusLesson) ──
+  function focusInfo() {
+    const f = S.settings.focus; if (!f || !f.key) return null;
+    const l = allLessons().find((x) => x.key === f.key); if (!l) return null;
+    const stage = lessonStage(l, S.lessons[l.key]);
+    return { l, stage, done: stage === 'done' };
+  }
+  function focusCard() {
+    const fi = focusInfo(); if (!fi) return '';
+    return `<p class="cg-caption">Sent to him</p><div class="cg-group">
+      ${row({ tag: 'div', ic: fi.done ? 'check' : 'flag', label: esc(fi.l.title), cls: fi.done ? 'sc-done' : '',
+        sub: fi.done ? 'He finished it. He is back on his normal lessons.' : `Unit ${fi.l.u.n} · his only focus until he finishes it · now on: ${STAGE_LABEL[fi.stage]}` })}
+      <button type="button" class="cg-row" id="clearFocus"><span class="cg-row-text"><span class="cg-row-label">${fi.done ? 'Clear this' : 'Cancel: back to his normal lessons'}</span></span></button></div>`;
+  }
+  function wireFocus(body) { const b = body.querySelector('#clearFocus'); if (b) b.onclick = clearFocus; }
+  async function clearFocus() {
+    const prev = S.settings.focus || null;
+    await store.saveSettings({ focus: null });
+    toast('Cleared', { action: () => store.saveSettings({ focus: prev }), label: 'Undo' });
+  }
+  async function sendLesson(key) {
+    const l = allLessons().find((x) => x.key === key); if (!l) return;
+    const p = S.lessons[key] || {}, before = JSON.parse(JSON.stringify(p)), prevFocus = S.settings.focus || null;
+    const finished = lessonStage(l, p) === 'done';
+    // Already finished: he does it again from the start. His old quiz scores and answer are kept under history.
+    if (finished) await store.replaceLesson(sid, key, { timeSec: p.timeSec || 0,
+      history: { attempts: (p.quiz || {}).attempts || [], best: (p.quiz || {}).best || 0, completedAt: p.completedAt || 0, realLife: p.realLife || null, redoAt: Date.now() } });
+    await store.saveSettings({ focus: { key, at: Date.now() } });
+    chat.say(`I sent you a lesson: "${l.title}". It's your only focus until you finish it.`);
+    toast(finished ? 'Sent. He finished it before, so he does it again.' : 'Sent. It\'s his only focus until he finishes it.', { label: 'Undo', time: 8000, action: async () => {
+      if (finished) await store.replaceLesson(sid, key, before);
+      await store.saveSettings({ focus: prevFocus }); toast('Undone');
+    } });
+  }
+
   function latestSeen() {
     let best = null;
     for (const dd of Object.values(S.days)) if (dd.lastSeen && (!best || dd.lastSeen > best.t)) best = { t: dd.lastSeen, step: dd.lastStep, lesson: dd.lastLesson };
@@ -220,8 +257,9 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     if (!unitsSeeded) {   // open the unit he is working in
       unitsSeeded = true;
       for (const subj of ['algebra', 'biology']) { const L = currentLesson(cur[subj], S.lessons); if (L) openUnits.add(L.u.id); }
+      const fi = focusInfo(); if (fi) openUnits.add(fi.l.u.id);
     }
-    body.innerHTML = ['algebra', 'biology'].map((subj) => {
+    body.innerHTML = focusCard() + ['algebra', 'biology'].map((subj) => {
       const course = cur[subj];
       const now = currentLesson(course, S.lessons);
       const done = doneCount(course.lessons, S.lessons);
@@ -241,6 +279,8 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     body.querySelectorAll('.unit-row').forEach((b) => { b.onclick = () => { const k = b.dataset.u; openUnits.has(k) ? openUnits.delete(k) : openUnits.add(k); render(); }; });
     body.querySelectorAll('.lesson-row').forEach((b) => { b.onclick = () => { const k = b.dataset.k; open.has(k) ? open.delete(k) : open.add(k); render(); }; });
     // Destructive: do it at once, offer Undo (Calm Glass rule 12 — no confirm dialogs).
+    wireFocus(body);
+    body.querySelectorAll('[data-send]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); sendLesson(b.dataset.send); }; });
     body.querySelectorAll('[data-reset]').forEach((b) => {
       b.onclick = async () => {
         const key = b.dataset.reset;
@@ -259,10 +299,11 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     const status = p.timeSec || stage !== 'watch' ? STAGE_LABEL[stage] : 'Not started';
     const sub = `${p.timeSec ? hm(p.timeSec) + ' · ' : ''}${videosDone(l, p)}/${l.videos.length} videos · quiz ${q.best != null ? q.best + '%' : '—'}${q.attempts ? ` (${q.attempts.length} ${q.attempts.length === 1 ? 'try' : 'tries'})` : ''}`;
     const many = q.passed && (q.passedOnTry || (q.attempts || []).length) >= cur.rules.manyTries;
+    const sent = S.settings.focus && S.settings.focus.key === l.key;
     return `
       <button type="button" class="cg-row has-icon lesson-row ${now && now.key === l.key ? 'sc-current' : ''}" data-k="${l.key}" aria-expanded="${isOpen}">
         <span class="cg-row-icon">${stage === 'done' ? `<span class="sc-on">${icon('check')}</span>` : `<span class="sc-n cg-num">${l.i}</span>`}</span>
-        <span class="cg-row-text"><span class="cg-row-label">${esc(l.title)}</span><span class="cg-row-sub">${sub}</span>${many ? `<span class="cg-row-sub sc-flagged">${icon('flag')} Passed only on try ${q.passedOnTry || q.attempts.length} — check his written answer</span>` : ''}</span>
+        <span class="cg-row-text"><span class="cg-row-label">${esc(l.title)}</span><span class="cg-row-sub">${sub}</span>${many ? `<span class="cg-row-sub sc-flagged">${icon('flag')} Passed only on try ${q.passedOnTry || q.attempts.length} — check his written answer</span>` : ''}${sent && stage !== 'done' ? `<span class="cg-row-sub sc-flagged">${icon('flag')} Sent to him — his only focus until he finishes it</span>` : ''}</span>
         <span class="cg-row-value">${status}</span><span class="cg-chev ${isOpen ? 'is-open' : ''}"></span>
       </button>
       ${isOpen ? `<div class="cg-row cg-row-tall lesson-detail"><div class="cg-row-block">
@@ -270,7 +311,9 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
           ? `<p class="cg-meta">His real-life answer</p><blockquote class="sc-quote">${esc(p.realLife.answer)}</blockquote><p class="cg-meta">Question: ${esc(l.realLife.prompt)}</p>`
           : '<p class="cg-meta">No real-life answer yet.</p>'}
         ${q.attempts && q.attempts.length ? `<p class="cg-meta">Quiz tries</p><ul class="sc-tries">${q.attempts.map((a) => `<li><span>${new Date(a.at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span><b class="cg-num ${a.pct >= cur.rules.passPct ? 'sc-pass' : ''}">${a.right}/${a.total} · ${a.pct}%${a.pct >= cur.rules.passPct ? ' ✓' : ''}</b></li>`).join('')}</ul>` : ''}
-        <button type="button" class="cg-btn cg-btn-plain sc-danger-text" data-reset="${l.key}">Reset this lesson</button>
+        <div class="cg-btns">${sent && stage !== 'done' ? '<span class="cg-meta">Sent to him ✓</span>' : `<button type="button" class="cg-btn cg-btn-glass" data-send="${l.key}">Send to him</button>`}
+          <button type="button" class="cg-btn cg-btn-plain sc-danger-text" data-reset="${l.key}">Reset this lesson</button></div>
+        <p class="cg-foot">Send to him: every study block opens this lesson until he finishes it. Then he goes back to his normal order.${stage === 'done' ? ' He already finished it, so sending it makes him do it again (his old scores are kept).' : ''}</p>
       </div></div>` : ''}`;
   }
 

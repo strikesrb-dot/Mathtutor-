@@ -1,6 +1,6 @@
 // Student home screen: greeting, today's focused-time ring, today's plan, his two courses, and messages.
 
-import { dayStatus, currentLesson, doneCount } from './curriculum.js';
+import { dayStatus, currentLesson, doneCount, lessonStage, STAGES } from './curriculum.js';
 import { esc, hm, toast, unlockAudio, icon, bar } from './ui.js';
 import { STUDENT_NAME } from './config.js';
 
@@ -18,8 +18,8 @@ function nextLabel(s) {
   return 'Reward video time';
 }
 
-// deps: { cur, lessons, day, chat, tracker, onSignOut, start(stepId), extra() }
-export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, start, extra }) {
+// deps: { cur, lessons, day, chat, tracker, onSignOut, focus (the lesson his brother sent, or null), start(stepId), extra() }
+export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, focus, start, extra }) {
   const st = dayStatus(cur.rules, day);
   const d = new Date();
   const isStudyDay = cur.rules.studyDays.includes(d.getDay());
@@ -63,11 +63,16 @@ export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, 
       <section class="cg-card sc-hero">
         <div class="sc-ring" style="--p:${pct}" role="img" aria-label="${hm(active)} of ${hm(goal)} focused time"><div><b class="cg-num">${hm(active)}</b><span class="cg-meta">of ${hm(goal)}</span></div></div>
         <div class="sc-hero-text">
-          <h3 class="cg-title2">${st.allDone ? 'MashaAllah — today is done' : st.current ? nextLabel(st.current) : ''}</h3>
-          <p class="cg-meta">${st.allDone ? 'All 4 blocks and both fun videos are finished. Proud of you.' : 'Only real, focused time counts. Stay on the app and keep the video playing.'}</p>
-          ${st.allDone ? '<button class="cg-btn cg-btn-strong cg-btn-block" id="extra">Extra practice (bonus)</button>' : `<button class="cg-btn cg-btn-strong cg-btn-block" id="go">${active > 0 ? 'Continue' : 'Start'}</button>`}
+          <h3 class="cg-title2">${st.allDone ? 'MashaAllah — today is done' : focus ? 'Your brother sent you a lesson' : st.current ? nextLabel(st.current) : ''}</h3>
+          <p class="cg-meta">${focus ? `"${esc(focus.lesson.title)}" is your only focus until it's done. Every study block opens it.` : st.allDone ? 'All 4 blocks and both fun videos are finished. Proud of you.' : 'Only real, focused time counts. Stay on the app and keep the video playing.'}</p>
+          ${st.allDone ? `<button class="cg-btn cg-btn-strong cg-btn-block" id="extra">${focus ? 'Finish the lesson he sent (bonus)' : 'Extra practice (bonus)'}</button>` : `<button class="cg-btn cg-btn-strong cg-btn-block" id="go">${active > 0 ? 'Continue' : 'Start'}</button>`}
         </div>
       </section>
+      ${focus ? `<p class="cg-caption">Sent by your brother</p><ul class="cg-group"><li class="cg-row has-icon sc-current">
+        <span class="cg-row-icon">${icon(SUBJECT[focus.subject].icon)}</span>
+        <span class="cg-row-text"><span class="cg-row-label">${esc(focus.lesson.title)}</span>
+          <span class="cg-row-sub">${SUBJECT[focus.subject].name} · Unit ${focus.lesson.u.n} · now: ${(STAGES.find((s) => s.key === lessonStage(focus.lesson, lessons[focus.lesson.key])) || STAGES[0]).label}</span></span>
+        </li></ul>` : ''}
       <p class="cg-caption">Today's plan</p>
       <ul class="cg-group sc-plan">${st.list.map(stepRow).join('')}</ul>
       <p class="cg-caption">Your courses</p>

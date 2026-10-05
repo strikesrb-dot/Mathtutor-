@@ -161,6 +161,7 @@ export function masterChat({ store, sid, onNew }) {
   return {
     unread,
     messages: () => msgs,
+    say: (text) => send('msg', text),
     nudge: (text = '') => send('nudge', text),
     // Draw the Chat tab into body.
     panel(body) {

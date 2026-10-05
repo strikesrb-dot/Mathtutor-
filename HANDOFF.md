@@ -78,6 +78,11 @@ and khanacademy.org/science/hs-bio if needed.
   from break-play.js + break-arcade.js; `slice.js` is break-slice.js unchanged inside an ES-module wrapper; `glide.js` is mkFly's Glide
   mode. Removed: āyāt reading between rounds. Art: assets/games/*.webp (8 sheets, ~650 KB, loaded only at game time). Font: Lilita One
   (OFL, assets/fonts). Scene colours are allow-listed (CLAUDE.md design exception).
+- Send a lesson (owner request 2026-10-05): master Lessons tab → open a lesson → "Send to him". Saved as settings.focus { key, at }.
+  Until that lesson is done (curriculum.js focusLesson) every study block, and the bonus "extra" time, opens it whatever the block's
+  subject; breaks, game time and fun videos stay on schedule. If he's in a block when it's sent, his screen switches at once. A chat
+  message tells him. Sending a lesson he already finished restarts it (replaceLesson keeps his old scores under `history`). The master
+  sees a "Sent to him" card (Overview + Lessons) with Cancel / Undo. tests/e2e_focus.py covers it.
 - Breaks are 7 minutes (was 10) and run on wall time from first opening (day.breakStart). "Cash it in" on the break screen adds
   whatever is left of the break to the next game time (games[G].bonus), so he can play up to 14 minutes instead of resting.
 

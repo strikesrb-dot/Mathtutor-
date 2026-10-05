@@ -31,6 +31,7 @@ export function buildCurriculum(settings = {}) {
     algebra: prep(algebraCourse, 'algebra'),
     biology: prep(biologyCourse, 'biology'),
     facts: settings.facts && settings.facts.length ? settings.facts : facts,
+    focus: settings.focus && settings.focus.key ? settings.focus : null,   // a lesson the master sent: { key, at }
     rules: {
       ...schedule,
       blockMinutes: Number(settings.blockMinutes) || schedule.blockMinutes,
@@ -63,6 +64,17 @@ export function videosDone(lesson, prog = {}) {
 // The first lesson in a subject that isn't finished (or null if the course is complete).
 export function currentLesson(subject, lessonsProg) {
   return subject.lessons.find((l) => lessonStage(l, lessonsProg[l.key]) !== 'done') || null;
+}
+
+// The lesson the master sent him (settings.focus) is his only study until it's done: every block opens it, whatever the
+// block's subject. Returns { lesson, subject } while it isn't done yet, else null. (It may sit in a unit before the start unit.)
+export function focusLesson(cur, lessonsProg) {
+  const f = cur.focus; if (!f) return null;
+  for (const subject of ['algebra', 'biology']) {
+    const lesson = cur[subject].units.flatMap((u) => u.lessons).find((x) => x.key === f.key);
+    if (lesson) return lessonStage(lesson, lessonsProg[lesson.key]) === 'done' ? null : { lesson, subject };
+  }
+  return null;
 }
 
 export function doneCount(lessons, lessonsProg) {

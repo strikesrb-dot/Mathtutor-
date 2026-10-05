@@ -53,7 +53,7 @@ tests/                Playwright e2e tests in demo mode with a fake YouTube play
 
 ## Firestore data model
 ```
-settings/main                      { blockMinutes, passPct, bioUnit, videoOverrides{lessonKey:[{id,title}]}, facts[] }
+settings/main                      { blockMinutes, passPct, startUnit{}, videoOverrides{lessonKey:[{id,title}]}, facts[], focus{key,at} (lesson sent to him) }
 students/{uid}/lessons/{key}       { videos{id:{max,dur,done}}, learnDone, quiz{attempts[],best,passed}, realLife{answer,at}, timeSec, completedAt }
 students/{uid}/days/{YYYY-MM-DD}   { activeSec, openSec, steps{A1..F2:sec}, bySubject{}, blocksDone{}, breaks{}, factsDone{}, factPick{}, factProg{}, flags{}, events[], practice{}, lastSeen, lastStep, lastLesson }
 students/{uid}/meta/state          { factIdx }
@@ -68,6 +68,7 @@ days/{date} also holds breakStart{R1..R3: ts} (break clock) and games{G1..G3: { 
 ## Testing
 - `python3 tests/e2e_lesson.py` runs one full lesson, including the skip, leave-app, and missed-check flags, then checks the master view.
 - `python3 tests/e2e_day.py` sets 10-minute blocks and runs block → break → block → fact video → biology.
+- `python3 tests/e2e_focus.py` sends a lesson from the master tab and checks the student switches to it, then returns to normal once done.
 - Both need Playwright with a browser. WebKit is preferred: `p.webkit.launch()`. Screenshots go to `tests/screens/`.
 - Syntax check: `for f in js/*.js content/*.js; do node --check $f; done`.
 - Demo mode can't catch Firestore-only problems (indexes, rules). Never sort a query by `documentId()` descending: it needs an index
