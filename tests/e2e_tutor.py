@@ -9,7 +9,7 @@ URL = 'http://localhost:8772/index.html'; errs = []; sent = []; mode = {'status'
 def tutor_route(route):
   req = route.request; body = json.loads(req.post_data or '{}'); sent.append({'auth': req.headers.get('authorization'), 'body': body})
   if mode['status'] != 200: return route.fulfill(status=mode['status'], content_type='application/json', body=json.dumps({'error': 'not-configured'}))
-  route.fulfill(status=200, content_type='application/json', body=json.dumps({'reply': "I'm not going to give you the answer. Which part is confusing?\n[quote:q94-5]\nLet's try an example: 2 + n = 5."}))
+  route.fulfill(status=200, content_type='application/json', body=json.dumps({'reply': "I'm not going to give you the answer, Champ, but let's figure it out.\n\nA **variable** (a letter that stands for a number) is like an empty box.\n[quote:q94-5]\nHere is my own example. A shop charges `3 + 2s` dollars, where `s` is the number of stickers. You buy 5.\n\n1. Swap `s` for 5: `3 + 2(5)`\n2. Multiply first: `3 + 10`\n3. Add: `13`\n\nNow you try: what is `4 + 3t` when `t = 2`?"}))
 def until(fn, n=50):
   for i in range(n):
     try:
@@ -33,6 +33,7 @@ try:
     until(lambda: 'not going to give' in st.inner_text('#tutorList'))
     s = sent[-1]; print('sent: auth=%s stage=%s lesson="%s" learn=%d chars, messages=%s' % (s['auth'], s['body']['stage'], s['body']['lesson']['title'], len(s['body']['lesson']['learn']), [m['role'] for m in s['body']['messages']]))
     print('quote tag hidden while quotes are not approved:', '[quote' not in st.inner_text('#tutorList') and not st.query_selector('.sc-quote-card'))
+    print('formatting: steps=%d bold=%d math=%d' % (len(st.query_selector_all('.sc-tlist li')), len(st.query_selector_all('.sc-msg b')), len(st.query_selector_all('.sc-math'))))
     time.sleep(0.5); st.screenshot(path=f'{SP}/50-tutor.png')
     mode['status'] = 503; st.click('.sc-tutor-chips [data-chip]'); until(lambda: 'turned on yet' in st.inner_text('#tutorList'))
     print('no API key → he sees:', st.inner_text('.sc-tutor-note'))

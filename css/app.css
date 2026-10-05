@@ -269,3 +269,12 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-quote-card > * { margin: 0; }
 .sc-quote-card > * + * { margin-top: var(--cg-in-8); }
 .sc-ar { font-family: "Uthmanic Hafs", var(--cg-ui); font-size: var(--cg-t-ar); line-height: var(--cg-lh-ar); text-align: right; color: var(--cg-ink-strong); }
+
+/* tutor replies: paragraphs, steps, bold, math chips */
+.sc-tutor-sheet .sc-msg { display: flex; flex-direction: column; gap: var(--cg-in-8); }
+.sc-tutor-sheet .sc-msg > * { margin: 0; }
+.sc-tlist { margin: 0; padding-left: var(--cg-sp-3); display: flex; flex-direction: column; gap: var(--cg-in-6); }
+.sc-tlist li { margin: 0; padding-left: var(--cg-in-4); }
+.sc-tlist li::marker { color: var(--cg-ink2); font-variant-numeric: tabular-nums; }
+.sc-math { font-family: var(--cg-mono); font-size: var(--cg-t-min); white-space: nowrap; padding: 0 var(--cg-in-6); border-radius: var(--cg-r-icon); background: var(--cg-fill); color: var(--cg-ink-strong); }
+.sc-tutor-sheet b { font-weight: var(--cg-w-semi); color: var(--cg-ink-strong); }

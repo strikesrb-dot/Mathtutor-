@@ -36,6 +36,13 @@ check('rules say never give answers', sent.system[0].text.includes('NEVER GIVE H
 check('quotes are off until approved', sent.system[0].text.includes('Do not quote or paraphrase any Qur'));
 check('question context sent, marked wrong, no answer key', sent.system[1].text.includes('marked it WRONG') && !/correct answer is/i.test(sent.system[1].text));
 check('model is Sonnet 5.5', sent.model === 'claude-sonnet-5-5');
+check('no up-front thinking, low effort, room to finish', sent.thinking && sent.thinking.type === 'between_tools' && sent.output_config.effort === 'low' && sent.max_tokens >= 1500);
+check('rules ask for phone formatting (lists, bold, math in backticks)', sent.system[0].text.includes('numbered list') && sent.system[0].text.includes('backticks'));
+{ let calls = 0, second = null;
+  const f400 = async (url, init) => { if (url.includes('googleapis.com')) return fakeFetch(url, init); calls++; if (calls === 1) return new Response('{"error":"bad"}', { status: 400 }); second = JSON.parse(init.body); return new Response(JSON.stringify({ content: [{ type: 'text', text: 'ok' }], stop_reason: 'max_tokens' })); };
+  _resetCertCache(); const r4 = await handle(req(token(), body), env, f400); const j4 = await r4.json();
+  check('400 from Claude → retried once without effort/thinking', calls === 2 && !second.thinking && !second.output_config && r4.status === 200);
+  check('a reply that hits the limit says so', j4.reply.includes('Ask me to keep going')); }
 _resetCertCache(); r = await handle(req(token({ aud: 'other-project' }), body), env, fakeFetch); check('token for another project is refused (401)', r.status === 401);
 _resetCertCache(); r = await handle(req(token({ sub: 'someone-else' }), body), env, fakeFetch); check('someone else signed in is refused (403)', r.status === 403);
 _resetCertCache(); r = await handle(req(token({ exp: Math.floor(Date.now() / 1000) - 10 }), body), env, fakeFetch); check('expired token is refused (401)', r.status === 401);

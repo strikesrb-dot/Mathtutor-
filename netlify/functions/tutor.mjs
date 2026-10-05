@@ -22,21 +22,29 @@ export async function handle(req, env = process.env, fetchImpl = fetch) {
   try { body = await req.json(); } catch { return json({ error: 'bad-request' }, 400); }
   const messages = cleanMessages(body.messages);
   if (!messages.length) return json({ error: 'bad-request' }, 400);
-  const r = await fetchImpl('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({
-      model: env.TUTOR_MODEL || MODEL, max_tokens: 500,
-      system: [
-        { type: 'text', text: rulesPrompt({ name: STUDENT_NAME, quotes, quotesOn: approved === true }), cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: contextPrompt(body) },
-      ],
-      messages,
-    }),
-  });
+  const request = {
+    model: env.TUTOR_MODEL || MODEL, max_tokens: 1500,
+    // Sonnet 5.5 thinks before answering by default (effort high), and thinking uses up max_tokens — that cut replies off
+    // mid-step. A tutor reply is short: low effort, no up-front thinking. (Docs: build-with-claude/effort.)
+    output_config: { effort: 'low' }, thinking: { type: 'between_tools' },
+    system: [
+      { type: 'text', text: rulesPrompt({ name: STUDENT_NAME, quotes, quotesOn: approved === true }), cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: contextPrompt(body) },
+    ],
+    messages,
+  };
+  const call = (b) => fetchImpl('https://api.anthropic.com/v1/messages', {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(b) });
+  let r = await call(request);
+  if (r.status === 400) {   // a model without these settings (e.g. TUTOR_MODEL set to an older one): retry once without them
+    console.error('anthropic 400, retrying without effort/thinking:', (await r.text()).slice(0, 300));
+    const { output_config, thinking, ...plain } = request;
+    r = await call(plain);
+  }
   if (!r.ok) { console.error('anthropic error', r.status, (await r.text()).slice(0, 500)); return json({ error: 'upstream', status: r.status }, 502); }
   const data = await r.json();
-  const reply = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+  let reply = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+  if (data.stop_reason === 'max_tokens') reply += '\n\n(I ran out of room there. Ask me to keep going.)';
   return json({ reply: reply || 'Sorry, I lost my train of thought. Can you ask that again?', stop: data.stop_reason || '' });
 }
 

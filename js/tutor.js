@@ -15,17 +15,30 @@ function quoteCard(q) {
   const en = (Array.isArray(q.en) ? q.en : [q.en]).map((t) => `<p class="cg-text">${esc(t)}</p>`).join('');
   return `<figure class="sc-quote-card">${ar}${en}<figcaption class="cg-meta">${esc(q.ref)}${q.part ? ' (part of the verse)' : ''}</figcaption></figure>`;
 }
-// Reply text → safe HTML: paragraphs, and a quote card for each approved [quote:id] tag (anything else in brackets is dropped).
+// Reply text → safe HTML for a phone: paragraphs, numbered/bulleted lists, **bold**, `math` (its own chip), and a quote card
+// for each approved [quote:id] tag on its own line (any other bracket tag is dropped). Everything is escaped first.
+function inline(t) {
+  return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<span class="sc-math">$1</span>').replace(/\[quote:[\w-]+\]/g, '');
+}
 function renderText(text) {
-  const out = []; let para = [];
-  const flush = () => { if (para.length) { out.push(`<p class="cg-text">${para.join('<br>')}</p>`); para = []; } };
-  for (const line of String(text).split('\n')) {
-    const m = /^\s*\[quote:([\w-]+)\]\s*$/.exec(line);
-    if (m) { flush(); const q = QMAP[m[1]]; if (q && approved === true) out.push(quoteCard(q)); continue; }
-    const clean = line.replace(/\[quote:[\w-]+\]/g, '').trim();
-    if (clean) para.push(esc(clean)); else flush();
+  const out = []; let para = [], list = null;
+  const flushPara = () => { if (para.length) { out.push(`<p class="cg-text">${para.join(' ')}</p>`); para = []; } };
+  const flushList = () => { if (list) { out.push(`<${list.tag} class="sc-tlist">${list.items.map((i) => `<li class="cg-text">${i}</li>`).join('')}</${list.tag}>`); list = null; } };
+  for (const raw of String(text).replace(/\r/g, '').split('\n')) {
+    const line = raw.trim();
+    const q = /^\[quote:([\w-]+)\]$/.exec(line);
+    const num = /^(?:\d+[.)]|step\s+\d+[:.)])\s*(.+)$/i.exec(line);
+    const bul = /^[-•*]\s+(.+)$/.exec(line);
+    if (q) { flushPara(); flushList(); const item = QMAP[q[1]]; if (item && approved === true) out.push(quoteCard(item)); }
+    else if (num || bul) {
+      flushPara();
+      const tag = num ? 'ol' : 'ul';
+      if (!list || list.tag !== tag) { flushList(); list = { tag, items: [] }; }
+      list.items.push(inline((num || bul)[1]));
+    } else if (!line) { flushPara(); flushList(); }
+    else { flushList(); const t = inline(line); if (t.trim()) para.push(t); }
   }
-  flush();
+  flushPara(); flushList();
   return out.join('');
 }
 const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html || ''; return d.textContent.replace(/\s+/g, ' ').trim(); };
