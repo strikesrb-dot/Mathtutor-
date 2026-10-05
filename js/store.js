@@ -91,6 +91,13 @@ function demoAdapter() {
 
     watchLive(sid, cb) { return watch(() => cb(snap(`students/${sid}/live`) || {})); },
     async saveLive(sid, obj) { setAt(`students/${sid}/live`, obj); },
+
+    watchChat(sid, cb) { return watch(() => cb(Object.entries(snap(`students/${sid}/chat`) || {}).map(([id, m]) => ({ id, ...m })).sort((a, b) => a.at - b.at))); },
+    async sendChat(sid, msg) { setAt(`students/${sid}/chat/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, msg); },
+    watchChatRead(sid, cb) { return watch(() => cb(snap(`students/${sid}/chatRead`) || {})); },
+    async saveLog(sid, date, entries) { setAt(`students/${sid}/log/${date}`, applyMerge(get(`students/${sid}/log/${date}`), { entries: union(...entries) })); },
+    async getLog(sid, date) { return snap(`students/${sid}/log/${date}`) || {}; },
+    async saveChatRead(sid, patch) { setAt(`students/${sid}/chatRead`, applyMerge(get(`students/${sid}/chatRead`), patch)); },
   };
 }
 
@@ -163,6 +170,24 @@ async function firebaseAdapter() {
 
     watchLive(sid, cb) { return watchDoc('live', `students/${sid}/meta/live`, cb); },
     async saveLive(sid, obj) { await F.setDoc(F.doc(db, `students/${sid}/meta/live`), obj); },
+
+    // Chat: the newest 100 by time ("at" is an ordinary field, so Firestore's automatic index covers the sort).
+    // If that read ever fails, fall back to a plain read of the whole collection.
+    watchChat(sid, cb) {
+      const list = (out) => Object.entries(out).map(([id, m]) => ({ id, ...m })).sort((a, b) => (a.at || 0) - (b.at || 0));
+      const col = F.collection(db, `students/${sid}/chat`);
+      let stop = watchCol('chat', null, (out, err) => {
+        if (!err) return cb(list(out));
+        stop = watchCol('chat (plain)', `students/${sid}/chat`, (o, e) => cb(list(o), e));
+      }, F.query(col, F.orderBy('at', 'desc'), F.limit(100)));
+      return () => stop();
+    },
+    async sendChat(sid, msg) { await F.addDoc(F.collection(db, `students/${sid}/chat`), msg); },
+    watchChatRead(sid, cb) { return watchDoc('chat read', `students/${sid}/meta/chat`, cb); },
+    // Activity log: one doc per day, read only when the master exports it (never watched — it can get large).
+    async saveLog(sid, date, entries) { await merge(F.doc(db, `students/${sid}/log/${date}`), { entries: union(...entries) }); },
+    async getLog(sid, date) { const d = await F.getDoc(F.doc(db, `students/${sid}/log/${date}`)); return d.data() || {}; },
+    async saveChatRead(sid, patch) { await merge(F.doc(db, `students/${sid}/meta/chat`), patch); },
   };
 }
 

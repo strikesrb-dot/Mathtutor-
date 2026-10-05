@@ -2,20 +2,16 @@
 // Drawn with Calm Glass (css/calm-glass.css): one shared header, grouped lists, one dark main button per screen,
 // and a floating glass island that holds the block timer.
 
-import { buildCurriculum, lessonStage, currentLesson, STAGES, todayKey, dayStatus, doneCount } from './curriculum.js';
+import { buildCurriculum, lessonStage, currentLesson, STAGES, todayKey, dayStatus } from './curriculum.js';
 import { createTracker } from './tracker.js';
 import { mountVideo } from './video.js';
 import { applyMerge, inc } from './store.js';
-import { esc, mmss, hm, shuffle, toast, unlockAudio, icon, refreshSegs, bar } from './ui.js';
+import { esc, mmss, shuffle, toast, icon, refreshSegs } from './ui.js';
 import { practiceFor } from './practice.js';
 import { questionHTML, wireAnswer, stageQuiz } from './quiz.js';
-import { STUDENT_NAME } from './config.js';
+import { studentChat } from './chat.js';
+import { SUBJECT, renderHome as drawHome } from './home.js';
 
-const SUBJECT = {
-  algebra: { name: 'Algebra 1', icon: 'algebra' },
-  biology: { name: 'Biology', icon: 'biology' },
-  fact: { name: 'Did you know?', icon: 'globe' },
-};
 const VIDEO_STATE = { '-1': 'not started', 0: 'finished', 1: 'playing', 2: 'paused', 3: 'loading', 5: 'not started' };
 const videoPos = (t, dur, state) => `${mmss(t)} of ${dur ? mmss(dur) : '…'} · ${VIDEO_STATE[state] || 'loading'}`;
 
@@ -23,6 +19,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
   const S = { settings: {}, lessons: {}, days: {}, meta: {} };
   let cur = buildCurriculum({});
   const tracker = createTracker(store, sid, cur.rules);
+  const chat = studentChat({ store, sid, tracker });   // messages + nudges from his brother
   let cleanups = [];
   let view = { name: 'home' };
   const unsubs = [];
@@ -66,70 +63,12 @@ export function startStudent(root, { store, sid, onSignOut }) {
     if (view.name === 'step') return renderStep();
   }
 
-  function pctOf(subject) { return subject.lessons.length ? (doneCount(subject.lessons, S.lessons) / subject.lessons.length) * 100 : 0; }
 
-  // ─────────────────────────── HOME ───────────────────────────
+  // ─────────────────────────── HOME ─────────────────────────── (drawn by home.js)
   function renderHome() {
     clean();
-    const st = dayStatus(cur.rules, day());
-    const d = new Date();
-    const isStudyDay = cur.rules.studyDays.includes(d.getDay());
-    const goal = cur.rules.blockMinutes * 60 * 4;
-    const active = day().activeSec || 0;
-    const pct = Math.min(100, Math.round((active / goal) * 100));
-    const blockNo = { A1: 1, A2: 2, B1: 1, B2: 2 };
-
-    const stepRow = (s) => {
-      const isCur = st.current && st.current.id === s.id;
-      let label, sub = '', ic;
-      if (s.type === 'block') { ic = SUBJECT[s.subject].icon; label = `${SUBJECT[s.subject].name} · Block ${blockNo[s.id]}`; sub = s.done ? 'Done' : `${Math.floor(s.sec / 60)} of ${cur.rules.blockMinutes} min`; }
-      if (s.type === 'break') { ic = 'cup'; label = `Break · ${cur.rules.breakMinutes} min`; sub = s.done ? 'Done' : ''; }
-      if (s.type === 'fact') { ic = 'globe'; label = 'Did you know? video'; sub = s.done ? 'Done' : 'Reward video'; }
-      return `<li class="cg-row has-icon sc-step ${isCur ? 'sc-current' : ''}" ${isCur ? 'aria-current="step"' : ''}>
-        <span class="cg-row-icon">${icon(ic)}</span>
-        <span class="cg-row-text"><span class="cg-row-label">${label}</span>${sub ? `<span class="cg-row-sub">${sub}</span>` : ''}
-          ${s.type === 'block' && !s.done && s.sec > 0 ? bar((s.sec / s.need) * 100) : ''}</span>
-        ${s.done ? `<span class="cg-check sc-on">${icon('check')}</span>` : isCur ? '<span class="cg-row-value">Next</span>' : ''}
-      </li>`;
-    };
-    const courseRow = (subject, subj) => {
-      const L = currentLesson(subject, S.lessons);
-      const done = doneCount(subject.lessons, S.lessons);
-      return `<li class="cg-row has-icon">
-        <span class="cg-row-icon">${icon(SUBJECT[subj].icon)}</span>
-        <span class="cg-row-text"><span class="cg-row-label">${SUBJECT[subj].name}${L ? ` — Unit ${L.u.n}: ${esc(L.u.title)}` : ''}</span>
-          <span class="cg-row-sub">${L ? `Lesson ${L.i} of ${L.of}: ${esc(L.title)}` : 'Course finished'}</span>
-          ${bar(pctOf(subject))}<span class="cg-row-sub cg-num">${done} of ${subject.lessons.length} lessons done</span></span>
-      </li>`;
-    };
-
-    root.innerHTML = `
-      <header class="cg-header">
-        <h1 class="cg-header-title">Study Coach<small>${d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · ${isStudyDay ? 'Study day' : 'Bonus day'}</small></h1>
-        <button class="cg-key cg-key-end" id="me" aria-label="Account">${icon('person')}</button>
-      </header>
-      <main class="cg-content sc-main">
-        <h2 class="cg-title1 sc-hello">As-salamu alaykum, ${esc(STUDENT_NAME)}</h2>
-        <section class="cg-card sc-hero">
-          <div class="sc-ring" style="--p:${pct}" role="img" aria-label="${hm(active)} of ${hm(goal)} focused time"><div><b class="cg-num">${hm(active)}</b><span class="cg-meta">of ${hm(goal)}</span></div></div>
-          <div class="sc-hero-text">
-            <h3 class="cg-title2">${st.allDone ? 'MashaAllah — today is done' : st.current ? nextLabel(st.current) : ''}</h3>
-            <p class="cg-meta">${st.allDone ? 'All 4 blocks and both fun videos are finished. Proud of you.' : 'Only real, focused time counts. Stay on the app and keep the video playing.'}</p>
-            ${st.allDone ? '<button class="cg-btn cg-btn-strong cg-btn-block" id="extra">Extra practice (bonus)</button>' : `<button class="cg-btn cg-btn-strong cg-btn-block" id="go">${active > 0 ? 'Continue' : 'Start'}</button>`}
-          </div>
-        </section>
-        <p class="cg-caption">Today's plan</p>
-        <ul class="cg-group sc-plan">${st.list.map(stepRow).join('')}</ul>
-        <p class="cg-caption">Your courses</p>
-        <ul class="cg-group">${courseRow(cur.algebra, 'algebra')}${courseRow(cur.biology, 'biology')}</ul>
-      </main>`;
-    tracker.setLive({ view: 'home', title: 'Home screen', lesson: '', sub: '', stage: '', pos: '',
-      detail: st.allDone ? 'Finished today — on the home screen' : `Looking at today's plan (next: ${st.current ? nextLabel(st.current).replace('Next: ', '') : '—'})` }, true);
-    root.querySelector('#me').onclick = () => toast(`Signed in as ${STUDENT_NAME}`, { action: onSignOut, label: 'Sign out' });
-    const goBtn = root.querySelector('#go');
-    if (goBtn) goBtn.onclick = () => { unlockAudio(); go({ name: 'step', stepId: st.current.id }); };
-    const ex = root.querySelector('#extra');
-    if (ex) ex.onclick = () => { unlockAudio(); go({ name: 'step', stepId: 'X', extra: true }); };
+    drawHome(root, { cur, lessons: S.lessons, day: day(), chat, tracker, onSignOut,
+      start: (id) => go({ name: 'step', stepId: id }), extra: () => go({ name: 'step', stepId: 'X', extra: true }) });
   }
 
   function blockTitle(step) {
@@ -140,11 +79,6 @@ export function startStudent(root, { store, sid, onSignOut }) {
       onClean: (fn) => cleanups.push(fn), goStage: (stage) => { clean(); view.stage = stage; renderStep(); } };
   }
 
-  function nextLabel(s) {
-    if (s.type === 'block') return `Next: ${SUBJECT[s.subject].name}`;
-    if (s.type === 'break') return 'Break time';
-    return 'Reward video time';
-  }
 
   // ─────────────────────────── STEP ───────────────────────────
   function stepById(id) {
@@ -172,7 +106,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       <header class="cg-header">
         <button class="cg-key cg-key-start" id="home" aria-label="Back to today's plan">${icon('back')}</button>
         <h1 class="cg-header-title">${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ''}</h1>
-        <button class="cg-key cg-key-end" id="help" aria-label="How time counts">${icon('help')}</button>
+        ${chat.keyHTML()}
       </header>
       <main class="cg-content sc-main" id="stepBody">
         <div id="blockDone" class="cg-card sc-notice" hidden>
@@ -191,13 +125,13 @@ export function startStudent(root, { store, sid, onSignOut }) {
       </nav>`;
     root.querySelector('#home').onclick = () => go({ name: 'home' });
     root.querySelector('#home2').onclick = () => go({ name: 'home' });
-    root.querySelector('#help').onclick = () => toast('Time counts only while the video plays or you are working on this screen.');
+    chat.wire(root);
     const clock = root.querySelector('#clock'), clockT = root.querySelector('#clockT');
     const notice = root.querySelector('#blockDone');
     let done = false;
     root.querySelector('#clockPill').onclick = () => {
       if (done) return takeBreak();
-      toast(clock.classList.contains('on') ? 'Counting — keep going' : 'Not counting right now');
+      toast(clock.classList.contains('on') ? 'Counting — keep going' : 'Not counting right now. Time counts while new video plays or while you work on this step.');
     };
     cleanups.push(tracker.onTick(({ counting, stepSec }) => {
       clock.classList.toggle('on', counting);
@@ -212,6 +146,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       } else clockT.textContent = counting ? 'Counting' : 'Paused';
     }));
     const takeBreak = async () => {
+      tracker.log('block', `${step.id} block time done — took the break`);
       await tracker.flush();
       patchDay({ blocksDone: { [step.id]: true } });
       nextStep();
@@ -310,8 +245,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
         };
       });
       const player = mountVideo(el.querySelector('#player'), {
-        // A finished video starts over from the top (a review rewatch would otherwise begin 3 s before the end).
-        id: v.id, startMax: p.done ? 0 : (p.max || 0), rules: cur.rules, tracker,
+        // A finished video starts over from the top. Replays don't count as time, except the review after a failed quiz.
+        id: v.id, startMax: p.max || 0, startAt: p.done ? 0 : undefined, done: !!p.done, countReplay: owesReview(lesson), rules: cur.rules, tracker,
         onTime: (t, dur, state) => tracker.setLive({ pos: videoPos(t, dur, state) }),
         onProgress: (max, dur) => patchLesson(lesson.key, { videos: { [v.id]: { max: Math.max(max, p.max || 0), dur } } }),
         onDone: () => {
@@ -342,6 +277,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       <article class="cg-card sc-read">${lesson.learn}</article>
       <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="gotIt" ${wait ? 'disabled' : ''}>${wait ? `Read it first… ${wait}` : ready}</button></div>`;
     tracker.setLive({ detail: reviewing ? 'Rereading the Learn page (review after a failed quiz)' : 'Reading the Learn page', pos: '' }, true);
+    tracker.screen({ cap: cur.rules.capLearnMin * 60, label: 'Learn page' });
     const btn = el.querySelector('#gotIt');
     if (wait) {
       const t = setInterval(() => {
@@ -353,6 +289,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       cleanups.push(() => clearInterval(t));
     }
     btn.onclick = () => {
+      tracker.log('learn', reviewing ? 'finished rereading for review' : 'tapped "I\'ve got it — quiz me"');
       if (reviewing) { reviewDone(lesson); clean(); view.stage = 'quiz'; return renderStep(); }
       patchLesson(lesson.key, { learnDone: true }); advance();
     };
@@ -361,29 +298,38 @@ export function startStudent(root, { store, sid, onSignOut }) {
   // ── Real life ──
   function stageReal({ unit, lesson, el }) {
     const prev = ((S.lessons[lesson.key] || {}).realLife || {}).answer;
+    const draft = (S.lessons[lesson.key] || {}).realDraft;   // what he was typing when the app closed
     const MIN = 15;
     el.innerHTML = `
       <article class="cg-card sc-read">${lesson.realLife.text}</article>
       <p class="cg-caption">Your turn</p>
       <div class="cg-card">
         <p class="cg-headline">${esc(lesson.realLife.prompt)}</p>
-        <textarea id="ans" class="sc-textarea" rows="5" placeholder="Explain it in your own words…">${esc(prev || '')}</textarea>
+        <textarea id="ans" class="sc-textarea" rows="5" placeholder="Explain it in your own words…">${esc(draft || prev || '')}</textarea>
         <div class="sc-row-between"><span id="wc" class="cg-meta cg-num"></span><button class="cg-btn cg-btn-strong" id="send" disabled>${prev ? 'Update answer' : 'Submit'}</button></div>
       </div>`;
     const ta = el.querySelector('#ans'), wc = el.querySelector('#wc'), send = el.querySelector('#send');
     tracker.setLive({ detail: prev ? 'Rereading his real-life answer' : 'Writing the real-life answer', pos: '' }, true);
+    tracker.screen({ cap: cur.rules.capRealMin * 60, label: 'Real-life answer' });
+    let draftTimer = null;
+    const saveDraft = () => { draftTimer = null; patchLesson(lesson.key, { realDraft: ta.value }); };
+    cleanups.push(() => { if (draftTimer) { clearTimeout(draftTimer); saveDraft(); } });
     const upd = () => {
       const n = ta.value.trim().split(/\s+/).filter(Boolean).length;
       wc.textContent = n >= MIN ? `${n} words ✓` : `${n} of ${MIN} words`; send.disabled = n < MIN;
       tracker.setLive({ pos: `${n} word${n === 1 ? '' : 's'} typed (needs ${MIN})` });
     };
-    ta.oninput = upd; upd();
+    ta.oninput = () => { upd(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 1500); };
+    upd();
     ta.addEventListener('paste', (e) => { e.preventDefault(); toast('Type it in your own words'); });
     send.onclick = () => {
+      clearTimeout(draftTimer); draftTimer = null;
+      tracker.log('real', `submitted the real-life answer (${ta.value.trim().split(/\s+/).filter(Boolean).length} words)`);
       const wasDone = lessonStage(lesson, S.lessons[lesson.key]) === 'done';
-      patchLesson(lesson.key, { realLife: { answer: ta.value.trim(), at: Date.now() }, ...(wasDone ? {} : { completedAt: Date.now() }) });
+      patchLesson(lesson.key, { realLife: { answer: ta.value.trim(), at: Date.now() }, realDraft: null, ...(wasDone ? {} : { completedAt: Date.now() }) });
       const next = currentLesson(unit, S.lessons);
       tracker.setLive({ detail: 'Finished the lesson — on the "Lesson complete" screen', pos: '' }, true);
+      tracker.screen({ cap: cur.rules.capScreenSec, label: 'Lesson complete screen' });
       el.innerHTML = `<div class="cg-card sc-center"><h3 class="cg-title1">Lesson complete</h3>
         <p class="cg-text">${next ? (next.u.id !== lesson.u.id ? `Unit ${lesson.u.n} finished! Next: Unit ${next.u.n} — ${esc(next.u.title)}` : `Up next: ${esc(next.title)}`) : 'You finished the whole course.'}</p>
         <button class="cg-btn cg-btn-strong cg-btn-block" id="nextL">${next ? 'Start next lesson' : 'Practice'}</button></div>`;
@@ -403,10 +349,12 @@ export function startStudent(root, { store, sid, onSignOut }) {
       const item = practiceFor(l) || (() => { const b = l.quiz[Math.floor(Math.random() * l.quiz.length)]; return { q: b.q, c: b.c, why: b.why }; })();
       const opts = shuffle(item.c.map((text, i) => ({ text, ok: i === 0 })));
       tracker.setLive({ detail: `Practice question on: ${l.title}`, pos: total ? `${right} of ${total} right` : '' });
+      tracker.screen({ cap: cur.rules.capQuestionMin * 60, label: 'Practice question' });
       body.innerHTML = questionHTML(item, opts, `Review · ${esc(l.title)} · ${right} of ${total} right`)
         + '<p class="cg-meta sc-hint">You finished every lesson in this course. Keep practicing until the block time is done.</p>';
-      wireAnswer(body, item, opts, (ok) => {
+      wireAnswer(body, item, opts, (ok, picked) => {
         total += 1; if (ok) right += 1;
+        tracker.log('answer', `practice ${ok ? 'right' : 'WRONG'} — "${String(item.q).slice(0, 100)}"${ok ? '' : ` — picked "${String(picked).slice(0, 60)}"`}`);
         patchDay({ practice: { [step.subject]: { right: inc(ok ? 1 : 0), total: inc(1) } } });
       }, 'Next', () => { nextQ(); window.scrollTo(0, 0); });
     };
@@ -430,6 +378,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       <header class="cg-header">
         <button class="cg-key cg-key-start" id="home" aria-label="Back to today's plan">${icon('back')}</button>
         <h1 class="cg-header-title">Break</h1>
+        ${chat.keyHTML()}
       </header>
       <main class="cg-content sc-main">
         <div class="cg-card sc-center sc-break">
@@ -440,8 +389,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
         </div>
       </main>`;
     const bc = root.querySelector('#bc');
-    const liveLeft = (major) => tracker.setLive({ view: 'break', title: 'Break', lesson: '', sub: '', stage: '', pos: '',
-      detail: left > 0 ? `${mmss(left)} of break left` : 'Break is over — hasn\'t tapped "next" yet' }, major);
+    const liveLeft = (major) => tracker.setLive({ view: 'break', title: 'Break', lesson: '', sub: '', stage: '',
+      detail: left > 0 ? 'On break' : 'Break is over — hasn\'t tapped "next" yet', pos: left > 0 ? `${mmss(left)} left` : '' }, major);
     liveLeft(true);
     const t = setInterval(() => {
       left -= 1; bc.textContent = mmss(left); liveLeft(left <= 0);
@@ -449,6 +398,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
     }, 1000);
     cleanups.push(() => clearInterval(t));
     root.querySelector('#home').onclick = () => go({ name: 'home' });
+    chat.wire(root);
     root.querySelector('#skip').onclick = () => { patchDay({ breaks: { [step.id]: true } }); nextStep(); };
   }
 
@@ -488,6 +438,6 @@ export function startStudent(root, { store, sid, onSignOut }) {
   }
 
   return {
-    destroy() { clean(); tracker.destroy(); document.body.classList.remove('cg-has-island'); unsubs.forEach((u) => { try { u && u(); } catch {} }); },
+    destroy() { clean(); chat.destroy(); tracker.destroy(); document.body.classList.remove('cg-has-island'); unsubs.forEach((u) => { try { u && u(); } catch {} }); },
   };
 }

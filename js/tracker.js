@@ -3,6 +3,8 @@
 //   • on a video: the video is actually playing and he answered the last "Still there?" check, or
 //   • on reading/quiz screens: he has tapped or typed in the last 90 seconds.
 // Everything is saved to the day's record every 15 seconds, and when he leaves the app.
+// The activity log (students/{uid}/log/{date}.entries[] = { t, k, d }) records every screen, every time the clock
+// starts or stops and why, leaving/returning, flags, video and quiz events. The master exports it for Claude (log-export.js).
 
 import { inc, union } from './store.js';
 import { flash, isFlashing } from './ui.js';
@@ -10,23 +12,36 @@ import { todayKey } from './curriculum.js';
 
 export function createTracker(store, sid, rules) {
   let ctx = { mode: 'off' };          // { mode: 'video'|'active'|'off', stepId, subject, lessonKey }
-  let videoOK = false;                // set by the video player each second
+  let videoOK = false, videoWhy = '';  // set by the video player each second (why = reason it isn't counting)
   let lastInput = Date.now();
   let idleFlagged = false;
+  // Limits for the screen he's on (set by student.js / quiz.js through screen()):
+  //   cap = most seconds that can count here · noCount = nothing counts (e.g. waiting out a quiz retry)
+  let scr = { cap: 0, sec: 0, noCount: false, capped: false, label: '' };
+  let held = false;                   // the chat sheet is open: the clock pauses
   let leftAt = null;
   let day = {};                       // latest saved day record (kept fresh by the caller)
   let pending = { sec: 0, open: 0, steps: {}, subj: {}, lessons: {}, flags: {}, events: [] };
   const listeners = new Set();
 
+  // ── Activity log ──
+  let logBuf = [], logCount = 0;
+  const dur = (sec) => (sec < 60 ? `${sec}s` : sec < 3600 ? `${Math.floor(sec / 60)}m ${sec % 60}s` : `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`);
+  function log(k, d) { if (logCount++ < 6000) logBuf.push({ t: Date.now(), k, d: String(d).slice(0, 300) }); }
+  const device = /iPad|Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1 ? 'iPad' : /iPhone/.test(navigator.userAgent) ? 'iPhone' : 'a browser';
+  log('app', `opened on ${device}${navigator.standalone ? ' (Home Screen app)' : ''}`);
+
   // ── Live status for the master's "right now" card (students/{uid}/meta/live) ──
   // view/title/lesson/sub/stage/detail/pos are plain text set by the student screens (see student.js).
   let live = { view: 'home', title: '', lesson: '', sub: '', stage: '', detail: '', pos: '' };
   let session = { start: Date.now(), open: 0, focus: 0 };
-  let lastCounting = false, liveDirty = true, lastLiveWrite = 0, liveTimer = null, dead = false;
+  let lastCounting = false, liveDirty = true, lastLiveWrite = 0, liveTimer = null, dead = false, lastWhere = '';
   function writeLive(extra = {}) {
     if (dead) return Promise.resolve();
     if (liveTimer) { clearTimeout(liveTimer); liveTimer = null; }
     lastLiveWrite = Date.now(); liveDirty = false;
+    const where = [live.title, live.lesson, live.stage].filter(Boolean).join(' › ') + (live.detail ? ` — ${live.detail}` : '');
+    if (where !== lastWhere) { lastWhere = where; log('screen', where); }
     return store.saveLive(sid, { ...live, at: Date.now(), counting: lastCounting, flashing: isFlashing(),
       visible: document.visibilityState === 'visible', sessionStart: session.start, sessionOpen: session.open, sessionFocus: session.focus, ...extra })
       .catch(() => { liveDirty = true; });
@@ -40,9 +55,23 @@ export function createTracker(store, sid, rules) {
     if (major && !liveTimer) liveTimer = setTimeout(writeLive, Math.max(300, 1500 - (Date.now() - lastLiveWrite)));
   }
 
+  // Why the clock isn't running right now (for the log).
+  function why() {
+    if (ctx.mode === 'off') return 'not in a study step';
+    if (document.visibilityState !== 'visible') return 'app not on screen';
+    if (held) return 'chat open';
+    if (isFlashing()) return 'red alert on screen';
+    if (ctx.mode === 'video') return videoWhy || 'video not playing';
+    if (scr.noCount) return 'waiting out the quiz retry timer';
+    if (scr.capped) return `time limit reached (${scr.label})`;
+    return `no taps for ${rules.idleSec}s`;
+  }
+  let clockOn = null, clockWhy = '', clockSince = Date.now();
+
   const counting = () => {
-    if (ctx.mode === 'off' || document.visibilityState !== 'visible' || isFlashing()) return false;
+    if (ctx.mode === 'off' || held || document.visibilityState !== 'visible' || isFlashing()) return false;
     if (ctx.mode === 'video') return videoOK;
+    if (scr.noCount || scr.capped) return false;
     return Date.now() - lastInput < rules.idleSec * 1000;
   };
 
@@ -52,6 +81,7 @@ export function createTracker(store, sid, rules) {
   function flag(type, note = '') {
     pending.flags[type] = (pending.flags[type] || 0) + 1;
     pending.events.push({ t: Date.now(), type, step: ctx.stepId || '', note });
+    log('flag', `${type}${note ? ` (${note})` : ''}`);
   }
 
   // Away time. iOS can fire "hidden" late or more than once, so the leave moment is the earlier of
@@ -62,10 +92,12 @@ export function createTracker(store, sid, rules) {
     if (ctx.mode === 'off' || leftAt != null) return;
     leftAt = Math.min(Date.now(), lastVisibleBeat + 1000);
     flag('leftApp');
+    log('app', 'left the app');
   }
   function cameBack(fromTs) {
     const away = Math.max(0, Math.round((Date.now() - fromTs) / 1000));
-    if (away > 600) session = { start: Date.now(), open: 0, focus: 0 };   // gone 10+ minutes = a new session
+    log('app', `came back after ${dur(away)} away`);
+    if (away > 600) { session = { start: Date.now(), open: 0, focus: 0 }; log('app', 'new session (away 10+ minutes)'); }   // gone 10+ minutes = a new session
     leftAt = null;
     lastVisibleBeat = Date.now();
     if (ctx.mode !== 'off' && away >= 3) {
@@ -88,15 +120,27 @@ export function createTracker(store, sid, rules) {
     }
     const on = counting();
     lastCounting = on;
+    const reason = on ? '' : why();
+    if (on !== clockOn || reason !== clockWhy) {
+      const ran = dur(Math.round((Date.now() - clockSince) / 1000));
+      if (clockOn !== null) log('clock', on ? `running (stopped ${ran}: ${clockWhy})` : `stopped: ${reason}${clockOn ? ` (ran ${ran})` : ''}`);
+      clockOn = on; clockWhy = reason; clockSince = Date.now();
+    }
     if (document.visibilityState === 'visible') { pending.open += 1; session.open += 1; }
     if (on) session.focus += 1;
     if (Date.now() - lastLiveWrite > (liveDirty ? 10000 : 30000)) writeLive();
+    if (on && ctx.mode === 'active' && scr.cap && ++scr.sec >= scr.cap) {
+      scr.capped = true;
+      flag('stalled', scr.label);
+      setLive({ pos: 'Time limit reached on this screen — clock stopped' }, true);
+      flash('Time\'s up on this screen', 'Your clock stopped. Do the next step to start it again.', 'OK');
+    }
     if (on) {
       pending.sec += 1;
       if (ctx.stepId) pending.steps[ctx.stepId] = (pending.steps[ctx.stepId] || 0) + 1;
       if (ctx.subject) pending.subj[ctx.subject] = (pending.subj[ctx.subject] || 0) + 1;
       if (ctx.lessonKey) pending.lessons[ctx.lessonKey] = (pending.lessons[ctx.lessonKey] || 0) + 1;
-    } else if (ctx.mode === 'active' && document.visibilityState === 'visible' && !isFlashing()
+    } else if (ctx.mode === 'active' && document.visibilityState === 'visible' && !isFlashing() && !held && !scr.noCount && !scr.capped
       && !idleFlagged && Date.now() - lastInput >= rules.idleSec * 1000) {
       idleFlagged = true;
       flag('idle');
@@ -115,6 +159,7 @@ export function createTracker(store, sid, rules) {
   let flushing = false;
   async function flush() {
     if (flushing) return;
+    if (logBuf.length) { const batch = logBuf.splice(0); store.saveLog(sid, todayKey(), batch).catch(() => { logBuf.unshift(...batch); }); }
     const p = pending;
     const hasData = p.sec || p.open || Object.keys(p.flags).length;
     pending = { sec: 0, open: 0, steps: {}, subj: {}, lessons: {}, flags: {}, events: [] };
@@ -146,15 +191,20 @@ export function createTracker(store, sid, rules) {
   }
 
   return {
-    set(next) { if (ctx.lessonKey !== next.lessonKey || ctx.stepId !== next.stepId) flush(); ctx = { mode: 'off', ...next }; lastInput = Date.now(); },
+    set(next) { if (ctx.lessonKey !== next.lessonKey || ctx.stepId !== next.stepId) flush(); ctx = { mode: 'off', ...next }; lastInput = Date.now(); this.screen(); },
     off() { ctx = { mode: 'off' }; videoOK = false; },
-    setVideoOK(ok) { videoOK = ok; },
+    // A new screen inside the current step: { cap: seconds, noCount: true, label: 'Learn page' }. Resets the screen's count.
+    screen(o = {}) { scr = { cap: o.cap || 0, sec: 0, noCount: !!o.noCount, capped: false, label: o.label || '' }; lastInput = Date.now(); idleFlagged = false; },
+    hold(on) { held = !!on; if (!on) lastInput = Date.now(); },
+    isHeld: () => held,
+    setVideoOK(ok, reason = '') { videoOK = ok; videoWhy = ok ? '' : reason; },
+    log,
     setDay(d) { day = d || {}; },
     setLive,
     stepSec,
     flag,
     flush,
     onTick(fn) { listeners.add(fn); return () => listeners.delete(fn); },
-    destroy() { clearInterval(timer); clearInterval(flushTimer); flush(); writeLive({ visible: false }); dead = true; },
+    destroy() { log('app', 'closed / signed out'); clearInterval(timer); clearInterval(flushTimer); flush(); writeLive({ visible: false }); dead = true; },
   };
 }

@@ -25,7 +25,10 @@ js/store.js           data layer: Firebase adapter + localStorage demo adapter (
 js/tracker.js         focused-time + on-app meter, red flags, 15s flush, live "right now" status (setLive)
 js/video.js           YouTube IFrame API wrapper: no-skip, speed cap, "Still watching?" checks, pause nag
 js/student.js         student screens: home plan → blocks (Watch → Learn → Quiz → Real life) → breaks → fact videos
-js/quiz.js            graded quiz (anti-cheat lock, review, retry wait) + the question widget practice reuses
+js/quiz.js            graded quiz (anti-cheat lock, review, retry wait, resume mid-quiz) + the question widget practice reuses
+js/home.js            student home screen (plan, courses, messages row)
+js/chat.js            master ↔ student messages + nudges (student sheet pauses his clock; master Chat tab)
+js/log-export.js      master's "Activity log for Claude" export (instructions + totals + lessons + every logged event)
 js/master.js          master screens: Overview / Lessons / Settings
 js/curriculum.js      merges content + master overrides; lesson stage + day status logic
 js/practice.js        endless algebra practice generators (biology reuses quiz banks)
@@ -51,6 +54,10 @@ students/{uid}/lessons/{key}       { videos{id:{max,dur,done}}, learnDone, quiz{
 students/{uid}/days/{YYYY-MM-DD}   { activeSec, openSec, steps{A1..F2:sec}, bySubject{}, blocksDone{}, breaks{}, factsDone{}, factPick{}, factProg{}, flags{}, events[], practice{}, lastSeen, lastStep, lastLesson }
 students/{uid}/meta/state          { factIdx }
 students/{uid}/meta/live           { view, title, lesson, sub, stage, detail, pos, at, visible, counting, flashing, sessionStart, sessionOpen, sessionFocus }
+students/{uid}/meta/chat           { masterRead, studentRead }   (time of the last message each side has seen)
+students/{uid}/chat/{id}           { from: 'master'|'student', kind: 'msg'|'nudge', text, at }
+students/{uid}/log/{YYYY-MM-DD}    { entries: [{ t, k, d }] }   (activity log; read only on export, never watched)
+lessons/{key} also holds quizRun { at, graded, i, right, qs } (a quiz in progress) and realDraft (unsent real-life text)
 ```
 
 ## Testing
@@ -58,6 +65,8 @@ students/{uid}/meta/live           { view, title, lesson, sub, stage, detail, po
 - `python3 tests/e2e_day.py` sets 10-minute blocks and runs block → break → block → fact video → biology.
 - Both need Playwright with a browser. WebKit is preferred: `p.webkit.launch()`. Screenshots go to `tests/screens/`.
 - Syntax check: `for f in js/*.js content/*.js; do node --check $f; done`.
+- Demo mode can't catch Firestore-only problems (indexes, rules). Never sort a query by `documentId()` descending: it needs an index
+  Firestore doesn't create, and the read fails silently (the 2026-10-04 "no study days" bug). Plain reads or ordinary fields only.
 
 ## Releases
 When shipping a zip to the owner, number it and always go up (`study-coach-v2.zip`, v3, …). Never reuse a number.

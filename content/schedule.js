@@ -28,4 +28,9 @@ export default {
   attentionReplySec: 15,    // seconds he has to tap before it counts as missed
   pausedNagSec: 30,         // paused this long on a video → red flash
   idleSec: 90,              // no taps this long on quiz/reading screens → time stops counting
+  // Time limits per screen (owner request): past these the clock stops until he moves on, and you get a "stalled" flag.
+  capLearnMin: 10,          // the Learn page
+  capRealMin: 10,           // writing the real-life answer
+  capQuestionMin: 3,        // one quiz or practice question
+  capScreenSec: 90,         // in-between screens: quiz start, quiz result, "lesson complete"
 };

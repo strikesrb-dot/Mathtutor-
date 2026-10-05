@@ -59,6 +59,19 @@ and khanacademy.org/science/hs-bio if needed.
 - Failed reads now pass the error code to the callback. The master Overview shows a "Some of his data didn't load" card instead of zeros.
 - Demo-mode tests can't catch Firestore index or rule errors. When the master looks empty, open `?debug=1`. "days FAILED: …" means a read error.
 
+## Added 2026-10-05 (owner requests)
+- Time limits per screen (schedule.js caps): Learn 10 min, real-life 10, one question 3, in-between screens 90 s. After that the clock
+  stops and a `stalled` flag is raised. Replaying video he already watched doesn't count (except the review after a failed quiz). Waiting
+  out the quiz retry doesn't count. The tracker's `screen()` sets the limits; `hold()` pauses the clock while chat is open.
+- Resume: a quiz in progress is saved as `quizRun` (same questions, same spot; closing the app can't get him a fresh quiz). The real-life
+  draft saves as he types. The video spot saves when the app hides.
+- Chat + nudge (js/chat.js): master Chat tab and "Nudge him"/"Message him" on the Overview. The student sees a sheet (his clock pauses)
+  from the chat key in the header, the break screen, or the home row. A nudge shows as the red alert with a beep.
+- Activity log (tracker `log()`, js/log-export.js): every screen, clock start/stop with the reason, video, quiz answers with seconds and
+  the pick, flags, chat. Saved per day in `log/{date}`. Master Overview → "Activity log for Claude" → Copy / Share / Download. The
+  export starts with instructions so Claude analyzes it with no extra prompt.
+- Student home screen moved to js/home.js (student.js was past 500 lines).
+
 ## Lesson order is forward-only (owner request 2026-10-04)
 - He can't go back to Watch or Learn once he has moved past them. That was the loophole: rewatching videos filled block time without doing the quiz.
 - The only way back is the review after a failed quiz. After 60 s of rewatching he's sent straight back to the quiz.

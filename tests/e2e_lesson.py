@@ -45,15 +45,26 @@ try:
     page.clock.run_for(16_000)
     print('missed check → flash:', bool(page.query_selector('.sc-flash'))); page.click('.sc-flash button')
     # watch every video of the lesson
+    first = True
     while page.query_selector('#nextVid'):
       page.evaluate('window.__players.at(-1).playVideo()')
       for i in range(700):
         tick(page)
         if not page.eval_on_selector('#nextVid', 'e=>e.disabled'): break
+      if first:   # replay the video he just finished: the clock must not move
+        first = False
+        page.click('.sc-vids .cg-chip[data-i="0"]'); page.clock.run_for(1500)
+        page.evaluate('window.__players.at(-1).playVideo()'); before = page.inner_text('#clockT')
+        for i in range(8): tick(page)
+        print('replay of a finished video counted:', page.eval_on_selector('#clock', 'e=>e.classList.contains("on")'), '| clock', before, '->', page.inner_text('#clockT'))
       page.click('#nextVid'); page.clock.run_for(1500)
     print('stage now:', page.inner_text('.sc-stages').replace('\n', ' '))
     print('can\'t go back to videos from Learn:', page.eval_on_selector('.sc-stages [data-stage=watch]', 'e=>e.disabled'))
-    for i in range(45): page.touchscreen.tap(5, 400); page.clock.run_for(1000)
+    for i in range(11):   # keep tapping for 11 minutes: the clock must stop at 10
+      page.touchscreen.tap(5, 400); page.clock.run_for(60_000)
+      if page.query_selector('.sc-flash'): break
+    print('Learn time limit:', page.inner_text('.sc-flash h2') if page.query_selector('.sc-flash') else 'NO ALERT'); page.click('.sc-flash button')
+    page.clock.run_for(2000); print('clock after the limit:', 'counting' if page.eval_on_selector('#clock', 'e=>e.classList.contains("on")') else 'stopped')
     page.click('#gotIt'); page.wait_for_selector('#start')
     answers = page.evaluate("import('/content/algebra/index.js').then(m=>{const o={};m.default.units.forEach(u=>u.lessons.forEach(l=>l.quiz.forEach(q=>o[q.q]=q.c[0])));return o})")
     def take_quiz(wrong_first):
@@ -68,7 +79,19 @@ try:
         if qn < wrong_first and page.query_selector('.opt[aria-checked="true"]'): revealed = True
         page.click('#nx')
       return revealed
-    revealed = take_quiz(2)
+    def answer(wrong):
+      qt = page.inner_text('.q'); right = answers.get(qt); opts = page.query_selector_all('.opt')
+      if right is None: opts[0].click()
+      else: [o for o in opts if (o.inner_text() == right) != wrong][0].click()
+      hidden = wrong and not page.query_selector('.opt[aria-checked="true"]')
+      page.click('#nx'); return hidden
+    page.evaluate("document.getElementById('start').scrollIntoView({block:'center'})"); page.click('#start')
+    page.clock.run_for(2000); print('live (quiz):', live(page))
+    revealed = not all([answer(True), answer(True)]); answer(False)
+    q4 = page.inner_text('.q')
+    page.reload(); page.wait_for_selector('#go'); page.click('#go'); page.wait_for_selector('.sc-qtop'); page.clock.run_for(1500)
+    print('quiz after the app closed:', page.inner_text('.sc-qtop').split('·')[0].strip(), '| same question as before:', page.inner_text('.q') == q4)
+    for qn in range(7): answer(False)
     print('attempt 1:', page.inner_text('.sc-result h3'), '| right answer revealed on a miss:', revealed)
     page.click('#revWatch'); page.wait_for_selector('.video-frame'); page.clock.run_for(1500)
     print('failed quiz opens review (rewatch allowed):', page.eval_on_selector('.sc-stages [data-stage=watch]', 'e=>e.getAttribute("aria-pressed")') == 'true')
@@ -90,7 +113,7 @@ try:
     print('next lesson:', page.inner_text('.sc-lesson-head h2'))
     # The master on a second tab (same browser storage, like a second device) sees where he is right now.
     page.clock.run_for(3000)
-    m = ctx.new_page(); m.goto('http://localhost:8765/index.html'); m.click('[data-role=master]'); m.wait_for_selector('#liveCard')
+    m = ctx.new_page(); m.on('pageerror', lambda e: errs.append('MASTER PAGEERR ' + str(e))); m.goto('http://localhost:8765/index.html'); m.click('[data-role=master]'); m.wait_for_selector('#liveCard')
     print('master live card (studying):', m.inner_text('#liveCard').replace('\n', ' | '))
     page.evaluate("Object.defineProperty(document,'visibilityState',{value:'hidden',configurable:true}); document.dispatchEvent(new Event('visibilitychange'))")
     for i in range(30):
@@ -100,6 +123,36 @@ try:
     print('master today:', m.inner_text('.sc-stats').replace('\n', ' | '))
     print('flags:', m.inner_text('.flags').replace('\n', ' | '))
     shot(m, '13-master')
+    def until(fn, n=40):
+      for i in range(n):
+        try:
+          if fn(): return True
+        except Exception: pass
+        time.sleep(0.1)
+      return False
+    page.evaluate("Object.defineProperty(document,'visibilityState',{value:'visible',configurable:true}); document.dispatchEvent(new Event('visibilitychange'))")
+    if page.query_selector('.sc-flash'): page.click('.sc-flash button')
+    m.click('#msgBtn'); m.wait_for_selector('.sc-composer input')
+    m.fill('.sc-composer input', 'Salam, how is it going?'); m.click('.sc-composer button[type=submit]')
+    print('student gets the message:', until(lambda: 'how is it going' in page.inner_text('.cg-toast-msg')))
+    page.click('[data-chat-open]'); page.wait_for_selector('.sc-chat-sheet.is-open'); page.clock.run_for(3000)
+    print('clock while chat is open:', 'counting' if page.eval_on_selector('#clock', 'e=>e.classList.contains("on")') else 'paused')
+    time.sleep(0.7); shot(page, '15a-chat-open')
+    page.fill('.sc-chat-sheet .sc-composer input', 'Alhamdulillah, on the quiz now'); page.press('.sc-chat-sheet .sc-composer input', 'Enter')
+    print('master sees the reply:', until(lambda: 'on the quiz now' in m.inner_text('.sc-chat-box')))
+    print('master sees "Seen":', until(lambda: 'Seen' in m.inner_text('.sc-chat-box')))
+    m.click('#nudgeChat')
+    print('nudge pops up on his screen:', until(lambda: page.inner_text('.sc-flash h2') == 'Your brother nudged you'))
+    shot(page, '14-student-nudge'); page.click('.sc-flash button')
+    shot(page, '15-student-chat'); shot(m, '16-master-chat')
+    # export the activity log from the master view
+    page.clock.run_for(16_000)   # let the student's app save its log (every 15 s)
+    m.click('.sc-tabs [data-t=overview]'); m.wait_for_selector('#logBtn'); m.click('#logBtn')
+    m.wait_for_selector('.sc-log-sheet.is-open'); m.click('.sc-log-range [data-r=today]')
+    until(lambda: 'END OF LOG' in m.eval_on_selector('#logText', 'e=>e.value'), 50)
+    txt = m.eval_on_selector('#logText', 'e=>e.value'); open(f'{SP}/sample-log.txt', 'w').write(txt)
+    kinds = sorted(set(l.split()[1] for l in txt.split('\n') if len(l) > 10 and l[2] == ':' and l[5] == ':'))
+    print('log export:', m.inner_text('#logStat'), '| kinds:', ' '.join(kinds))
     b.close()
 finally:
   srv.terminate()

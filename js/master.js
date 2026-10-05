@@ -5,6 +5,8 @@ import { buildCurriculum, lessonStage, currentLesson, todayKey, dayStatus, video
 import { esc, hm, toast, parseYouTubeId, icon, refreshSegs, bar } from './ui.js';
 import { STUDENT_NAME } from './config.js';
 import factsDefault from '../content/facts.js';
+import { masterChat } from './chat.js';
+import { openLogSheet, closeLogSheet } from './log-export.js';
 
 const FLAG_LABEL = {
   leftApp: 'Left the app',
@@ -14,10 +16,11 @@ const FLAG_LABEL = {
   skipTry: 'Tried to skip ahead',
   videoError: 'A video wouldn\'t play',
   manyTries: 'Passed a quiz only after 3+ tries',
+  stalled: 'Stalled on a screen (time limit hit)',
 };
 const STAGE_LABEL = { watch: 'Watching', learn: 'Reading', quiz: 'Quiz', real: 'Real-life answer', done: 'Done' };
 const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fun video 1', B1: 'Biology · Block 1', B2: 'Biology · Block 2', F2: 'Fun video 2', X: 'Extra practice' };
-const TABS = [['overview', 'Overview'], ['lessons', 'Lessons'], ['settings', 'Settings']];
+const TABS = [['overview', 'Overview'], ['lessons', 'Lessons'], ['chat', 'Chat'], ['settings', 'Settings']];
 
 export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStudent }) {
   const S = { settings: {}, lessons: {}, days: {}, live: {}, err: {} };   // err = data that failed to load
@@ -34,6 +37,13 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     root.innerHTML = `<main class="cg-content sc-main"><div class="cg-card"><h2 class="cg-title2">One more setup step</h2><p class="cg-text">Put your brother's User UID in <code>js/config.js</code> as <code>STUDENT_UID</code>.</p></div></main>`;
     return { destroy() {} };
   }
+  // Created before the data watchers: in demo mode they draw the screen at once, and the tab label asks chat for unread.
+  const chat = masterChat({ store, sid, onNew: (fresh) => {
+    if (tab === 'chat') return;
+    const m = fresh[fresh.length - 1];
+    toast(`${STUDENT_NAME}: ${m.text}`, { action: () => { tab = 'chat'; render(); window.scrollTo(0, 0); }, label: 'Open', time: 7000 });
+    badge();
+  } });
   let rendered = false;
   const have = { l: false, d: false };
   const gate = (k) => { have[k] = true; if (!rendered && have.l && have.d) { rendered = true; render(); } };
@@ -46,8 +56,10 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   const liveTimer = setInterval(() => { if (tab === 'overview') softRender(); }, 30000);
   const cardTimer = setInterval(updateLive, 5000);   // keeps "on the app now" / "last seen" honest between saves
 
-  // Don't wipe the settings form while you're typing in it.
-  function softRender() { if (tab !== 'settings') render(); }
+  // Don't wipe the settings form or a half-typed message while you're typing.
+  function softRender() { if (tab !== 'settings' && tab !== 'chat') render(); else badge(); }
+  function tabLabel(t, label) { const n = t === 'chat' ? chat.unread() : 0; return n ? `${label} · ${n}` : label; }
+  function badge() { const b = root.querySelector('.sc-tabs [data-t=chat]'); if (b) { b.textContent = tabLabel('chat', 'Chat'); refreshSegs(); } }
 
   function render() {
     const scrollY = window.scrollY;
@@ -56,7 +68,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
         <h1 class="cg-header-title">Master view<small>${esc(STUDENT_NAME)}'s study coach${isDemo ? ' · demo' : ''}</small></h1>
       </header>
       <main class="cg-content sc-main">
-        <div class="cg-seg sc-tabs" role="group" aria-label="Section">${TABS.map(([t, label]) => `<button type="button" data-t="${t}" aria-pressed="${t === tab}">${label}</button>`).join('')}</div>
+        <div class="cg-seg sc-tabs" role="group" aria-label="Section">${TABS.map(([t, label]) => `<button type="button" data-t="${t}" aria-pressed="${t === tab}">${tabLabel(t, label)}</button>`).join('')}</div>
         <div id="mbody"></div>
       </main>`;
     root.querySelectorAll('.sc-tabs > button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.t) return; tab = b.dataset.t; render(); window.scrollTo(0, 0); }; });
@@ -64,6 +76,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     if (tab === 'overview') overview(body);
     if (tab === 'lessons') lessons(body);
     if (tab === 'settings') settings(body);
+    if (tab === 'chat') { chat.panel(body); badge(); }
     refreshSegs();
     window.scrollTo(0, scrollY);
   }
@@ -90,6 +103,9 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       ${failed.length ? `<div class="cg-card sc-notice"><p class="cg-headline">Some of his data didn't load</p>
         <p class="cg-meta">${failed.map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(' · ')}. The numbers below may be missing. Reload; if it stays, send Claude a screenshot.</p></div>` : ''}
       <div id="liveCard">${liveCard()}</div>
+      <div class="cg-btns sc-live-btns"><button type="button" class="cg-btn cg-btn-glass" id="nudgeBtn">Nudge him</button><button type="button" class="cg-btn cg-btn-glass" id="msgBtn">Message him</button></div>
+      <div class="cg-group sc-log-row"><button type="button" class="cg-row has-icon" id="logBtn"><span class="cg-row-icon">${icon('list')}</span>
+        <span class="cg-row-text"><span class="cg-row-label">Activity log for Claude</span><span class="cg-row-sub">Every screen, clock stop and quiz answer. Export it and paste it into Claude for feedback.</span></span><span class="cg-chev"></span></button></div>
 
       <p class="cg-caption">Today</p>
       <div class="sc-stats">
@@ -132,6 +148,9 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
         ic: 'flag', label: FLAG_LABEL[e.type] || esc(e.type), sub: e.step ? STEP_LABEL[e.step] || esc(e.step) : '',
         value: new Date(e.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
       })).join('') || row({ label: 'Nothing flagged' })}</ul>`;
+    body.querySelector('#nudgeBtn').onclick = () => chat.nudge();
+    body.querySelector('#logBtn').onclick = () => openLogSheet({ store, sid, state: () => ({ cur, days: S.days, lessons: S.lessons, msgs: chat.messages() }) });
+    body.querySelector('#msgBtn').onclick = () => { tab = 'chat'; render(); window.scrollTo(0, 0); };
   }
 
   function daySub(dd) { return `${dd.openSec ? hm(dd.openSec) + ' on the app · ' : ''}${Object.keys(dd.blocksDone || {}).length}/4 blocks · ${flagSum(dd)} flags`; }
@@ -359,5 +378,5 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     }
   }
 
-  return { destroy() { clearInterval(liveTimer); clearInterval(cardTimer); unsubs.forEach((u) => { try { u && u(); } catch {} }); } };
+  return { destroy() { clearInterval(liveTimer); clearInterval(cardTimer); chat.destroy(); closeLogSheet(); unsubs.forEach((u) => { try { u && u(); } catch {} }); } };
 }
