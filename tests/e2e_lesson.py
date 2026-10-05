@@ -52,6 +52,7 @@ try:
         if not page.eval_on_selector('#nextVid', 'e=>e.disabled'): break
       page.click('#nextVid'); page.clock.run_for(1500)
     print('stage now:', page.inner_text('.sc-stages').replace('\n', ' '))
+    print('can\'t go back to videos from Learn:', page.eval_on_selector('.sc-stages [data-stage=watch]', 'e=>e.disabled'))
     for i in range(45): page.touchscreen.tap(5, 400); page.clock.run_for(1000)
     page.click('#gotIt'); page.wait_for_selector('#start')
     answers = page.evaluate("import('/content/algebra/index.js').then(m=>{const o={};m.default.units.forEach(u=>u.lessons.forEach(l=>l.quiz.forEach(q=>o[q.q]=q.c[0])));return o})")
@@ -69,10 +70,15 @@ try:
       return revealed
     revealed = take_quiz(2)
     print('attempt 1:', page.inner_text('.sc-result h3'), '| right answer revealed on a miss:', revealed)
-    page.click('#rev'); page.wait_for_selector('#gotIt')
-    for i in range(45): page.touchscreen.tap(5, 400); page.clock.run_for(1000)
-    page.click('#gotIt'); page.wait_for_selector('#start')
+    page.click('#revWatch'); page.wait_for_selector('.video-frame'); page.clock.run_for(1500)
+    print('failed quiz opens review (rewatch allowed):', page.eval_on_selector('.sc-stages [data-stage=watch]', 'e=>e.getAttribute("aria-pressed")') == 'true')
+    page.evaluate('window.__players.at(-1).playVideo()')
+    for i in range(80):
+      tick(page)
+      if page.query_selector('#start'): break
+    print('sent back to the quiz after 1 min of review:', bool(page.query_selector('#start')))
     print('locked after review:', page.eval_on_selector('#start', 'e=>e.disabled'), page.inner_text('#lockMsg'))
+    print('videos locked again once review is done:', page.eval_on_selector('.sc-stages [data-stage=watch]', 'e=>e.disabled'))
     page.clock.run_for(11_000); print('live (waiting):', live(page))
     page.clock.run_for(181_000)
     if page.query_selector('.sc-flash'): print('idle flash during wait:', page.inner_text('.sc-flash h2')); page.click('.sc-flash button')

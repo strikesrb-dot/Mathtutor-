@@ -20,7 +20,7 @@ const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fu
 const TABS = [['overview', 'Overview'], ['lessons', 'Lessons'], ['settings', 'Settings']];
 
 export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStudent }) {
-  const S = { settings: {}, lessons: {}, days: {}, live: {} };
+  const S = { settings: {}, lessons: {}, days: {}, live: {}, err: {} };   // err = data that failed to load
   let cur = buildCurriculum({});
   let tab = 'overview';
   const open = new Set();
@@ -39,10 +39,10 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   const gate = (k) => { have[k] = true; if (!rendered && have.l && have.d) { rendered = true; render(); } };
   const slow = setTimeout(() => { if (!rendered) { rendered = true; render(); } }, 6000);
   unsubs.push(() => clearTimeout(slow));
-  unsubs.push(store.watchSettings((s) => { S.settings = s; cur = buildCurriculum(s); if (rendered) softRender(); }));
-  unsubs.push(store.watchLessons(sid, (l) => { S.lessons = l || {}; rendered ? softRender() : gate('l'); }));
-  unsubs.push(store.watchDays(sid, (d) => { S.days = d || {}; rendered ? softRender() : gate('d'); }));
-  unsubs.push(store.watchLive(sid, (l) => { S.live = l || {}; updateLive(); }));
+  unsubs.push(store.watchSettings((s, err) => { S.settings = s; S.err.settings = err; cur = buildCurriculum(s); if (rendered) softRender(); }));
+  unsubs.push(store.watchLessons(sid, (l, err) => { S.lessons = l || {}; S.err.lessons = err; rendered ? softRender() : gate('l'); }));
+  unsubs.push(store.watchDays(sid, (d, err) => { S.days = d || {}; S.err.days = err; rendered ? softRender() : gate('d'); }));
+  unsubs.push(store.watchLive(sid, (l, err) => { S.live = l || {}; S.err.live = err; updateLive(); }));
   const liveTimer = setInterval(() => { if (tab === 'overview') softRender(); }, 30000);
   const cardTimer = setInterval(updateLive, 5000);   // keeps "on the app now" / "last seen" honest between saves
 
@@ -85,7 +85,10 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     const flags = d.flags || {};
     const flagTotal = flagSum(d);
 
+    const failed = Object.entries(S.err).filter(([, v]) => v);
     body.innerHTML = `
+      ${failed.length ? `<div class="cg-card sc-notice"><p class="cg-headline">Some of his data didn't load</p>
+        <p class="cg-meta">${failed.map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(' · ')}. The numbers below may be missing. Reload; if it stays, send Claude a screenshot.</p></div>` : ''}
       <div id="liveCard">${liveCard()}</div>
 
       <p class="cg-caption">Today</p>

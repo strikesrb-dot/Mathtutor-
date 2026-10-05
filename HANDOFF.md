@@ -52,6 +52,17 @@ and khanacademy.org/science/hs-bio if needed.
 - Evolution units (b07, b08) are written in neutral textbook language ("scientists explain…").
 - Some helper agents ran out of web searches; remaining units may need videos found by browsing channels (WebFetch).
 
+## Fixed 2026-10-04 — master showed "no study" although he studied
+- Cause: `watchDays` used `orderBy(documentId(), 'desc')`. That sort needs an index Firestore doesn't create by default, so the
+  read failed from v1 onward. The error handler returned `{}`, so the master saw empty days and the student's block timers and done
+  blocks reset on every reload. The writes were fine all along. Now it's a plain collection read (see the comment in store.js).
+- Failed reads now pass the error code to the callback. The master Overview shows a "Some of his data didn't load" card instead of zeros.
+- Demo-mode tests can't catch Firestore index or rule errors. When the master looks empty, open `?debug=1`. "days FAILED: …" means a read error.
+
+## Lesson order is forward-only (owner request 2026-10-04)
+- He can't go back to Watch or Learn once he has moved past them. That was the loophole: rewatching videos filled block time without doing the quiz.
+- The only way back is the review after a failed quiz. After 60 s of rewatching he's sent straight back to the quiz.
+
 ## Anti-cheat (owner request 2026-10-03)
 - Graded quizzes hide the right answer on a miss; answers show only after passing.
 - After a fail he must review (reread Learn 40 s or watch 60 s of video), then wait `retryWaitMin` (3) minutes.

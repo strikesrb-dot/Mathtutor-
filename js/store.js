@@ -128,14 +128,14 @@ async function firebaseAdapter() {
     return F.onSnapshot(q || F.collection(db, path), (snap) => {
       if (first) { first = false; mark(`${name} loaded (${snap.size})`); }
       const out = {}; snap.forEach((d) => { out[d.id] = d.data(); }); cb(out);
-    }, (err) => { mark(`${name} FAILED: ${err.code}`); console.warn('watch failed', name, err); cb({}); });
+    }, (err) => { mark(`${name} FAILED: ${err.code}`); console.warn('watch failed', name, err); cb({}, err.code || 'error'); });
   };
   const watchDoc = (name, path, cb) => {
     let first = true;
     return F.onSnapshot(F.doc(db, path), (s) => {
       if (first) { first = false; mark(`${name} loaded`); }
       cb(s.data() || {});
-    }, (err) => { mark(`${name} FAILED: ${err.code}`); cb({}); });
+    }, (err) => { mark(`${name} FAILED: ${err.code}`); console.warn('watch failed', name, err); cb({}, err.code || 'error'); });
   };
 
   return {
@@ -153,10 +153,9 @@ async function firebaseAdapter() {
     async saveLesson(sid, key, patch) { await merge(F.doc(db, `students/${sid}/lessons/${key}`), patch); },
     async resetLesson(sid, key) { await F.deleteDoc(F.doc(db, `students/${sid}/lessons/${key}`)); },
 
-    watchDays(sid, cb) {
-      const col = F.collection(db, `students/${sid}/days`);
-      return watchCol('days', null, cb, F.query(col, F.orderBy(F.documentId(), 'desc'), F.limit(60)));
-    },
+    // Plain collection read (one small doc per study day). Don't add orderBy(documentId(), 'desc') here:
+    // a descending sort on the doc ID needs an index Firestore doesn't make by default, and the read fails.
+    watchDays(sid, cb) { return watchCol('days', `students/${sid}/days`, cb); },
     async saveDay(sid, date, patch) { await merge(F.doc(db, `students/${sid}/days/${date}`), patch); },
 
     watchMeta(sid, cb) { return watchDoc('meta', `students/${sid}/meta/state`, cb); },

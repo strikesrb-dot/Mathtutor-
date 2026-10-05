@@ -50,7 +50,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
   unsubs.push(() => clearTimeout(slow));
   unsubs.push(store.watchSettings((s) => { S.settings = s; cur = buildCurriculum(s); if (rendered && view.name === 'home') render(); }));
   unsubs.push(store.watchLessons(sid, (l) => { S.lessons = l || {}; gate('l'); }));
-  unsubs.push(store.watchDays(sid, (d) => {
+  unsubs.push(store.watchDays(sid, (d, err) => {
+    if (err) toast('Couldn\'t load today\'s progress — check the Wi-Fi');
     S.days = d || {};
     tracker.setDay(day());
     if (!rendered) gate('d'); else if (view.name === 'home') render();
@@ -232,9 +233,13 @@ export function startStudent(root, { store, sid, onSignOut }) {
     const prog = S.lessons[lesson.key] || {};
     const realStage = lessonStage(lesson, prog);
     const order = STAGES.map((s) => s.key);
-    let stage = forceStage && order.indexOf(forceStage) <= order.indexOf(realStage) ? forceStage : realStage;
-    if (stage === 'done') stage = 'real';
-    const ri = order.indexOf(realStage === 'done' ? 'real' : realStage);
+    const now = realStage === 'done' ? 'real' : realStage;
+    // Forward only (owner's rule): he works the step he's on — videos, then Learn, then the quiz, then real life.
+    // The only way back is the review a failed quiz asks for (reread Learn or rewatch a video).
+    const review = now === 'quiz' && owesReview(lesson);
+    const open = (k) => k === now || (review && (k === 'watch' || k === 'learn'));
+    const stage = forceStage && open(forceStage) ? forceStage : now;
+    const ri = order.indexOf(now);
 
     body.innerHTML = `
       <div class="sc-lesson-head">
@@ -242,9 +247,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
       </div>
       <div class="cg-seg sc-stages" role="group" aria-label="Lesson steps">${STAGES.map((s) => {
         const i = order.indexOf(s.key);
-        const locked = i > ri && realStage !== 'done';
         const finished = i < ri || realStage === 'done';
-        return `<button type="button" data-stage="${s.key}" aria-pressed="${s.key === stage}" ${locked ? 'disabled' : ''}>${finished && s.key !== stage ? '✓ ' : ''}${s.label}</button>`;
+        return `<button type="button" data-stage="${s.key}" aria-pressed="${s.key === stage}" ${open(s.key) ? '' : 'disabled'}>${finished && s.key !== stage ? '✓ ' : ''}${s.label}</button>`;
       }).join('')}</div>
       <div id="stage" class="sc-stage"></div>`;
     body.querySelectorAll('.sc-stages > button:not([disabled])').forEach((b) => {
@@ -264,7 +268,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
 
   // ── Watch ──
   // After a failed quiz he must review: reread Learn (40 s) or watch 60 s of a video. Returns true if review is still owed.
-  const owesReview = (lesson) => !!(((S.lessons[lesson.key] || {}).quiz || {}).needReview);
+  function owesReview(lesson) { return !!(((S.lessons[lesson.key] || {}).quiz || {}).needReview); }
   function reviewDone(lesson) {
     if (!owesReview(lesson)) return;
     patchLesson(lesson.key, { quiz: { needReview: false } });
@@ -279,19 +283,23 @@ export function startStudent(root, { store, sid, onSignOut }) {
     // Rewatching counts as review after a failed quiz (60 seconds of real watching).
     if (owesReview(lesson)) {
       let watched = 0;
-      cleanups.push(tracker.onTick(({ counting }) => { if (counting && ++watched === 60) reviewDone(lesson); }));
+      cleanups.push(tracker.onTick(({ counting }) => {
+        if (!counting || ++watched !== 60) return;
+        reviewDone(lesson);
+        setTimeout(() => { if (view.name === 'step' && view.stage === 'watch') { clean(); view.stage = 'quiz'; view.videoIdx = null; renderStep(); } }, 0);
+      }));
     }
     const draw = () => {
       const v = lesson.videos[idx];
       const p = vprog(v.id);
       el.innerHTML = `
-        ${owesReview(lesson) ? '<div class="cg-card sc-notice"><p class="cg-headline">Review time</p><p class="cg-meta">Watch at least one minute, then go back to the quiz.</p></div>' : ''}
+        ${owesReview(lesson) ? '<div class="cg-card sc-notice"><p class="cg-headline">Review time</p><p class="cg-meta">Watch for one minute. Then you go straight back to the quiz.</p></div>' : ''}
         ${lesson.videos.length > 1 ? `<div class="cg-chips sc-vids">${lesson.videos.map((vv, i) => `
           <button type="button" class="cg-chip" data-i="${i}" aria-pressed="${i === idx}">${vprog(vv.id).done ? icon('check') : ''}${i + 1}. ${esc(vv.title)}</button>`).join('')}</div>`
           : `<p class="cg-meta sc-vid-title">${esc(v.title)}</p>`}
         <div id="player"></div>
         <p class="cg-meta sc-hint">Keep it playing and stay on this screen. A "Still watching?" button pops up sometimes — tap it fast. No skipping ahead.</p>
-        <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="nextVid" ${p.done ? '' : 'disabled'}>${idx < lesson.videos.length - 1 ? 'Next video' : 'Continue to Learn'}</button></div>`;
+        <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="nextVid" ${p.done ? '' : 'disabled'}>${owesReview(lesson) ? 'Back to the quiz' : idx < lesson.videos.length - 1 ? 'Next video' : 'Continue to Learn'}</button></div>`;
       tracker.setLive({ detail: `${owesReview(lesson) ? 'Rewatching for review · ' : ''}Video ${idx + 1} of ${lesson.videos.length}: ${v.title}`, pos: '' }, true);
       el.querySelectorAll('.sc-vids .cg-chip').forEach((b) => {
         b.onclick = () => {
@@ -302,7 +310,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
         };
       });
       const player = mountVideo(el.querySelector('#player'), {
-        id: v.id, startMax: p.max || 0, rules: cur.rules, tracker,
+        // A finished video starts over from the top (a review rewatch would otherwise begin 3 s before the end).
+        id: v.id, startMax: p.done ? 0 : (p.max || 0), rules: cur.rules, tracker,
         onTime: (t, dur, state) => tracker.setLive({ pos: videoPos(t, dur, state) }),
         onProgress: (max, dur) => patchLesson(lesson.key, { videos: { [v.id]: { max: Math.max(max, p.max || 0), dur } } }),
         onDone: () => {
@@ -314,6 +323,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       cleanups.push(() => player.destroy());
       el.querySelector('#nextVid').onclick = () => {
         player.destroy();
+        if (owesReview(lesson)) { clean(); view.stage = 'quiz'; view.videoIdx = null; return renderStep(); }
         if (idx < lesson.videos.length - 1) { idx += 1; view.videoIdx = idx; draw(); }
         else { view.videoIdx = null; advance(); }
       };
