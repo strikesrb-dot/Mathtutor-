@@ -19,7 +19,7 @@ const FLAG_LABEL = {
   stalled: 'Stalled on a screen (time limit hit)',
 };
 const STAGE_LABEL = { watch: 'Watching', learn: 'Reading', quiz: 'Quiz', real: 'Real-life answer', done: 'Done' };
-const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fun video 1', B1: 'Biology · Block 1', B2: 'Biology · Block 2', F2: 'Fun video 2', X: 'Extra practice' };
+const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fun video 1', B1: 'Biology · Block 1', B2: 'Biology · Block 2', F2: 'Fun video 2', X: 'Extra practice', G1: 'Game time 1', G2: 'Game time 2', G3: 'Game time 3' };
 const TABS = [['overview', 'Overview'], ['lessons', 'Lessons'], ['chat', 'Chat'], ['settings', 'Settings']];
 
 export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStudent }) {
@@ -118,10 +118,10 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
         <li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Goal: ${hm(goal)} of focused time</span>${bar(((d.activeSec || 0) / goal) * 100)}</span></li>
         ${d.openSec >= 60 && d.openSec >= (d.activeSec || 0) ? row({ label: 'Focus rate', sub: 'Share of his app time that counted', value: `${Math.round(((d.activeSec || 0) / d.openSec) * 100)}%` }) : ''}
         ${st.list.filter((s) => s.type !== 'break').map((s) => row({
-          ic: s.done ? 'check' : s.type === 'fact' ? 'globe' : s.subject === 'biology' ? 'biology' : 'algebra',
+          ic: s.done ? 'check' : s.type === 'fact' ? 'globe' : s.type === 'game' ? 'play' : s.subject === 'biology' ? 'biology' : 'algebra',
           cls: s.done ? 'sc-done' : '',
           label: STEP_LABEL[s.id],
-          value: s.type === 'block' ? `${Math.floor(s.sec / 60)} / ${cur.rules.blockMinutes} min` : s.done ? 'Watched' : '',
+          value: s.type === 'block' ? `${Math.floor(s.sec / 60)} / ${cur.rules.blockMinutes} min` : s.done ? (s.type === 'game' ? 'Played' : 'Watched') : '',
         })).join('')}
       </ul>
 
@@ -177,7 +177,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       <ul class="cg-group sc-live ${online ? 'is-live' : ''}">
         <li class="cg-row has-icon"><span class="cg-row-icon"><i class="sc-live-dot"></i></span>
           <span class="cg-row-text"><span class="cg-row-label">${head}</span></span>${status ? `<span class="cg-row-value">${status}</span>` : ''}</li>
-        ${row({ ic: L.view === 'break' ? 'cup' : L.view === 'fact' ? 'globe' : L.view === 'home' ? 'list' : /biology/i.test(L.title || '') ? 'biology' : 'algebra',
+        ${row({ ic: L.view === 'break' ? 'cup' : L.view === 'fact' ? 'globe' : L.view === 'game' ? 'play' : L.view === 'home' ? 'list' : /biology/i.test(L.title || '') ? 'biology' : 'algebra',
           label: esc(L.title || 'Home screen'), sub: esc([L.lesson, L.sub].filter(Boolean).join(' · ')) })}
         ${L.detail ? row({ ic: 'play', label: esc(L.stage ? `${L.stage}: ${L.detail}` : L.detail), sub: esc(L.pos || '') }) : ''}
         ${L.sessionStart ? row({ ic: 'clock', label: sessionOld ? 'Last session' : 'This session',

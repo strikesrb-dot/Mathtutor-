@@ -1,1 +1,3 @@
-{ "allow": [] }
+{ "allow": [
+  { "rule": "colour", "file": "js/games/slice.js", "why": "Slice's scene (fruit, juice, blades, score lettering) draws its own colours inside the game canvas only — the break games' exception the owner set in Mithlayn's design language, carried over when he asked for the games in Study Coach (2026-10-05)" }
+] }

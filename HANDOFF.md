@@ -71,6 +71,13 @@ and khanacademy.org/science/hs-bio if needed.
   the pick, flags, chat. Saved per day in `log/{date}`. Master Overview → "Activity log for Claude" → Copy / Share / Download. The
   export starts with instructions so Claude analyzes it with no extra prompt.
 - Student home screen moved to js/home.js (student.js was past 500 lines).
+- Game time (owner request 2026-10-05): steps G1–G3 after each break, `gameMinutes` 7. He picks Slice or Glide (can switch); the clock
+  is wall time from first opening (day.games[G].start), so leaving doesn't add time. When it runs out mid-round he finishes the round,
+  then moves on. Skip / "Back to studying" end it early. Not study time; logged as `game` events.
+  The games are ported from Repo-1 (Mithlayn), branch claude/read-handoff-plb7xv @468ed1d: `js/games/kit.js` lifts the kit functions
+  from break-play.js + break-arcade.js; `slice.js` is break-slice.js unchanged inside an ES-module wrapper; `glide.js` is mkFly's Glide
+  mode. Removed: āyāt reading between rounds. Art: assets/games/*.webp (8 sheets, ~650 KB, loaded only at game time). Font: Lilita One
+  (OFL, assets/fonts). Scene colours are allow-listed (CLAUDE.md design exception).
 
 ## Lesson order is forward-only (owner request 2026-10-04)
 - He can't go back to Watch or Learn once he has moved past them. That was the loophole: rewatching videos filled block time without doing the quiz.

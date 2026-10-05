@@ -194,3 +194,62 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-log-body { display: flex; flex-direction: column; gap: var(--cg-sp-2); padding: var(--cg-sp-2) var(--cg-inset); }
 .sc-log-body > * + * { margin-top: 0; }
 .sc-log-text { font-family: var(--cg-mono); white-space: pre; overflow: auto; }
+
+/* ── game time (js/game-time.js) and the break games (js/games/*, ported from Mithlayn's t-break.css) ──
+   The scene inside each game's canvas draws its own colours (the break games' exception); everything around it uses tokens.
+   No color-mix() here: it needs Safari 16.2 (CLAUDE.md: nothing newer than 15.4). */
+.sc-game { --bp-page: var(--cg-page); --bp-group: var(--cg-group); --bp-fill: var(--cg-fill); --bp-fill2: var(--cg-selected);
+  --bp-ink: var(--cg-ink); --bp-ink2: var(--cg-ink2); --bp-ink3: var(--cg-ink3); --bp-hair: var(--cg-hair); --bp-acc: var(--cg-accent);
+  --bp-accsoft: var(--cg-accent-soft); --bp-white: var(--cg-page); --bp-pillar: var(--cg-fill); --bp-pillaredge: var(--cg-hair-strong);
+  --bp-restbg: var(--cg-black); --bp-uif: var(--cg-ui); --bp-arf: var(--cg-ui); }
+.sc-game-stage { position: relative; height: calc(100vh - 220px); height: calc(100dvh - 220px); min-height: 380px; }
+.sc-game-stage[hidden] { display: none; }
+.sc-game-keys { justify-content: center; }
+.sc-game .bp-probe { position: absolute; width: 0; height: 0; overflow: hidden; }
+.sc-game .bp-aw { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: var(--cg-r-group); background: var(--cg-group); overflow: hidden;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; outline: none; }
+.sc-game .bp-aw[data-act="slice"] { background: var(--bp-restbg); }
+.sc-game .bp-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.sc-game .bp-hud { position: absolute; left: var(--cg-sp); right: var(--cg-sp); top: var(--cg-sp); z-index: 6; display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--cg-in-8) var(--cg-sp); pointer-events: none; }
+.sc-game .bp-pill { padding: var(--cg-in-8) var(--cg-sp); border-radius: var(--cg-r-cap); background: var(--cg-glass); box-shadow: 0 0 0 1px var(--cg-hair);
+  font: var(--cg-w-reg) var(--cg-t-min)/1.2 var(--cg-ui); color: var(--cg-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sc-game .bp-pill:empty { display: none; }
+.sc-game .bp-keybar { position: absolute; left: var(--cg-sp); right: var(--cg-sp); bottom: var(--cg-sp); z-index: 6; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--cg-sp); }
+.sc-game .bp-keybar[hidden] { display: none; }
+.sc-game .bp-btn { min-height: var(--cg-tap); min-width: var(--cg-tap); display: inline-flex; align-items: center; justify-content: center; gap: var(--cg-in-6); padding: 0 var(--cg-sp-2); border: 0; border-radius: var(--cg-r-cap);
+  background: var(--cg-fill); color: var(--cg-ink); box-shadow: 0 0 0 1px var(--cg-hair); font: var(--cg-w-med) var(--cg-t-min)/1.1 var(--cg-ui); white-space: nowrap; cursor: pointer; touch-action: manipulation; }
+.sc-game .bp-btn.on, .sc-game .bp-btn.bp-go { background: var(--cg-accent-soft); color: var(--cg-accent); box-shadow: none; font-weight: var(--cg-w-semi); }
+.sc-game :focus-visible { outline: 2px solid var(--cg-accent); outline-offset: 2px; }
+.sc-game .bp-ovl { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: var(--cg-sp-3); text-align: center;
+  background: var(--cg-glass); -webkit-backdrop-filter: var(--cg-blur); backdrop-filter: var(--cg-blur); cursor: pointer; }
+.sc-game .bp-ovl[hidden] { display: none; }
+.sc-game .bp-ovl > div { display: flex; flex-direction: column; align-items: center; gap: var(--cg-sp); max-width: 420px; }
+.sc-game .bp-ovl b { font: var(--cg-w-semi) var(--cg-t-t2)/1.2 var(--cg-ui); color: var(--cg-ink); }
+.sc-game .bp-ovl p { margin: 0; font: var(--cg-w-reg) var(--cg-t-min)/1.45 var(--cg-ui); color: var(--cg-ink2); }
+.sc-game .ba-pn { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; padding: calc(var(--bp-top, 64px) + 4px) var(--cg-sp-2) calc(var(--bp-bot, 76px) + 4px); background: var(--cg-scrim); }
+.sc-game .ba-pn[hidden] { display: none; }
+.sc-game .ba-pc { width: min(100%, 460px); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--cg-sp); padding: var(--cg-sp-2);
+  border-radius: var(--cg-r-group); background: var(--cg-glass); -webkit-backdrop-filter: var(--cg-blur); backdrop-filter: var(--cg-blur); box-shadow: var(--cg-glass-rim), var(--cg-glass-edge), var(--cg-sh-glass); color: var(--cg-ink); }
+.sc-game .ba-pc p { margin: 0; font: var(--cg-w-reg) var(--cg-t-min)/1.45 var(--cg-ui); color: var(--cg-ink2); }
+.sc-game .ba-h { font: var(--cg-w-bold) var(--cg-t-t2)/1.2 var(--cg-ui); color: var(--cg-ink); }
+.sc-game .ba-meta { display: flex; flex-wrap: wrap; gap: var(--cg-in-8); }
+.sc-game .ba-meta span { min-height: 32px; display: inline-flex; align-items: center; padding: 0 var(--cg-sp); border-radius: var(--cg-r-cap); background: var(--cg-fill); font: var(--cg-w-med) var(--cg-t-min)/1 var(--cg-ui); font-variant-numeric: tabular-nums; }
+.sc-game .ba-row { display: flex; flex-wrap: wrap; gap: var(--cg-sp); }
+.sc-game .ba-row .bp-btn.bp-go { flex: 1 1 auto; }
+.sc-game .ba-hd { display: flex; align-items: center; gap: var(--cg-sp); }
+.sc-game .ba-hd .ba-h { flex: 1; }
+.sc-game .ba-bats { display: flex; flex-direction: column; gap: var(--cg-in-8); }
+.sc-game .ba-bat { display: grid; grid-template-columns: 90px 1fr 1fr; gap: var(--cg-in-4) var(--cg-sp); align-items: center; padding: var(--cg-sp) var(--cg-sp); border: 0; border-radius: var(--cg-r-ctl);
+  background: var(--cg-fill); color: var(--cg-ink); text-align: left; cursor: pointer; font: var(--cg-w-med) var(--cg-t-min)/1.2 var(--cg-ui); }
+.sc-game .ba-bat:disabled { opacity: .5; cursor: default; }
+.sc-game .ba-bat.on { box-shadow: inset 0 0 0 2px var(--cg-accent); }
+.sc-game .ba-bat b { grid-row: 1 / 3; font: var(--cg-w-semi) var(--cg-t-body)/1.2 var(--cg-ui); }
+.sc-game .ba-bat em { grid-column: 2 / 4; font-style: normal; color: var(--cg-ink2); }
+.sc-game .ba-sw { display: block; height: 8px; border-radius: var(--cg-r-cap); background: linear-gradient(90deg, var(--c1), var(--c2)); }
+.sc-game .ba-modes { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; gap: var(--cg-in-8); padding: var(--cg-sp) var(--cg-sp-2) var(--cg-sp-2); pointer-events: none; }
+.sc-game .ba-modes[hidden] { display: none; }
+.sc-game .ba-modes .bp-btn { pointer-events: auto; }
+.sc-game .ba-mrow { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--cg-in-8); }
+.sc-game .ba-mrow .bp-btn, .sc-game .ba-blade { background: var(--cg-glass); }
+.sc-game .ba-big { font: var(--cg-w-bold) var(--cg-t-t1)/1.1 var(--cg-ui) !important; color: var(--cg-ink) !important; font-variant-numeric: tabular-nums; }
+.sc-game .ba-mrow .ba-sr:not(:focus-visible) { position: absolute; width: 1px; height: 1px; min-width: 0; padding: 0; overflow: hidden; clip-path: inset(50%); }

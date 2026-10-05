@@ -95,6 +95,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
     if (!step) return go({ name: 'home' });
     if (step.type === 'break') return renderBreak(step);
     if (step.type === 'fact') return renderFact(step);
+    if (step.type === 'game') return renderGame(step);
     if (step.type === 'extra') return renderExtra();
     return renderBlock(step);
   }
@@ -400,6 +401,16 @@ export function startStudent(root, { store, sid, onSignOut }) {
     root.querySelector('#home').onclick = () => go({ name: 'home' });
     chat.wire(root);
     root.querySelector('#skip').onclick = () => { patchDay({ breaks: { [step.id]: true } }); nextStep(); };
+  }
+
+  // ── Game time after a break (game-time.js; the games load only when he gets here) ──
+  function renderGame(step) {
+    root.innerHTML = '<div class="sc-loading"><i class="sc-spin"></i><p class="cg-meta">Loading game time…</p></div>';
+    import('./game-time.js').then(({ renderGameTime }) => {
+      if (view.name !== 'step' || view.stepId !== step.id) return;
+      renderGameTime(root, { step, rules: cur.rules, day: day(), tracker, chat, patchDay, addCleanup: (fn) => cleanups.push(fn),
+        onHome: () => go({ name: 'home' }), onDone: () => nextStep() });
+    }).catch(() => { toast('Game time didn\'t load — check the Wi-Fi'); go({ name: 'home' }); });
   }
 
   // ── Fun-fact reward video ──

@@ -91,6 +91,7 @@ export function dayStatus(rules, day = {}) {
     let done = false, sec = 0;
     if (s.type === 'block') { sec = steps[s.id] || 0; done = !!(day.blocksDone || {})[s.id]; }
     if (s.type === 'break') done = !!breaks[s.id];
+    if (s.type === 'game') done = !!((day.games || {})[s.id] || {}).done;
     if (s.type === 'fact') { sec = steps[s.id] || 0; done = !!factsDone[s.id]; }
     return { ...s, sec, need: s.type === 'block' ? need : 0, done };
   });

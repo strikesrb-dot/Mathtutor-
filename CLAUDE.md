@@ -7,6 +7,8 @@ Weekend study app for the owner's younger brother. **Student** = the brother (ph
 - Text ≥ 16, corners 8/14/26/32/capsule/circle only, one accent for state only, one `.cg-btn-strong` per screen, no `confirm()`/`alert()` (do it + Undo toast).
 - Run `node tools/check-design.mjs css/app.css js index.html --allow tools/calm-glass.allow.json` before every push; it must say clean.
 - Deliberate exception: the red "you left / missed the check" flash uses `--cg-danger` because the owner asked for a bright red alert.
+- Deliberate exception: the break games (`js/games/`, ported from the owner's Mithlayn site) draw their own colours inside the game canvas.
+  Everything around the canvas uses tokens (`.sc-game` maps the games' `--bp-*` colours to `--cg-*`). Allow-listed in `tools/calm-glass.allow.json`.
 
 ## Hard constraints
 - **No build step.** Plain ES modules loaded by `index.html`. No bundler, no npm runtime deps, no TypeScript. Netlify serves the repo as-is.
@@ -29,6 +31,8 @@ js/quiz.js            graded quiz (anti-cheat lock, review, retry wait, resume m
 js/home.js            student home screen (plan, courses, messages row)
 js/chat.js            master ↔ student messages + nudges (student sheet pauses his clock; master Chat tab)
 js/log-export.js      master's "Activity log for Claude" export (instructions + totals + lessons + every logged event)
+js/game-time.js       7-minute game time after each break (Slice or Glide; a round in progress is finished first)
+js/games/             kit.js (the break games' kit) + slice.js + glide.js — ported from Repo-1 (Mithlayn), art in assets/games, font in assets/fonts
 js/master.js          master screens: Overview / Lessons / Settings
 js/curriculum.js      merges content + master overrides; lesson stage + day status logic
 js/practice.js        endless algebra practice generators (biology reuses quiz banks)

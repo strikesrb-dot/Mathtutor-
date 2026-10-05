@@ -27,12 +27,16 @@ try:
     print('banner visible:', page.is_visible('#blockDone'), page.inner_text('#clockT'))
     shot(page,'20-block-done')
     page.click('#takeBreak'); page.wait_for_selector('.break-clock'); shot(page,'21-break')
-    page.click('#skip'); page.wait_for_selector('.sc-lesson-head'); print('A2 lesson:', page.inner_text('.sc-lesson-head h2'))
+    page.click('#skip'); page.wait_for_selector('[data-game=slice]'); print('game time after break 1:', page.inner_text('#gtLeft'))
+    page.click('[data-game=slice]'); page.wait_for_selector('.bp-aw[data-act=slice]'); shot(page,'21b-game-time')
+    page.clock.run_for(421_000)   # 7 minutes in the Slice menu (no round going): game time ends by itself
+    page.wait_for_selector('.sc-lesson-head'); print('A2 lesson (after 7 min of game time):', page.inner_text('.sc-lesson-head h2'))
     page.clock.run_for(500); tick(page, 610); page.evaluate('window.__ytDur=100'); page.click('#takeBreak')
     page.wait_for_selector('.fact-card'); print('fact:', page.inner_text('.fact-card h2')); page.clock.run_for(500)
     tick(page, 100); shot(page,'22-fact')
     print('fact done enabled:', not page.eval_on_selector('#done','e=>e.disabled'))
     page.click('#done'); page.wait_for_selector('.break-clock'); page.click('#skip')
+    page.wait_for_selector('#gtSkip'); page.click('#gtSkip')   # game time 2: skipped
     page.wait_for_selector('.sc-lesson-head'); print('B1:', page.inner_text('.cg-header-title'), '|', page.inner_text('.sc-lesson-head h2')); shot(page,'23-bio')
     page.click('#home'); page.wait_for_selector('.sc-plan'); shot(page,'24-home-progress')
     print(page.inner_text('.sc-plan').replace('\n',' / '))

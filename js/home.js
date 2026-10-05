@@ -14,6 +14,7 @@ function pctOf(subject, lessons) { return subject.lessons.length ? (doneCount(su
 function nextLabel(s) {
   if (s.type === 'block') return `Next: ${SUBJECT[s.subject].name}`;
   if (s.type === 'break') return 'Break time';
+  if (s.type === 'game') return 'Game time';
   return 'Reward video time';
 }
 
@@ -33,6 +34,7 @@ export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, 
     if (s.type === 'block') { ic = SUBJECT[s.subject].icon; label = `${SUBJECT[s.subject].name} · Block ${blockNo[s.id]}`; sub = s.done ? 'Done' : `${Math.floor(s.sec / 60)} of ${cur.rules.blockMinutes} min`; }
     if (s.type === 'break') { ic = 'cup'; label = `Break · ${cur.rules.breakMinutes} min`; sub = s.done ? 'Done' : ''; }
     if (s.type === 'fact') { ic = 'globe'; label = 'Did you know? video'; sub = s.done ? 'Done' : 'Reward video'; }
+    if (s.type === 'game') { ic = 'play'; label = `Game time · ${cur.rules.gameMinutes} min`; sub = s.done ? 'Done' : 'Slice or Glide'; }
     return `<li class="cg-row has-icon sc-step ${isCur ? 'sc-current' : ''}" ${isCur ? 'aria-current="step"' : ''}>
       <span class="cg-row-icon">${icon(ic)}</span>
       <span class="cg-row-text"><span class="cg-row-label">${label}</span>${sub ? `<span class="cg-row-sub">${sub}</span>` : ''}
