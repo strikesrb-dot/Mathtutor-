@@ -83,7 +83,9 @@ and khanacademy.org/science/hs-bio if needed.
   (TUTOR_MODEL env overrides). The function verifies the Firebase ID token (RS256 vs Google's certs, aud/iss/exp) and allows only
   MASTER_UID / STUDENT_UID. Rules (netlify/lib/tutor-prompt.mjs): find what confuses him, teach with its own different example, check
   with a mini-question, never give/confirm/eliminate answers, never write his real-life answer, refuse "just tell me" plainly, short
-  plain replies, motivation, safety (988/911). The app never sends the right answer. His clock pauses while the tutor is open
+  plain replies, motivation, safety (988/911). 2026-10-05 (research-based, owner approved): under 90 words, at most 3 steps,
+  5th-6th grade reading level, no filler openers, worked example → faded example with a ? step → bare problem, a "why" question
+  about every other turn, numbered lists for steps and bullets only for unordered items (max 4). The app never sends the right answer. His clock pauses while the tutor is open
   (owner's choice). Every question/reply is in the activity log (kind "tutor").
   The API key is set in Netlify (ANTHROPIC_API_KEY); the tutor is live. 2026-10-05: replies were cut off because Sonnet 5.5 thinks
   first by default and used up max_tokens; fixed with effort low, thinking between_tools, max_tokens 1500, and phone formatting.

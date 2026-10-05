@@ -44,6 +44,9 @@ check('question context sent, marked wrong, no answer key', sent.system[1].text.
 check('model is Sonnet 5.5', sent.model === 'claude-sonnet-5-5');
 check('no up-front thinking, low effort, room to finish', sent.thinking && sent.thinking.type === 'between_tools' && sent.output_config.effort === 'low' && sent.max_tokens >= 1500);
 check('rules ask for phone formatting (lists, bold, math in backticks)', sent.system[0].text.includes('numbered list') && sent.system[0].text.includes('backticks'));
+{ const t = sent.system[0].text;
+  check('rules follow the research: under 90 words, 3 steps max, fade the help, ask why, grade 5-6, no filler', t.includes('under 90 words')
+    && t.includes('at most 3 steps') && t.includes('fade the help') && t.includes('WHY a step works') && t.includes('5th-6th grade') && t.includes('No filler openers')); }
 { let calls = 0, second = null;
   const f400 = async (url, init) => { if (url.includes('googleapis.com')) return fakeFetch(url, init); calls++; if (calls === 1) return new Response('{"error":"bad"}', { status: 400 }); second = JSON.parse(init.body); return new Response(JSON.stringify({ content: [{ type: 'text', text: 'ok' }], stop_reason: 'max_tokens' })); };
   _resetCertCache(); const r4 = await handle(req(token(), body), env, f400); const j4 = await r4.json();
