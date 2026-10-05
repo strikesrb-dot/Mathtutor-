@@ -1,15 +1,15 @@
 # Demo-mode test of the study tutor (js/tutor.js). /api/tutor is stubbed: the test sees exactly what the app sends.
-# Run on a demo copy (js/config.js firebase = null): python3 tests/e2e_tutor.py
+# Run on a demo copy (js/config.js firebase = null): python3 tests/e2e_tutor.py   (BROWSER=webkit for Safari's engine)
 import os, subprocess, time, json
 from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE); SP = os.path.join(HERE, 'screens'); os.makedirs(SP, exist_ok=True)
 srv = subprocess.Popen(['python3', '-m', 'http.server', '8772'], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
 fake = open(os.path.join(HERE, 'fake-youtube.js')).read()
-URL = 'http://localhost:8772/index.html'; errs = []; sent = []; mode = {'status': 200}
+URL = 'http://localhost:8772/index.html'; errs = []; sent = []; mode = {'status': 200, 'quote': 'q94-5'}
 def tutor_route(route):
   req = route.request; body = json.loads(req.post_data or '{}'); sent.append({'auth': req.headers.get('authorization'), 'body': body})
   if mode['status'] != 200: return route.fulfill(status=mode['status'], content_type='application/json', body=json.dumps({'error': 'not-configured'}))
-  route.fulfill(status=200, content_type='application/json', body=json.dumps({'reply': "I'm not going to give you the answer, Champ, but let's figure it out.\n\nA **variable** (a letter that stands for a number) is like an empty box.\n[quote:q94-5]\nHere is my own example. A shop charges `3 + 2s` dollars, where `s` is the number of stickers. You buy 5.\n\n1. Swap `s` for 5: `3 + 2(5)`\n2. Multiply first: `3 + 10`\n3. Add: `13`\n\nNow you try: what is `4 + 3t` when `t = 2`?"}))
+  route.fulfill(status=200, content_type='application/json', body=json.dumps({'reply': "I'm not going to give you the answer, Champ, but let's figure it out.\n\nA **variable** (a letter that stands for a number) is like an empty box.\n[quote:" + mode['quote'] + "]\nHere is my own example. A shop charges `3 + 2s` dollars, where `s` is the number of stickers. You buy 5.\n\n1. Swap `s` for 5: `3 + 2(5)`\n2. Multiply first: `3 + 10`\n3. Add: `13`\n\nNow you try: what is `4 + 3t` when `t = 2`?"}))
 def until(fn, n=50):
   for i in range(n):
     try:
@@ -19,7 +19,7 @@ def until(fn, n=50):
   return False
 try:
   with sync_playwright() as p:
-    b = p.chromium.launch(); ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    b = getattr(p, os.environ.get('BROWSER', 'chromium')).launch(); ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
     ctx.route('https://www.youtube.com/iframe_api', lambda r: r.fulfill(status=200, content_type='text/javascript', body=fake))
     ctx.route('**/api/tutor', tutor_route)
     st = ctx.new_page(); st.on('pageerror', lambda e: errs.append(str(e)))
@@ -32,7 +32,15 @@ try:
     st.fill('.sc-tutor-sheet input', 'just tell me the answer'); st.press('.sc-tutor-sheet input', 'Enter')
     until(lambda: 'not going to give' in st.inner_text('#tutorList'))
     s = sent[-1]; print('sent: auth=%s stage=%s lesson="%s" learn=%d chars, messages=%s' % (s['auth'], s['body']['stage'], s['body']['lesson']['title'], len(s['body']['lesson']['learn']), [m['role'] for m in s['body']['messages']]))
-    print('quote tag hidden while quotes are not approved:', '[quote' not in st.inner_text('#tutorList') and not st.query_selector('.sc-quote-card'))
+    card = st.query_selector('.sc-quote-card'); want = st.evaluate("import('/content/motivation.js').then(m => ({ on: m.approved, ar: [].concat(m.default.find(q => q.id === 'q94-5').ar) }))")
+    if want['on']:
+      shown = [e.inner_text() for e in st.query_selector_all('.sc-quote-card .sc-ar')]
+      print('quote card shows the stored Arabic exactly:', bool(card) and shown == want['ar'], '| tag text hidden:', '[quote' not in st.inner_text('#tutorList'))
+      print('Qur\'an font loaded:', st.evaluate("document.fonts.ready.then(() => document.fonts.check('32px \"Scheherazade New\"', 'ب'))"),
+        '| Tanzil credit links to tanzil.net:', bool(st.query_selector('.sc-quote-card a[href="https://tanzil.net"]')))
+      card.scroll_into_view_if_needed(); time.sleep(0.4); card.screenshot(path=f'{SP}/52-quote-card.png')
+    else:
+      print('quote tag hidden while quotes are not approved:', '[quote' not in st.inner_text('#tutorList') and not card)
     print('formatting: steps=%d bold=%d math=%d' % (len(st.query_selector_all('.sc-tlist li')), len(st.query_selector_all('.sc-msg b')), len(st.query_selector_all('.sc-math'))))
     time.sleep(0.5); st.screenshot(path=f'{SP}/50-tutor.png')
     mode['status'] = 503; st.click('.sc-tutor-chips [data-chip]'); until(lambda: 'turned on yet' in st.inner_text('#tutorList'))
@@ -52,8 +60,11 @@ try:
     wrong = [o for o in opts if o.inner_text() != right][0]; picked = wrong.inner_text(); wrong.click()
     st.wait_for_selector('#askWhy'); print('after a miss:', st.inner_text('#askWhy')); st.click('#askWhy'); st.wait_for_selector('.sc-tutor-sheet.is-open'); time.sleep(0.6)
     print('opener:', st.inner_text('#tutorList'))
+    mode['quote'] = 'h-strong'
     st.fill('.sc-tutor-sheet input', 'why is it wrong?'); st.press('.sc-tutor-sheet input', 'Enter'); until(lambda: len(sent) >= 3 and 'not going' in st.inner_text('#tutorList'))
     q = sent[-1]['body']['question']; print('question sent: picked=%s wrong=%s choices=%d, right answer NOT marked: %s' % (q['picked'] == picked, q['wrong'], len(q['choices']), 'answer' not in q))
+    hc = st.query_selector_all('.sc-quote-card')[-1] if st.query_selector_all('.sc-quote-card') else None
+    if hc: print('hadith card:', hc.inner_text().replace(chr(10), ' | ')); hc.scroll_into_view_if_needed(); time.sleep(0.3); hc.screenshot(path=f'{SP}/53-hadith-card.png')
     st.screenshot(path=f'{SP}/51-tutor-quiz.png')
     print('errors:', errs or 'none')
     b.close()

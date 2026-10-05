@@ -5,6 +5,8 @@ import { createSign } from 'node:crypto';
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path';
 import { handle } from '../netlify/functions/tutor.mjs';
 import { _resetCertCache } from '../netlify/lib/firebase-auth.mjs';
+import { rulesPrompt } from '../netlify/lib/tutor-prompt.mjs';
+import QUOTES from '../content/motivation.js';
 import { firebase as FB, STUDENT_UID } from '../js/config.js';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tutor-'));
@@ -33,7 +35,11 @@ let r = await handle(req(token(), body), env, fakeFetch); let j = await r.json()
 check('signed-in student gets a reply', r.status === 200 && j.reply === 'What part is confusing you?');
 check('conversation starts with him (opening line added)', sent.messages[0].role === 'user' && sent.messages.length === 3);
 check('rules say never give answers', sent.system[0].text.includes('NEVER GIVE HIM ANSWERS') && sent.system[0].cache_control);
-check('quotes are off until approved', sent.system[0].text.includes('Do not quote or paraphrase any Qur'));
+check('approved quotes are offered by tag only', sent.system[0].text.includes('[quote:q94-5]') && !sent.system[0].text.includes('Do not quote or paraphrase any Qur'));
+check('quotes stay off when not approved', rulesPrompt({ name: 'X', quotes: QUOTES, quotesOn: false }).includes('Do not quote or paraphrase any Qur'));
+{ const ids = new Set(QUOTES.map((q) => q.id)), ar = QUOTES.filter((q) => q.kind === 'quran').flatMap((q) => [].concat(q.ar));
+  check('quotes list is well-formed (unique ids, Arabic present, every hadith has its narrator line + translator)', ids.size === QUOTES.length
+    && ar.length && ar.every((t) => /[\u0621-\u064A]/.test(t)) && QUOTES.filter((q) => q.kind === 'hadith').every((q) => q.lead && q.translator && q.en)); }
 check('question context sent, marked wrong, no answer key', sent.system[1].text.includes('marked it WRONG') && !/correct answer is/i.test(sent.system[1].text));
 check('model is Sonnet 5.5', sent.model === 'claude-sonnet-5-5');
 check('no up-front thinking, low effort, room to finish', sent.thinking && sent.thinking.type === 'between_tools' && sent.output_config.effort === 'low' && sent.max_tokens >= 1500);

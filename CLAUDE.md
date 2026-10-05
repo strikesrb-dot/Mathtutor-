@@ -38,7 +38,8 @@ js/break.js           the 7-minute break (wall clock; "cash it in" adds what's l
 js/tutor.js           the study tutor sheet (Claude via /api/tutor): asks what confuses him, never gives answers; pauses his clock
 netlify/functions/tutor.mjs  POST /api/tutor — checks the Firebase sign-in (master/student only), applies the tutor rules
                       (netlify/lib/tutor-prompt.mjs), calls Claude. Needs ANTHROPIC_API_KEY in Netlify env. No npm deps.
-content/motivation.js Qur'an (exact Tanzil text from Repo-1) + hadith the tutor may quote by tag; inactive until approved = true
+content/motivation.js Qur'an (Tanzil Uthmani 1.1 + Saheeh Intl, verbatim) + hadith (sunnah.com English, verbatim) the tutor may quote
+                      by tag; owner-approved 2026-10-05. Built by script — never hand-type or edit these texts; ask the owner to change the list
 js/games/             kit.js (the break games' kit) + slice.js + glide.js — ported from Repo-1 (Mithlayn), art in assets/games, font in assets/fonts
 js/master.js          master screens: Overview / Lessons / Settings
 js/curriculum.js      merges content + master overrides; lesson stage + day status logic
@@ -57,6 +58,9 @@ tests/                Playwright e2e tests in demo mode with a fake YouTube play
 - Write at a struggling-teen reading level. Define each technical term in parentheses the first time it appears.
 - **Every YouTube ID must be verified** before shipping. WebFetch `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<ID>&format=json` and check the title and channel. Prefer Khan Academy (US channel, not "Khan Academy India"), Amoeba Sisters, TED-Ed, Crash Course, and Kurzgesagt. Kid-safe only.
 - Recompute any math with code before adding a question.
+- Qur'an text is Tanzil Uthmani (tanzil.net), copied byte-for-byte (NFC-normalize both sides only when comparing); credit Tanzil
+  with a link wherever a verse shows.
+  Shown in Scheherazade New (OFL). Never type Qur'an or hadith text by hand, and never use a font whose licence doesn't allow it.
 
 ## Firestore data model
 ```

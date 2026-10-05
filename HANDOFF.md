@@ -85,11 +85,14 @@ and khanacademy.org/science/hs-bio if needed.
   with a mini-question, never give/confirm/eliminate answers, never write his real-life answer, refuse "just tell me" plainly, short
   plain replies, motivation, safety (988/911). The app never sends the right answer. His clock pauses while the tutor is open
   (owner's choice). Every question/reply is in the activity log (kind "tutor").
-  SETUP STILL NEEDED BY THE OWNER: Anthropic API key → Netlify env ANTHROPIC_API_KEY, then redeploy. Until then he sees "The tutor
-  isn't turned on yet".
-  Motivation quotes: content/motivation.js, 13 Qur'an pieces copied exactly from Repo-1 site/data/quran.json (Tanzil Uthmani, NFC,
-  verified as exact substrings) + 7 hadith in Claude's wording with check notes. approved = false until the owner checks them; the
-  tutor then cites them only by tag ([quote:id]) and the app renders the exact text (Uthmanic Hafs font from Repo-1).
+  The API key is set in Netlify (ANTHROPIC_API_KEY); the tutor is live. 2026-10-05: replies were cut off because Sonnet 5.5 thinks
+  first by default and used up max_tokens; fixed with effort low, thinking between_tools, max_tokens 1500, and phone formatting.
+  Motivation quotes LIVE (approved = true, owner 2026-10-05): content/motivation.js, built by a script, never hand-typed. 10 Qur'an
+  pieces: Arabic = Tanzil Uthmani 1.1 byte-for-byte from tanzil.net (download-form defaults; CC BY 3.0, so every card credits Tanzil with a link), English =
+  Saheeh International (tanzil.net en.sahih) verbatim. 4 hadith: sunnah.com's published English verbatim (Bukhari 6464 and 39: Muhsin
+  Khan; Muslim 2699a and 2664: Siddiqui), each with the narrator line as published. Two independent reviewers checked every entry first.
+  The owner left out Ibn Majah 224, Muslim 1631, al-Hakim 7846 and 13:11, 3:139. Font: Scheherazade New 4.500 (SIL, OFL, unmodified), assets/fonts.
+  (The earlier Arabic was really the King Fahd/QPC encoding, not Tanzil: same letters, different marks. Replaced.)
 - Send a lesson (owner request 2026-10-05): master Lessons tab → open a lesson → "Send to him". Saved as settings.focus { key, at }.
   Until that lesson is done (curriculum.js focusLesson) every study block, and the bonus "extra" time, opens it whatever the block's
   subject; breaks, game time and fun videos stay on schedule. If he's in a block when it's sent, his screen switches at once. A chat

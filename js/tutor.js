@@ -10,10 +10,18 @@ import { STUDENT_NAME } from './config.js';
 const QMAP = Object.fromEntries(QUOTES.map((q) => [q.id, q]));
 const CHIPS = ['I don\'t get this part', 'Give me another example', 'Explain it more simply', 'I\'m losing motivation'];
 
+// Shows the text exactly as stored. Tanzil's licence asks that the source is named with a link to tanzil.net wherever a verse is shown.
 function quoteCard(q) {
-  const ar = q.kind === 'quran' ? (Array.isArray(q.ar) ? q.ar : [q.ar]).map((t) => `<p class="sc-ar" lang="ar" dir="rtl">${esc(t)}</p>`).join('') : '';
-  const en = (Array.isArray(q.en) ? q.en : [q.en]).map((t) => `<p class="cg-text">${esc(t)}</p>`).join('');
-  return `<figure class="sc-quote-card">${ar}${en}<figcaption class="cg-meta">${esc(q.ref)}${q.part ? ' (part of the verse)' : ''}</figcaption></figure>`;
+  const each = (v) => (Array.isArray(v) ? v : [v]);
+  const saw = (t) => esc(t).replace(/ﷺ/g, '<span class="sc-saw">ﷺ</span>');   // same text; ﷺ just drawn in a font that has it
+  const quran = q.kind === 'quran';
+  const ar = quran ? each(q.ar).map((t) => `<p class="sc-ar" lang="ar" dir="rtl">${esc(t)}</p>`).join('') : '';
+  const lead = q.lead ? `<p class="cg-meta">${saw(q.lead)}</p>` : '';
+  const en = each(q.en).map((t) => `<p class="cg-text">${saw(t)}</p>`).join('');
+  const part = q.part ? (quran ? ' (part of the verse)' : ' (part of the hadith)') : '';
+  const credit = quran ? ' · Arabic: <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil</a> · English: Saheeh International'
+    : (q.translator ? ` · English: ${esc(q.translator)}` : '');
+  return `<figure class="sc-quote-card">${ar}${lead}${en}<figcaption class="cg-meta">${esc(q.ref)}${part}${credit}</figcaption></figure>`;
 }
 // Reply text → safe HTML for a phone: paragraphs, numbered/bulleted lists, **bold**, `math` (its own chip), and a quote card
 // for each approved [quote:id] tag on its own line (any other bracket tag is dropped). Everything is escaped first.
