@@ -27,7 +27,7 @@ export function createTracker(store, sid, rules) {
   // ── Activity log ──
   let logBuf = [], logCount = 0;
   const dur = (sec) => (sec < 60 ? `${sec}s` : sec < 3600 ? `${Math.floor(sec / 60)}m ${sec % 60}s` : `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`);
-  function log(k, d) { if (logCount++ < 6000) logBuf.push({ t: Date.now(), k, d: String(d).slice(0, 300) }); }
+  function log(k, d) { if (logCount++ < 6000) logBuf.push({ t: Date.now(), k, d: String(d).slice(0, k === 'tutor' ? 1500 : 300) }); }
   const device = /iPad|Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1 ? 'iPad' : /iPhone/.test(navigator.userAgent) ? 'iPhone' : 'a browser';
   log('app', `opened on ${device}${navigator.standalone ? ' (Home Screen app)' : ''}`);
 

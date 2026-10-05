@@ -15,6 +15,8 @@ Weekend study app for the owner's younger brother. **Student** = the brother (ph
 - **Safari/WebKit first.** Both devices are Apple (iOS/iPadOS Safari, often added to the Home Screen). Check every change for WebKit issues: no `navigator.vibrate` reliance, audio only after a user tap, 16px+ inputs (prevents iOS zoom), `env(safe-area-inset-*)`, `playsinline` on video, and no APIs newer than Safari 15.4.
 - **Demo mode must keep working** when `js/config.js` has `firebase = null`. It's the test harness.
 - **Keep files small and single-purpose.** If a file passes about 500 lines, split it by responsibility. Don't let the app grow into one giant file.
+- **The tutor never gives answers.** Its rules live in `netlify/lib/tutor-prompt.mjs`. Never send it the right answer to a question, and
+  never let it write Qur'an or hadith text: it may only cite `content/motivation.js` entries by tag, and only once the owner sets approved.
 - **Source content is the owner's call.** Never silently "fix" lesson text, quiz answers, or video choices he has edited. Flag the issue and propose a change.
 
 ## Layout
@@ -32,6 +34,11 @@ js/home.js            student home screen (plan, courses, messages row)
 js/chat.js            master ↔ student messages + nudges (student sheet pauses his clock; master Chat tab)
 js/log-export.js      master's "Activity log for Claude" export (instructions + totals + lessons + every logged event)
 js/game-time.js       7-minute game time after each break (Slice or Glide; a round in progress is finished first)
+js/break.js           the 7-minute break (wall clock; "cash it in" adds what's left to game time)
+js/tutor.js           the study tutor sheet (Claude via /api/tutor): asks what confuses him, never gives answers; pauses his clock
+netlify/functions/tutor.mjs  POST /api/tutor — checks the Firebase sign-in (master/student only), applies the tutor rules
+                      (netlify/lib/tutor-prompt.mjs), calls Claude. Needs ANTHROPIC_API_KEY in Netlify env. No npm deps.
+content/motivation.js Qur'an (exact Tanzil text from Repo-1) + hadith the tutor may quote by tag; inactive until approved = true
 js/games/             kit.js (the break games' kit) + slice.js + glide.js — ported from Repo-1 (Mithlayn), art in assets/games, font in assets/fonts
 js/master.js          master screens: Overview / Lessons / Settings
 js/curriculum.js      merges content + master overrides; lesson stage + day status logic
@@ -69,6 +76,8 @@ days/{date} also holds breakStart{R1..R3: ts} (break clock) and games{G1..G3: { 
 - `python3 tests/e2e_lesson.py` runs one full lesson, including the skip, leave-app, and missed-check flags, then checks the master view.
 - `python3 tests/e2e_day.py` sets 10-minute blocks and runs block → break → block → fact video → biology.
 - `python3 tests/e2e_focus.py` sends a lesson from the master tab and checks the student switches to it, then returns to normal once done.
+- `python3 tests/e2e_tutor.py` stubs /api/tutor and checks the tutor sheet, the clock pause, what is sent, and the quiz "What did I do wrong?".
+- `node tests/tutor-function.test.mjs` unit-tests the server function (sign-in check, rules, refusals) with no network.
 - Both need Playwright with a browser. WebKit is preferred: `p.webkit.launch()`. Screenshots go to `tests/screens/`.
 - Syntax check: `for f in js/*.js content/*.js; do node --check $f; done`.
 - Demo mode can't catch Firestore-only problems (indexes, rules). Never sort a query by `documentId()` descending: it needs an index

@@ -8,6 +8,12 @@
 [build.environment]
   SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyD1RK2hFxTPc5fLjGmay2oohyTl8Ut1AaA"
 
+# The study tutor: netlify/functions/tutor.mjs at /api/tutor. Needs ANTHROPIC_API_KEY in Site configuration → Environment
+# variables. esbuild bundles its imports (netlify/lib, js/config.js, content/motivation.js) — the site itself still has no build.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 # Always fetch fresh app code so updates show up right away.
 [[headers]]
   for = "/*"

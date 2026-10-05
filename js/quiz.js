@@ -7,19 +7,24 @@ import { esc, mmss, shuffle, icon, bar } from './ui.js';
 import { practiceFor } from './practice.js';
 
 // One multiple-choice question as a grouped list.
-export function questionHTML(item, opts, top) {
+// withTutor: add a "Stuck? Ask the tutor" button under the choices (wired by wireAnswer's askTutor).
+export function questionHTML(item, opts, top, withTutor = false) {
   return `
     <div class="sc-quiz">
       <p class="cg-meta sc-qtop">${top}</p>
       <h3 class="cg-title2 q">${esc(item.q)}</h3>
       <div class="cg-group sc-opts" role="group">${opts.map((o, k) => `
         <button type="button" class="cg-row opt" data-k="${k}"><span class="cg-row-text"><span class="cg-row-label">${esc(o.text)}</span></span><span class="cg-check">${icon('check')}</span></button>`).join('')}</div>
+      ${withTutor ? '<div class="sc-tutor-row"><button type="button" class="cg-btn cg-btn-plain" data-qtutor>Stuck? Ask the tutor</button></div>' : ''}
       <div id="fb"></div>
     </div>`;
 }
 
 // reveal = show the right answer + explanation after a miss (practice). Graded quizzes keep it hidden.
-export function wireAnswer(el, item, opts, onAnswer, nextLabel, onNext, reveal = true) {
+// askTutor(picked, wrong): opens the tutor about this question (it never gives the answer). Optional.
+export function wireAnswer(el, item, opts, onAnswer, nextLabel, onNext, reveal = true, askTutor = null) {
+  const qt = el.querySelector('[data-qtutor]');
+  if (qt && askTutor) qt.onclick = () => askTutor(null, false);
   el.querySelectorAll('.opt').forEach((b) => {
     b.onclick = () => {
       const o = opts[Number(b.dataset.k)];
@@ -36,8 +41,10 @@ export function wireAnswer(el, item, opts, onAnswer, nextLabel, onNext, reveal =
       const body = o.ok || reveal ? esc(item.why) : 'The right answer stays hidden until you pass. If you\'re stuck, the Learn page and the videos have it.';
       el.querySelector('#fb').innerHTML = `
         <div class="cg-card sc-why"><p class="cg-headline">${o.ok ? 'Correct' : 'Not quite'}</p><p class="cg-text">${body}</p></div>
-        <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="nx">${nextLabel}</button></div>`;
+        <div class="sc-actions">${!o.ok && askTutor ? '<button class="cg-btn cg-btn-glass" id="askWhy">What did I do wrong?</button>' : ''}<button class="cg-btn cg-btn-strong" id="nx">${nextLabel}</button></div>`;
       el.querySelector('#nx').onclick = onNext;
+      if (qt && askTutor) qt.onclick = () => askTutor(o.text, !o.ok);
+      const why = el.querySelector('#askWhy'); if (why) why.onclick = () => askTutor(o.text, true);
       el.querySelector('#nx').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
   });
@@ -126,7 +133,7 @@ export function stageQuiz({ lesson, el, advance }, app) {
     let shownAt = Date.now();
     const show = () => {
       const it = qs[i];
-      el.innerHTML = questionHTML(it, it.opts, `Question ${i + 1} of ${qs.length} · ${right} right`);
+      el.innerHTML = questionHTML(it, it.opts, `Question ${i + 1} of ${qs.length} · ${right} right`, !!app.askTutor);
       el.querySelector('.sc-qtop').insertAdjacentHTML('afterend', bar((i / qs.length) * 100));
       tracker.setLive({ detail: graded ? `Taking the quiz (try ${attempts + 1})` : 'Retaking a passed quiz for practice',
         pos: `Question ${i + 1} of ${qs.length}${i ? ` · ${right} of ${i} right so far` : ''}` }, true);
@@ -137,7 +144,8 @@ export function stageQuiz({ lesson, el, advance }, app) {
         app.patchLesson(lesson.key, { quizRun: { i: i + 1, right } });
         tracker.log('answer', `Q${i + 1} ${ok ? 'right' : 'WRONG'} in ${Math.round((Date.now() - shownAt) / 1000)}s — "${String(it.q).slice(0, 100)}"${ok ? '' : ` — picked "${String(picked).slice(0, 60)}"`}`);
       }, i < qs.length - 1 ? 'Next' : 'See my score',
-        () => { i += 1; if (i < qs.length) { show(); window.scrollTo(0, 0); } else finish(); }, !graded);
+        () => { i += 1; if (i < qs.length) { show(); window.scrollTo(0, 0); } else finish(); }, !graded,
+        app.askTutor ? (picked, wrong) => app.askTutor(lesson, { q: it.q, choices: it.opts.map((o) => o.text), picked, wrong }) : null);
     };
     const finish = () => {
       const pct = Math.round((right / qs.length) * 100);

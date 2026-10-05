@@ -10,7 +10,9 @@ import { esc, mmss, shuffle, toast, icon, refreshSegs } from './ui.js';
 import { practiceFor } from './practice.js';
 import { questionHTML, wireAnswer, stageQuiz } from './quiz.js';
 import { studentChat } from './chat.js';
+import { createTutor, tutorButtonHTML, lessonInfo } from './tutor.js';
 import { SUBJECT, renderHome as drawHome } from './home.js';
+import { renderBreak as drawBreak } from './break.js';
 
 const VIDEO_STATE = { '-1': 'not started', 0: 'finished', 1: 'playing', 2: 'paused', 3: 'loading', 5: 'not started' };
 const videoPos = (t, dur, state) => `${mmss(t)} of ${dur ? mmss(dur) : '…'} · ${VIDEO_STATE[state] || 'loading'}`;
@@ -20,6 +22,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
   let cur = buildCurriculum({});
   const tracker = createTracker(store, sid, cur.rules);
   const chat = studentChat({ store, sid, tracker });   // messages + nudges from his brother
+  const tutor = createTutor({ store, tracker });       // the study tutor (Claude): asks, explains, never answers
   let cleanups = [];
   let view = { name: 'home' };
   const unsubs = [];
@@ -86,8 +89,13 @@ export function startStudent(root, { store, sid, onSignOut }) {
   }
   function quizApp() {
     return { rules: cur.rules, tracker, prog: (k) => S.lessons[k] || {}, owesReview, patchLesson, chosen: view.stage === 'quiz',
-      onClean: (fn) => cleanups.push(fn), goStage: (stage) => { clean(); view.stage = stage; renderStep(); } };
+      onClean: (fn) => cleanups.push(fn), goStage: (stage) => { clean(); view.stage = stage; renderStep(); },
+      askTutor: (lesson, question) => openTutor(lesson, 'quiz', question) };
   }
+  // The tutor for this lesson (and step, and question if any). Buttons made by tutorButtonHTML() carry data-tutor.
+  function subjectOf(lesson) { return cur.algebra.units.some((u) => u.lessons.includes(lesson)) ? cur.algebra.name : cur.biology.name; }
+  function openTutor(lesson, stage, question) { tutor.open({ lesson: lessonInfo(lesson, subjectOf(lesson)), lessonKey: lesson.key, stage, question }); }
+  function wireTutor(el, lesson, stage) { el.querySelectorAll('[data-tutor]').forEach((b) => { b.onclick = () => openTutor(lesson, stage); }); }
 
 
   // ─────────────────────────── STEP ───────────────────────────
@@ -247,9 +255,11 @@ export function startStudent(root, { store, sid, onSignOut }) {
           <button type="button" class="cg-chip" data-i="${i}" aria-pressed="${i === idx}">${vprog(vv.id).done ? icon('check') : ''}${i + 1}. ${esc(vv.title)}</button>`).join('')}</div>`
           : `<p class="cg-meta sc-vid-title">${esc(v.title)}</p>`}
         <div id="player"></div>
+        ${tutorButtonHTML()}
         <p class="cg-meta sc-hint">Keep it playing and stay on this screen. A "Still watching?" button pops up sometimes — tap it fast. No skipping ahead.</p>
         <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="nextVid" ${p.done ? '' : 'disabled'}>${owesReview(lesson) ? 'Back to the quiz' : idx < lesson.videos.length - 1 ? 'Next video' : 'Continue to Learn'}</button></div>`;
       tracker.setLive({ detail: `${owesReview(lesson) ? 'Rewatching for review · ' : ''}Video ${idx + 1} of ${lesson.videos.length}: ${v.title}`, pos: '' }, true);
+      wireTutor(el, lesson, 'watch');
       el.querySelectorAll('.sc-vids .cg-chip').forEach((b) => {
         b.onclick = () => {
           const i = Number(b.dataset.i);
@@ -289,9 +299,11 @@ export function startStudent(root, { store, sid, onSignOut }) {
     el.innerHTML = `
       ${reviewing ? '<div class="cg-card sc-notice"><p class="cg-headline">Review time</p><p class="cg-meta">Read this again carefully before you retry the quiz.</p></div>' : ''}
       <article class="cg-card sc-read">${lesson.learn}</article>
+      ${tutorButtonHTML()}
       <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="gotIt" ${wait ? 'disabled' : ''}>${wait ? `Read it first… ${wait}` : ready}</button></div>`;
     tracker.setLive({ detail: reviewing ? 'Rereading the Learn page (review after a failed quiz)' : 'Reading the Learn page', pos: '' }, true);
     tracker.screen({ cap: cur.rules.capLearnMin * 60, label: 'Learn page' });
+    wireTutor(el, lesson, 'learn');
     const btn = el.querySelector('#gotIt');
     if (wait) {
       const t = setInterval(() => {
@@ -316,12 +328,14 @@ export function startStudent(root, { store, sid, onSignOut }) {
     const MIN = 15;
     el.innerHTML = `
       <article class="cg-card sc-read">${lesson.realLife.text}</article>
+      ${tutorButtonHTML('Not sure what to write? Ask the tutor')}
       <p class="cg-caption">Your turn</p>
       <div class="cg-card">
         <p class="cg-headline">${esc(lesson.realLife.prompt)}</p>
         <textarea id="ans" class="sc-textarea" rows="5" placeholder="Explain it in your own words…">${esc(draft || prev || '')}</textarea>
         <div class="sc-row-between"><span id="wc" class="cg-meta cg-num"></span><button class="cg-btn cg-btn-strong" id="send" disabled>${prev ? 'Update answer' : 'Submit'}</button></div>
       </div>`;
+    wireTutor(el, lesson, 'real');
     const ta = el.querySelector('#ans'), wc = el.querySelector('#wc'), send = el.querySelector('#send');
     tracker.setLive({ detail: prev ? 'Rereading his real-life answer' : 'Writing the real-life answer', pos: '' }, true);
     tracker.screen({ cap: cur.rules.capRealMin * 60, label: 'Real-life answer' });
@@ -367,13 +381,14 @@ export function startStudent(root, { store, sid, onSignOut }) {
       const opts = shuffle(item.c.map((text, i) => ({ text, ok: i === 0 })));
       tracker.setLive({ detail: `Practice question on: ${l.title}`, pos: total ? `${right} of ${total} right` : '' });
       tracker.screen({ cap: cur.rules.capQuestionMin * 60, label: 'Practice question' });
-      body.innerHTML = questionHTML(item, opts, `Review · ${esc(l.title)} · ${right} of ${total} right`)
+      body.innerHTML = questionHTML(item, opts, `Review · ${esc(l.title)} · ${right} of ${total} right`, true)
         + '<p class="cg-meta sc-hint">You finished every lesson in this course. Keep practicing until the block time is done.</p>';
       wireAnswer(body, item, opts, (ok, picked) => {
         total += 1; if (ok) right += 1;
         tracker.log('answer', `practice ${ok ? 'right' : 'WRONG'} — "${String(item.q).slice(0, 100)}"${ok ? '' : ` — picked "${String(picked).slice(0, 60)}"`}`);
         patchDay({ practice: { [step.subject]: { right: inc(ok ? 1 : 0), total: inc(1) } } });
-      }, 'Next', () => { nextQ(); window.scrollTo(0, 0); });
+      }, 'Next', () => { nextQ(); window.scrollTo(0, 0); }, true,
+      (picked, wrong) => openTutor(l, 'practice', { q: item.q, choices: opts.map((o) => o.text), picked, wrong }));
     };
     nextQ();
   }
@@ -392,55 +407,10 @@ export function startStudent(root, { store, sid, onSignOut }) {
   }
 
   // ── Break ──
-  // The break runs on wall time from when he first opens it (day.breakStart), so reopening the app doesn't restart it.
-  // "Cash in my break" (owner request 2026-10-05): what's left of the break is added to the game time that follows it.
+  // ── Break (break.js) ──
   function renderBreak(step) {
-    tracker.off();
-    document.body.classList.remove('cg-has-island');
-    const total = cur.rules.breakMinutes * 60, saved = (day().breakStart || {})[step.id];
-    const started = saved || Date.now();
-    if (!saved) patchDay({ breakStart: { [step.id]: started } });
-    const remaining = () => Math.max(0, Math.ceil(total - (Date.now() - started) / 1000));
-    const steps = cur.rules.steps, next = steps[steps.findIndex((s) => s.id === step.id) + 1];
-    const canCash = !!(next && next.type === 'game');
-    let left = remaining();
-    root.innerHTML = `
-      <header class="cg-header">
-        <button class="cg-key cg-key-start" id="home" aria-label="Back to today's plan">${icon('back')}</button>
-        <h1 class="cg-header-title">Break</h1>
-        ${chat.keyHTML()}
-      </header>
-      <main class="cg-content sc-main">
-        <div class="cg-card sc-center sc-break">
-          <span class="sc-break-icon">${icon('cup')}</span>
-          <div class="sc-num cg-num break-clock" id="bc">${mmss(left)}</div>
-          <p class="cg-text">Stand up, stretch, drink some water. This time doesn't count — and that's fine.</p>
-          ${canCash ? `<p class="cg-meta">Or cash in your break: whatever is left gets added to your game time.</p>
-          <button class="cg-btn cg-btn-glass cg-btn-block cg-num" id="cashIn">Cash it in: +${mmss(left)} of games</button>` : ''}
-          <button class="cg-btn cg-btn-strong cg-btn-block" id="skip">I'm ready — next</button>
-        </div>
-      </main>`;
-    const bc = root.querySelector('#bc');
-    const liveLeft = (major) => tracker.setLive({ view: 'break', title: 'Break', lesson: '', sub: '', stage: '',
-      detail: left > 0 ? 'On break' : 'Break is over — hasn\'t tapped "next" yet', pos: left > 0 ? `${mmss(left)} left` : '' }, major);
-    liveLeft(true);
-    const cash = root.querySelector('#cashIn');
-    const over = () => { bc.textContent = '0:00'; bc.classList.add('sc-over'); if (cash) cash.hidden = true; };
-    if (left <= 0) over();
-    const t = setInterval(() => {
-      left = remaining(); bc.textContent = mmss(left); if (cash) cash.textContent = `Cash it in: +${mmss(left)} of games`; liveLeft(left <= 0);
-      if (left <= 0) { clearInterval(t); over(); toast('Break is over — back to it'); }
-    }, 1000);
-    if (cash) cash.onclick = () => {
-      const bonus = remaining(); if (!bonus) return;
-      tracker.log('break', `cashed in the break: +${mmss(bonus)} of game time`);
-      patchDay({ breaks: { [step.id]: true }, games: { [next.id]: { bonus } } });
-      nextStep();
-    };
-    cleanups.push(() => clearInterval(t));
-    root.querySelector('#home').onclick = () => go({ name: 'home' });
-    chat.wire(root);
-    root.querySelector('#skip').onclick = () => { patchDay({ breaks: { [step.id]: true } }); nextStep(); };
+    drawBreak(root, { step, rules: cur.rules, day: day(), tracker, chat, patchDay, addCleanup: (fn) => cleanups.push(fn),
+      onHome: () => go({ name: 'home' }), onNext: () => nextStep() });
   }
 
   // ── Game time after a break (game-time.js; the games load only when he gets here) ──
@@ -489,6 +459,6 @@ export function startStudent(root, { store, sid, onSignOut }) {
   }
 
   return {
-    destroy() { clean(); chat.destroy(); tracker.destroy(); document.body.classList.remove('cg-has-island'); unsubs.forEach((u) => { try { u && u(); } catch {} }); },
+    destroy() { clean(); chat.destroy(); tutor.destroy(); tracker.destroy(); document.body.classList.remove('cg-has-island'); unsubs.forEach((u) => { try { u && u(); } catch {} }); },
   };
 }

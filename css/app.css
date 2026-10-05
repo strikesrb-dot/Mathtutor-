@@ -253,3 +253,19 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-game .ba-mrow .bp-btn, .sc-game .ba-blade { background: var(--cg-glass); }
 .sc-game .ba-big { font: var(--cg-w-bold) var(--cg-t-t1)/1.1 var(--cg-ui) !important; color: var(--cg-ink) !important; font-variant-numeric: tabular-nums; }
 .sc-game .ba-mrow .ba-sr:not(:focus-visible) { position: absolute; width: 1px; height: 1px; min-width: 0; padding: 0; overflow: hidden; clip-path: inset(50%); }
+
+/* the study tutor (js/tutor.js) */
+@font-face { font-family: "Uthmanic Hafs"; src: url("../assets/fonts/uthmanic-hafs.woff2") format("woff2"); font-display: swap; }
+.sc-tutor-row { display: flex; justify-content: center; }
+.sc-tutor-row .cg-btn { gap: var(--cg-in-8); }
+.sc-tutor-row .cg-btn svg { width: var(--cg-icon-size); height: var(--cg-icon-size); flex: none; }
+.sc-tutor-chips { flex: none; display: flex; flex-direction: row; flex-wrap: nowrap; gap: var(--cg-in-8); overflow-x: auto; -webkit-overflow-scrolling: touch;
+  padding: var(--cg-in-8) var(--cg-inset) 0; scrollbar-width: none; }
+.sc-tutor-chips::-webkit-scrollbar { display: none; }
+.sc-tutor-chips > * { flex: none; margin: 0; }
+.sc-typing .cg-meta, .sc-tutor-note { margin: 0; }
+.sc-tutor-note { padding: 0 var(--cg-in-8); }
+.sc-quote-card { margin: var(--cg-in-8) 0; padding: var(--cg-sp) var(--cg-sp-2); border-radius: var(--cg-r-ctl); background: var(--cg-page); }
+.sc-quote-card > * { margin: 0; }
+.sc-quote-card > * + * { margin-top: var(--cg-in-8); }
+.sc-ar { font-family: "Uthmanic Hafs", var(--cg-ui); font-size: var(--cg-t-ar); line-height: var(--cg-lh-ar); text-align: right; color: var(--cg-ink-strong); }

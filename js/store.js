@@ -71,6 +71,7 @@ function demoAdapter() {
     async signIn() { throw new Error('Demo mode — use the demo buttons.'); },
     async signOut() { user = null; try { sessionStorage.removeItem('sc-demo-role'); } catch {} authCb && authCb(null); },
     roleOf(u) { return u && u.uid === DEMO_MASTER ? 'master' : 'student'; },
+    async idToken() { return 'demo'; },   // the tutor (/api/tutor) refuses it; tests stub that endpoint
     studentId() { return DEMO_STUDENT; },
     async resetDemo() { save({}); notify(); },
     exportDemo() { return JSON.stringify(mem); },
@@ -152,6 +153,7 @@ async function firebaseAdapter() {
     async signIn(email, pw) { await A.signInWithEmailAndPassword(auth, email, pw); },
     async signOut() { await A.signOut(auth); },
     roleOf(u) { return u && u.uid === CFG.MASTER_UID ? 'master' : 'student'; },
+    async idToken() { return auth.currentUser ? auth.currentUser.getIdToken() : null; },   // proves who he is to /api/tutor
     studentId() { return CFG.STUDENT_UID; },
 
     watchSettings(cb) { return watchDoc('settings', 'settings/main', cb); },

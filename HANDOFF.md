@@ -78,6 +78,18 @@ and khanacademy.org/science/hs-bio if needed.
   from break-play.js + break-arcade.js; `slice.js` is break-slice.js unchanged inside an ES-module wrapper; `glide.js` is mkFly's Glide
   mode. Removed: āyāt reading between rounds. Art: assets/games/*.webp (8 sheets, ~650 KB, loaded only at game time). Font: Lilita One
   (OFL, assets/fonts). Scene colours are allow-listed (CLAUDE.md design exception).
+- Study tutor (owner request 2026-10-05): "Ask the tutor" on Watch, Learn, Real life, every quiz/practice question ("Stuck?") and
+  after a miss ("What did I do wrong?"). js/tutor.js → POST /api/tutor (netlify/functions/tutor.mjs) → Claude Sonnet 5.5
+  (TUTOR_MODEL env overrides). The function verifies the Firebase ID token (RS256 vs Google's certs, aud/iss/exp) and allows only
+  MASTER_UID / STUDENT_UID. Rules (netlify/lib/tutor-prompt.mjs): find what confuses him, teach with its own different example, check
+  with a mini-question, never give/confirm/eliminate answers, never write his real-life answer, refuse "just tell me" plainly, short
+  plain replies, motivation, safety (988/911). The app never sends the right answer. His clock pauses while the tutor is open
+  (owner's choice). Every question/reply is in the activity log (kind "tutor").
+  SETUP STILL NEEDED BY THE OWNER: Anthropic API key → Netlify env ANTHROPIC_API_KEY, then redeploy. Until then he sees "The tutor
+  isn't turned on yet".
+  Motivation quotes: content/motivation.js, 13 Qur'an pieces copied exactly from Repo-1 site/data/quran.json (Tanzil Uthmani, NFC,
+  verified as exact substrings) + 7 hadith in Claude's wording with check notes. approved = false until the owner checks them; the
+  tutor then cites them only by tag ([quote:id]) and the app renders the exact text (Uthmanic Hafs font from Repo-1).
 - Send a lesson (owner request 2026-10-05): master Lessons tab → open a lesson → "Send to him". Saved as settings.focus { key, at }.
   Until that lesson is done (curriculum.js focusLesson) every study block, and the bonus "extra" time, opens it whatever the block's
   subject; breaks, game time and fun videos stay on schedule. If he's in a block when it's sent, his screen switches at once. A chat
