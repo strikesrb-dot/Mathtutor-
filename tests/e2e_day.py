@@ -35,8 +35,11 @@ try:
     page.wait_for_selector('.fact-card'); print('fact:', page.inner_text('.fact-card h2')); page.clock.run_for(500)
     tick(page, 100); shot(page,'22-fact')
     print('fact done enabled:', not page.eval_on_selector('#done','e=>e.disabled'))
-    page.click('#done'); page.wait_for_selector('.break-clock'); page.click('#skip')
-    page.wait_for_selector('#gtSkip'); page.click('#gtSkip')   # game time 2: skipped
+    page.click('#done'); page.wait_for_selector('.break-clock'); page.clock.run_for(60_000)
+    print('break 2 cash-in button:', page.inner_text('#cashIn'))
+    page.click('#cashIn'); page.wait_for_selector('#gtSkip')   # break 2 cashed in: its 6 minutes left go to game time
+    print('game time 2 after cashing in:', page.inner_text('#gtLeft'), '|', page.inner_text('#gtPick .cg-text'))
+    page.click('#gtSkip')
     page.wait_for_selector('.sc-lesson-head'); print('B1:', page.inner_text('.cg-header-title'), '|', page.inner_text('.sc-lesson-head h2')); shot(page,'23-bio')
     page.click('#home'); page.wait_for_selector('.sc-plan'); shot(page,'24-home-progress')
     print(page.inner_text('.sc-plan').replace('\n',' / '))

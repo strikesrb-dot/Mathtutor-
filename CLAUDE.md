@@ -62,6 +62,7 @@ students/{uid}/meta/chat           { masterRead, studentRead }   (time of the la
 students/{uid}/chat/{id}           { from: 'master'|'student', kind: 'msg'|'nudge', text, at }
 students/{uid}/log/{YYYY-MM-DD}    { entries: [{ t, k, d }] }   (activity log; read only on export, never watched)
 lessons/{key} also holds quizRun { at, graded, i, right, qs } (a quiz in progress) and realDraft (unsent real-life text)
+days/{date} also holds breakStart{R1..R3: ts} (break clock) and games{G1..G3: { start, bonus, done, played }} (bonus = seconds of break cashed in)
 ```
 
 ## Testing

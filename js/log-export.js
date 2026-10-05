@@ -41,7 +41,7 @@ export function buildLogText({ cur, days, lessons, logs, msgs, dates }) {
     '6. A few questions I should ask him.',
     'Keep it plain and direct. Say so when the data is too thin to tell.', '');
   p('HOW THE APP WORKS',
-    `- A study day: 4 blocks of ${r.blockMinutes} counted minutes (Algebra 1 twice, then Biology twice), a ${r.breakMinutes}-minute break after blocks 1–3, game time after each break, and 2 fun-fact reward videos.`,
+    `- A study day: 4 blocks of ${r.blockMinutes} counted minutes (Algebra 1 twice, then Biology twice), a ${r.breakMinutes}-minute break after blocks 1–3 followed by ${r.gameMinutes} minutes of game time (Slice or Glide; he may cash in what is left of the break as extra game time; a round in progress is finished when time is up), and 2 fun-fact reward videos.`,
     `- Each lesson, in order and forward-only: Watch the videos → Learn page (at least 40 s) → Quiz (${r.quizSize} questions, ${r.passPct}% to pass; after a fail he must reread or rewatch, then wait ${r.retryWaitMin} min; the right answers stay hidden until he passes) → Real-life answer (at least 15 typed words, no pasting) → the next lesson.`,
     `- The clock (focused time) runs only while the app is on screen AND either new video is playing (replays do not count; a "Still watching?" button appears every ${Math.round(r.attentionMinSec / 60)}–${Math.round(r.attentionMaxSec / 60)} minutes and must be tapped within ${r.attentionReplySec} s) or he tapped within the last ${r.idleSec} s on a reading/quiz screen.`,
     `- Time limits per screen, after which the clock stops until he moves on: Learn ${r.capLearnMin} min, real-life answer ${r.capRealMin} min, one question ${r.capQuestionMin} min, in-between screens ${r.capScreenSec} s.`,
@@ -57,7 +57,7 @@ export function buildLogText({ cur, days, lessons, logs, msgs, dates }) {
     if (!d) { p(`${dayName(k)}: no study`); continue; }
     const flags = Object.entries(d.flags || {}).filter(([, v]) => v).map(([f, v]) => `${f} ×${v}`).join(', ') || 'none';
     const subj = Object.entries(d.bySubject || {}).map(([s, v]) => `${s} ${hm(v)}`).join(', ') || '—';
-    const games = Object.values(d.games || {}).map((g) => g.played || '').filter(Boolean).join(', ');
+    const games = Object.entries(d.games || {}).map(([id, g]) => g.done ? `${id} ${g.played || 'nothing'}${g.bonus ? ` (+${hm(g.bonus)} cashed in from the break)` : ''}` : '').filter(Boolean).join('; ');
     p(`${dayName(k)}: on the app ${d.openSec ? hm(d.openSec) : 'not tracked'} · focused ${hm(d.activeSec)}${d.openSec ? ` (${Math.round(((d.activeSec || 0) / d.openSec) * 100)}%)` : ''} · by subject: ${subj} · blocks done ${Object.keys(d.blocksDone || {}).length}/4 · fun videos ${Object.keys(d.factsDone || {}).length}/2${games ? ` · games: ${games}` : ''} · flags: ${flags}`);
   }
   p('');

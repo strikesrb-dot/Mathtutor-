@@ -78,6 +78,8 @@ and khanacademy.org/science/hs-bio if needed.
   from break-play.js + break-arcade.js; `slice.js` is break-slice.js unchanged inside an ES-module wrapper; `glide.js` is mkFly's Glide
   mode. Removed: āyāt reading between rounds. Art: assets/games/*.webp (8 sheets, ~650 KB, loaded only at game time). Font: Lilita One
   (OFL, assets/fonts). Scene colours are allow-listed (CLAUDE.md design exception).
+- Breaks are 7 minutes (was 10) and run on wall time from first opening (day.breakStart). "Cash it in" on the break screen adds
+  whatever is left of the break to the next game time (games[G].bonus), so he can play up to 14 minutes instead of resting.
 
 ## Lesson order is forward-only (owner request 2026-10-04)
 - He can't go back to Watch or Learn once he has moved past them. That was the loophole: rewatching videos filled block time without doing the quiz.

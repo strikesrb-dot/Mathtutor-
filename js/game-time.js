@@ -14,10 +14,10 @@ const IN_ROUND = { slice: /^(play|pom|held|over)$/, glide: /^play$/ };
 
 // deps: { step, rules, day, tracker, chat, patchDay, addCleanup(fn), onHome(), onDone() }
 export function renderGameTime(root, { step, rules, day, tracker, chat, patchDay, addCleanup, onHome, onDone }) {
-  const total = (rules.gameMinutes || 7) * 60;
   const rec = (day.games || {})[step.id] || {};
+  const total = (rules.gameMinutes || 7) * 60 + (rec.bonus || 0);   // bonus = the break he cashed in (seconds)
   const start = rec.start || Date.now();
-  if (!rec.start) { patchDay({ games: { [step.id]: { start } } }); tracker.log('game', `game time started (${rules.gameMinutes} min)`); }
+  if (!rec.start) { patchDay({ games: { [step.id]: { start } } }); tracker.log('game', `game time started (${mmss(total)}${rec.bonus ? `, including ${mmss(rec.bonus)} cashed in from the break` : ''})`); }
   tracker.off();
   document.body.classList.remove('cg-has-island');
   const played = new Set(rec.played ? String(rec.played).split(', ') : []);
@@ -32,7 +32,7 @@ export function renderGameTime(root, { step, rules, day, tracker, chat, patchDay
     <main class="cg-content sc-main sc-game">
       <div id="gtUp" class="cg-card sc-notice" hidden><p class="cg-headline">Time's up</p><p class="cg-meta">Finish this round, then it's back to studying.</p></div>
       <div id="gtPick">
-        <p class="cg-text">You earned ${rules.gameMinutes} minutes. Pick a game. You can switch any time.</p>
+        <p class="cg-text">You earned ${rules.gameMinutes} minutes${rec.bonus ? ` + ${mmss(rec.bonus)} from your break` : ''}. Pick a game. You can switch any time.</p>
         <div class="cg-group">${GAMES.map((g) => `
           <button type="button" class="cg-row has-icon" data-game="${g.id}"><span class="cg-row-icon">${icon('play')}</span>
             <span class="cg-row-text"><span class="cg-row-label">${esc(g.name)}</span><span class="cg-row-sub">${esc(g.sub)}</span></span><span class="cg-chev"></span></button>`).join('')}</div>
@@ -91,7 +91,7 @@ export function renderGameTime(root, { step, rules, day, tracker, chat, patchDay
       timeUp = true;
       if (inRound()) { $('#gtUp').hidden = false; tracker.log('game', 'time is up — letting him finish the round'); toast('Time\'s up — finish this round'); live(true); }
     }
-    if (timeUp && !inRound()) return finish('7 minutes done');
+    if (timeUp && !inRound()) return finish(`${mmss(total)} done`);
     live(false);
   }
   const t = setInterval(tick, 1000);

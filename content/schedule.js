@@ -19,7 +19,7 @@ export default {
   ],
   studyDays: [6, 0],        // Saturday, Sunday (JS getDay numbers). Other days are "bonus" days.
   blockMinutes: 50,         // active minutes per block (plus a 10-min break = 1 hour)
-  breakMinutes: 10,
+  breakMinutes: 7,          // he can cash in what's left of a break as extra game time (owner request 2026-10-05)
   gameMinutes: 7,           // game time after each break (Slice or Glide); a round in progress is finished first
   passPct: 90,              // quiz score needed to pass a lesson
   quizSize: 10,             // questions per quiz attempt, drawn from the lesson's bank
