@@ -12,6 +12,7 @@ import { questionHTML, wireAnswer, stageQuiz } from './quiz.js';
 import { studentChat } from './chat.js';
 import { createTutor, tutorButtonHTML, lessonInfo } from './tutor.js';
 import { recordMiss } from './misses.js';
+import { createPoints } from './points.js';
 import { SUBJECT, renderHome as drawHome } from './home.js';
 import { renderBreak as drawBreak } from './break.js';
 
@@ -49,6 +50,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
   const gate = (k) => { have[k] = true; if (!rendered && have.l && have.d) { rendered = true; render(); } };
   const slow = setTimeout(() => { if (!rendered) { rendered = true; render(); toast('Slow connection — showing saved progress'); } }, 6000);
   unsubs.push(() => clearTimeout(slow));
+  // points, streaks, levels, badges (js/points.js); his home card redraws when they change
+  const points = createPoints({ store, sid, tracker, rules: () => cur.rules, onChange: () => { if (rendered && view.name === 'home') render(); } });
   let focusKey = null;   // the lesson his brother sent (settings.focus)
   unsubs.push(store.watchSettings((s) => {
     S.settings = s; cur = buildCurriculum(s);
@@ -83,7 +86,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
   // ─────────────────────────── HOME ─────────────────────────── (drawn by home.js)
   function renderHome() {
     clean();
-    drawHome(root, { cur, lessons: S.lessons, day: day(), chat, tracker, onSignOut, focus: focusLesson(cur, S.lessons),
+    points.dayDone(dayStatus(cur.rules, day()));   // full day → day, focus, streak and weekend bonuses (each pays once)
+    drawHome(root, { cur, lessons: S.lessons, day: day(), chat, tracker, onSignOut, points, focus: focusLesson(cur, S.lessons),
       start: (id) => go({ name: 'step', stepId: id }), extra: () => go({ name: 'step', stepId: 'X', extra: true }) });
   }
 
@@ -94,6 +98,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
     return { rules: cur.rules, tracker, prog: (k) => S.lessons[k] || {}, owesReview, patchLesson, chosen: view.stage === 'quiz',
       onClean: (fn) => cleanups.push(fn), goStage: (stage) => { clean(); view.stage = stage; renderStep(); },
       askTutor: (lesson, question) => openTutor(lesson, 'quiz', question),
+      onQuizPassed: (lesson, r) => points.quizPassed(lesson, r),
       // a graded miss → saved for his brother with Claude's breakdown (js/misses.js)
       onMiss: (lesson, m) => recordMiss(store, sid, { lessonKey: lesson.key, lesson: lesson.title, subject: isAlgebra(lesson) ? 'algebra' : 'biology',
         unit: lesson.u ? `Unit ${lesson.u.n}: ${lesson.u.title}` : '', ...m }) };
@@ -366,6 +371,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       tracker.log('real', `submitted the real-life answer (${ta.value.trim().split(/\s+/).filter(Boolean).length} words)`);
       const wasDone = lessonStage(lesson, S.lessons[lesson.key]) === 'done';
       patchLesson(lesson.key, { realLife: { answer: ta.value.trim(), at: Date.now() }, realDraft: null, ...(wasDone ? {} : { completedAt: Date.now() }) });
+      if (!wasDone) points.lessonDone(cur, lesson, S.lessons);
       const next = currentLesson(unit, S.lessons);
       const wasSent = !!(cur.focus && cur.focus.key === lesson.key);
       if (wasSent) tracker.log('focus', `finished the lesson his brother sent: ${lesson.title}`);
@@ -471,6 +477,6 @@ export function startStudent(root, { store, sid, onSignOut }) {
   }
 
   return {
-    destroy() { clean(); chat.destroy(); tutor.destroy(); tracker.destroy(); document.body.classList.remove('cg-has-island'); unsubs.forEach((u) => { try { u && u(); } catch {} }); },
+    destroy() { clean(); chat.destroy(); tutor.destroy(); points.destroy(); tracker.destroy(); document.body.classList.remove('cg-has-island'); unsubs.forEach((u) => { try { u && u(); } catch {} }); },
   };
 }

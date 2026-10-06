@@ -200,6 +200,8 @@ export function createTracker(store, sid, rules) {
     setVideoOK(ok, reason = '') { videoOK = ok; videoWhy = ok ? '' : reason; },
     log,
     setDay(d) { day = d || {}; },
+    // today's count of a red flag, including ones not saved yet (they're saved every 15 s) — the Focus-day bonus reads leftApp
+    flagCount(type) { return ((day.flags || {})[type] || 0) + (pending.flags[type] || 0); },
     setLive,
     stepSec,
     flag,

@@ -305,3 +305,16 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-miss-body .cg-caption { margin-top: var(--cg-sp); }
 .sc-breakdown { display: flex; flex-direction: column; gap: var(--cg-in-8); }
 .sc-breakdown > * { margin: 0; }
+
+/* points (js/points.js — his home card + "How to earn" sheet; js/points-card.js — the master card) */
+.sc-points { display: flex; flex-direction: column; gap: var(--cg-in-8); }
+.sc-points > * { margin: 0; }
+.sc-points-top { display: flex; align-items: baseline; gap: var(--cg-in-8); flex-wrap: wrap; }
+.sc-points-big { font-size: var(--cg-t-t1); line-height: 1.1; color: var(--cg-ink-strong); }
+.sc-points-line { display: flex; align-items: flex-start; gap: var(--cg-in-8); }
+.sc-points-line svg { width: var(--cg-icon-size); height: var(--cg-icon-size); flex: none; margin-top: var(--cg-in-2); }
+.sc-points-sheet .cg-row-value { flex: none; max-width: none; overflow: visible; }
+.sc-points-have { margin: 0 var(--cg-inset) var(--cg-in-8); padding: 0 var(--cg-row-px); }
+.sc-points .cg-btn { align-self: flex-start; }
+.sc-points-adj { display: flex; flex-direction: column; gap: var(--cg-in-8); }
+.sc-badges { padding: 0 var(--cg-inset); }

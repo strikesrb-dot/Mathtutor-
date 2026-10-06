@@ -99,6 +99,14 @@ and khanacademy.org/science/hs-bio if needed.
   All biology / Mix, saved as settings.plan (js/plan.js builds the day; js/plan-card.js is the card). Saves right away with Undo;
   his screens follow live. Rows show Done / On it now · m of N min / Up next. Removing the block he's in sends him home and on to
   the next one ("cut his day short"). Block ids count per subject, so mid-day changes keep his finished blocks. tests/e2e_plan.py.
+- Points game (owner request 2026-10-05: "100 points = 1$ … 200 points for not leaving the app … retention bonuses, gamify it").
+  Values in content/schedule.js → points: lesson 100 · quiz 1st try +25 / 2nd +10 · perfect +10 · full day +25 · FOCUS DAY (full
+  day, no leftApp flag) +200 · streak (study days in a row: 2nd +50, 3rd +75, 4th+ +100) · full weekend +100 · unit +150 ·
+  weekday session +50. No penalties, no cap (owner's choices). Strong weekend ≈ 1,960 pts ≈ $19.60. Cosmetic: levels every
+  1,000 lifetime pts, 12 badges, streak flame. Awards are written by his app at the moment (fixed ids = can't pay twice);
+  counting starts 2026-10-05 (earlier lessons only by "Add points"). Master: Overview → Points → Mark $X paid (+Undo), add or
+  take away points with a reason (he sees it). Note: Firestore rules let his account write his own points (he'd need computer
+  tools to fake any); tighten firestore.rules if that ever matters.
 - Missed questions (owner request 2026-10-05: "if he fails a question give me a full breakdown … give him the answer eventually and
   explain why his answer is wrong"; he chose: answer only after his answer is wrong and final; Claude's analysis automatic for every
   miss; one retry on one question per quiz).

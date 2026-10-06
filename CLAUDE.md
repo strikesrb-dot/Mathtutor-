@@ -32,6 +32,8 @@ js/tracker.js         focused-time + on-app meter, red flags, 15s flush, live "r
 js/video.js           YouTube IFrame API wrapper: no-skip, speed cap, "Still watching?" checks, pause nag
 js/student.js         student screens: home plan → blocks (Watch → Learn → Quiz → Real life) → breaks → fact videos
 js/quiz.js            graded quiz (anti-cheat lock, review, retry wait, resume mid-quiz, one retry per quiz) + the question widget practice reuses
+js/points.js          points game: rules (pure, unit-tested), awards (fixed ids, pay once), levels, streaks, badges, his home card
+js/points-card.js     master Overview "Points" card: owed, Mark paid (+Undo), add/take away points, history
 js/misses.js          missed quiz questions: saved per miss with Claude's breakdown (/api/breakdown); master Overview list + full-breakdown sheet
 js/home.js            student home screen (plan, courses, messages row)
 js/chat.js            master ↔ student messages + nudges (student sheet pauses his clock; master Chat tab)
@@ -83,6 +85,9 @@ students/{uid}/meta/live           { view, title, lesson, sub, stage, detail, po
 students/{uid}/meta/chat           { masterRead, studentRead }   (time of the last message each side has seen)
 students/{uid}/chat/{id}           { from: 'master'|'student', kind: 'msg'|'nudge', text, at }
 students/{uid}/log/{YYYY-MM-DD}    { entries: [{ t, k, d }] }   (activity log; read only on export, never watched)
+students/{uid}/points/{id}         { pts, kind, label, at, n? } — ids lesson-<key>, quiz-<key>, perfect-<key>, unit-<unitId>, day-<date>,
+                                   focus-<date>, streak-<date>, weekend-<sat>, weekday-<date>, adj-<time> (master); 100 pts = $1
+students/{uid}/payouts/{id}        { pts, at }   (the master marked these points paid)
 students/{uid}/misses/{id}         { at, lessonKey, lesson, subject, unit, q, choices[], picked, retryPick, retryOk, correct, why, sec, quizTry, qNum, of, analysis, analysisAt }
 lessons/{key} also holds quizRun { at, graded, i, right, retryUsed, qs } (a quiz in progress) and realDraft (unsent real-life text)
 Block ids count per subject (A1… Algebra, B1… Biology), so a plan changed mid-day keeps what he did.
@@ -96,6 +101,8 @@ days/{date} also holds breakStart{R1..R5: ts} (break clock) and games{G1..G5: { 
 - `python3 tests/e2e_focus.py` sends a lesson from the master tab and checks the student switches to it, then returns to normal once done.
 - `python3 tests/e2e_tutor.py` stubs /api/tutor and checks the tutor sheet, the clock pause, what is sent, and the quiz "What did I do wrong?".
 - `python3 tests/e2e_misses.py` one retry per quiz, the tutor explaining a final miss (and only then getting the answer), misses + breakdowns in the master view.
+- `python3 tests/e2e_points.py` earns points (perfect quiz, lesson, full day + focus), his card, the master's card (paid + Undo, add points).
+- `node tests/points.test.mjs` unit-tests every points rule on real calendar dates (streaks across weekends, full weekend, unit, weekday).
 - `node tests/breakdown.test.mjs` unit-tests /api/breakdown.
 - `node tests/tutor-video.test.mjs` unit-tests the video search + checks (wrong channel, anime, Shorts, embed off, blocked titles, subject).
 - `node tests/tutor-function.test.mjs` unit-tests the server function (sign-in check, rules, refusals) with no network.

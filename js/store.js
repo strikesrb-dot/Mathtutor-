@@ -104,6 +104,13 @@ function demoAdapter() {
     watchMisses(sid, cb) { return watch(() => cb(Object.entries(snap(`students/${sid}/misses`) || {}).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.at || 0) - (a.at || 0)))); },
     async addMiss(sid, rec) { const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; setAt(`students/${sid}/misses/${id}`, rec); return id; },
     async patchMiss(sid, id, patch) { setAt(`students/${sid}/misses/${id}`, applyMerge(get(`students/${sid}/misses/${id}`), patch)); },
+    // Points (js/points.js): one doc per award with a fixed id, so nothing pays twice; payouts the master marks.
+    watchPoints(sid, cb) { return watch(() => cb(snap(`students/${sid}/points`) || {})); },
+    async awardPoints(sid, id, entry) { setAt(`students/${sid}/points/${id}`, entry); },
+    async removePoints(sid, id) { const all = { ...(get(`students/${sid}/points`) || {}) }; delete all[id]; setAt(`students/${sid}/points`, all); },
+    watchPayouts(sid, cb) { return watch(() => cb(snap(`students/${sid}/payouts`) || {})); },
+    async addPayout(sid, rec) { const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; setAt(`students/${sid}/payouts/${id}`, rec); return id; },
+    async removePayout(sid, id) { const all = { ...(get(`students/${sid}/payouts`) || {}) }; delete all[id]; setAt(`students/${sid}/payouts`, all); },
   };
 }
 
@@ -209,6 +216,13 @@ async function firebaseAdapter() {
     },
     async addMiss(sid, rec) { const ref = await F.addDoc(F.collection(db, `students/${sid}/misses`), rec); return ref.id; },
     async patchMiss(sid, id, patch) { await merge(F.doc(db, `students/${sid}/misses/${id}`), patch); },
+    // Points (js/points.js): one doc per award with a fixed id, so nothing pays twice; payouts the master marks. Plain reads.
+    watchPoints(sid, cb) { return watchCol('points', `students/${sid}/points`, cb); },
+    async awardPoints(sid, id, entry) { await F.setDoc(F.doc(db, `students/${sid}/points/${id}`), entry); },
+    async removePoints(sid, id) { await F.deleteDoc(F.doc(db, `students/${sid}/points/${id}`)); },
+    watchPayouts(sid, cb) { return watchCol('payouts', `students/${sid}/payouts`, cb); },
+    async addPayout(sid, rec) { const ref = await F.addDoc(F.collection(db, `students/${sid}/payouts`), rec); return ref.id; },
+    async removePayout(sid, id) { await F.deleteDoc(F.doc(db, `students/${sid}/payouts/${id}`)); },
   };
 }
 

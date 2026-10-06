@@ -213,7 +213,7 @@ export function stageQuiz({ lesson, el, advance }, app) {
       const tries = (prev.attempts || []).length + 1;
       const patch = { attempts: union({ at: Date.now(), right, total: qs.length, pct }), best: Math.max(prev.best || 0, pct), passed: !!(prev.passed || passed) };
       if (!passed && !prev.passed) Object.assign(patch, { needReview: true, retryAt: Date.now() + rules.retryWaitMin * 60000 });
-      if (passed && !prev.passed) { patch.passedOnTry = tries; if (tries >= rules.manyTries) tracker.flag('manyTries', lesson.key); }
+      if (passed && !prev.passed) { patch.passedOnTry = tries; if (tries >= rules.manyTries) tracker.flag('manyTries', lesson.key); if (app.onQuizPassed) app.onQuizPassed(lesson, { tries, pct }); }
       app.patchLesson(lesson.key, { quiz: patch, quizRun: null });
       tracker.screen({ cap: rules.capScreenSec, label: 'Quiz result' });
       tracker.log('quiz', `${passed ? 'PASSED' : 'FAILED'} ${right}/${qs.length} (${pct}%) on try ${tries}${passed || prev.passed ? '' : ` — must review, then wait ${rules.retryWaitMin} min`}`);

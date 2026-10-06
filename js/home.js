@@ -19,7 +19,7 @@ function nextLabel(s) {
 }
 
 // deps: { cur, lessons, day, chat, tracker, onSignOut, focus (the lesson his brother sent, or null), start(stepId), extra() }
-export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, focus, start, extra }) {
+export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, points, focus, start, extra }) {
   const st = dayStatus(cur.rules, day);
   const d = new Date();
   const isStudyDay = cur.rules.studyDays.includes(d.getDay());
@@ -73,6 +73,7 @@ export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, 
         <span class="cg-row-text"><span class="cg-row-label">${esc(focus.lesson.title)}</span>
           <span class="cg-row-sub">${SUBJECT[focus.subject].name} · Unit ${focus.lesson.u.n} · now: ${(STAGES.find((s) => s.key === lessonStage(focus.lesson, lessons[focus.lesson.key])) || STAGES[0]).label}</span></span>
         </li></ul>` : ''}
+      ${points ? points.cardHTML() : ''}
       <p class="cg-caption">Today's plan</p>
       <ul class="cg-group sc-plan">${st.list.map(stepRow).join('')}</ul>
       <p class="cg-caption">Your courses</p>
@@ -80,6 +81,7 @@ export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, 
       ${chat.rowHTML()}
     </main>`;
   chat.wire(root);
+  if (points) points.wire(root);
   tracker.setLive({ view: 'home', title: 'Home screen', lesson: '', sub: '', stage: '', pos: '',
     detail: st.allDone ? 'Finished today — on the home screen' : `Looking at today's plan (next: ${st.current ? nextLabel(st.current).replace('Next: ', '') : '—'})` }, true);
   root.querySelector('#me').onclick = () => toast(`Signed in as ${STUDENT_NAME}`, { action: onSignOut, label: 'Sign out' });

@@ -10,6 +10,10 @@ export default {
   breakMinutes: 7,          // he can cash in what's left of a break as extra game time (owner request 2026-10-05)
   gameMinutes: 7,           // game time after each break (Slice or Glide); a round in progress is finished first
   passPct: 90,              // quiz score needed to pass a lesson
+  // Points (owner request 2026-10-05): 100 points = $1, no penalties, no cap; his brother marks payouts in the master view.
+  // streak[n] = bonus for the n-th study day in a row (4th and on: the last value). js/points.js awards them.
+  points: { perDollar: 100, lesson: 100, quizFirst: 25, quizSecond: 10, perfect: 10, fullDay: 25, focusDay: 200,
+    streak: [0, 0, 50, 75, 100], weekend: 100, unit: 150, weekdaySession: 50, levelEvery: 1000 },
   quizSize: 10,             // questions per quiz attempt, drawn from the lesson's bank
   retryWaitMin: 3,          // after a failed quiz: review, then wait this long before retrying
   manyTries: 3,             // passing only on this try or later raises a red flag for the master
