@@ -295,3 +295,13 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-tvideo-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .sc-tvideo figcaption { margin-top: var(--cg-in-8); }
 .sc-tvideo-note { margin: 0; }
+
+/* quiz: the one retry per quiz (js/quiz.js) */
+.sc-retry-note { margin: var(--cg-in-8) 0 0; }
+
+/* master → Overview → Missed quiz questions + the full-breakdown sheet (js/misses.js) */
+.sc-miss-body { display: flex; flex-direction: column; gap: var(--cg-in-8); padding-bottom: var(--cg-sp-2); }
+.sc-miss-body > p.cg-meta, .sc-miss-q { margin: 0 var(--cg-row-px); }
+.sc-miss-body .cg-caption { margin-top: var(--cg-sp); }
+.sc-breakdown { display: flex; flex-direction: column; gap: var(--cg-in-8); }
+.sc-breakdown > * { margin: 0; }

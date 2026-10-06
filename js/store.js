@@ -100,6 +100,10 @@ function demoAdapter() {
     async saveLog(sid, date, entries) { setAt(`students/${sid}/log/${date}`, applyMerge(get(`students/${sid}/log/${date}`), { entries: union(...entries) })); },
     async getLog(sid, date) { return snap(`students/${sid}/log/${date}`) || {}; },
     async saveChatRead(sid, patch) { setAt(`students/${sid}/chatRead`, applyMerge(get(`students/${sid}/chatRead`), patch)); },
+    // Missed quiz questions (js/misses.js), newest first.
+    watchMisses(sid, cb) { return watch(() => cb(Object.entries(snap(`students/${sid}/misses`) || {}).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.at || 0) - (a.at || 0)))); },
+    async addMiss(sid, rec) { const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; setAt(`students/${sid}/misses/${id}`, rec); return id; },
+    async patchMiss(sid, id, patch) { setAt(`students/${sid}/misses/${id}`, applyMerge(get(`students/${sid}/misses/${id}`), patch)); },
   };
 }
 
@@ -192,6 +196,19 @@ async function firebaseAdapter() {
     async saveLog(sid, date, entries) { await merge(F.doc(db, `students/${sid}/log/${date}`), { entries: union(...entries) }); },
     async getLog(sid, date) { const d = await F.getDoc(F.doc(db, `students/${sid}/log/${date}`)); return d.data() || {}; },
     async saveChatRead(sid, patch) { await merge(F.doc(db, `students/${sid}/meta/chat`), patch); },
+    // Missed quiz questions (js/misses.js): the newest 80 by "at" (an ordinary field: Firestore's automatic index covers it),
+    // with the same plain-read fallback as the chat.
+    watchMisses(sid, cb) {
+      const list = (out) => Object.entries(out).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.at || 0) - (a.at || 0));
+      const col = F.collection(db, `students/${sid}/misses`);
+      let stop = watchCol('misses', null, (out, err) => {
+        if (!err) return cb(list(out));
+        stop = watchCol('misses (plain)', `students/${sid}/misses`, (o, e) => cb(list(o), e));
+      }, F.query(col, F.orderBy('at', 'desc'), F.limit(80)));
+      return () => stop();
+    },
+    async addMiss(sid, rec) { const ref = await F.addDoc(F.collection(db, `students/${sid}/misses`), rec); return ref.id; },
+    async patchMiss(sid, id, patch) { await merge(F.doc(db, `students/${sid}/misses/${id}`), patch); },
   };
 }
 

@@ -15,8 +15,10 @@ Weekend study app for the owner's younger brother. **Student** = the brother (ph
 - **Safari/WebKit first.** Both devices are Apple (iOS/iPadOS Safari, often added to the Home Screen). Check every change for WebKit issues: no `navigator.vibrate` reliance, audio only after a user tap, 16px+ inputs (prevents iOS zoom), `env(safe-area-inset-*)`, `playsinline` on video, and no APIs newer than Safari 15.4.
 - **Demo mode must keep working** when `js/config.js` has `firebase = null`. It's the test harness.
 - **Keep files small and single-purpose.** If a file passes about 500 lines, split it by responsibility. Don't let the app grow into one giant file.
-- **The tutor never gives answers.** Its rules live in `netlify/lib/tutor-prompt.mjs`. Never send it the right answer to a question, and
-  never let it write Qur'an or hadith text: it may only cite `content/motivation.js` entries by tag, and only once the owner sets approved.
+- **The tutor gives no answers while a question is open.** Its rules live in `netlify/lib/tutor-prompt.mjs`. The right answer is sent to it
+  ONLY when the app says his answer is final and wrong (owner 2026-10-05: then it explains why his pick is wrong, gives the right answer,
+  and a similar question to try). It never writes his real-life answer. It never writes Qur'an or hadith text: it may only cite
+  `content/motivation.js` entries by tag, and only once the owner sets approved.
 - **Source content is the owner's call.** Never silently "fix" lesson text, quiz answers, or video choices he has edited. Flag the issue and propose a change.
 
 ## Layout
@@ -29,7 +31,8 @@ js/store.js           data layer: Firebase adapter + localStorage demo adapter (
 js/tracker.js         focused-time + on-app meter, red flags, 15s flush, live "right now" status (setLive)
 js/video.js           YouTube IFrame API wrapper: no-skip, speed cap, "Still watching?" checks, pause nag
 js/student.js         student screens: home plan → blocks (Watch → Learn → Quiz → Real life) → breaks → fact videos
-js/quiz.js            graded quiz (anti-cheat lock, review, retry wait, resume mid-quiz) + the question widget practice reuses
+js/quiz.js            graded quiz (anti-cheat lock, review, retry wait, resume mid-quiz, one retry per quiz) + the question widget practice reuses
+js/misses.js          missed quiz questions: saved per miss with Claude's breakdown (/api/breakdown); master Overview list + full-breakdown sheet
 js/home.js            student home screen (plan, courses, messages row)
 js/chat.js            master ↔ student messages + nudges (student sheet pauses his clock; master Chat tab)
 js/log-export.js      master's "Activity log for Claude" export (instructions + totals + lessons + every logged event)
@@ -40,6 +43,7 @@ netlify/functions/tutor.mjs  POST /api/tutor — checks the Firebase sign-in (ma
                       (netlify/lib/tutor-prompt.mjs), calls Claude. Needs ANTHROPIC_API_KEY in Netlify env. No npm deps.
 netlify/functions/tutor-video.mjs  POST /api/tutor-video — finds one video for a [video-search: …] line (Claude web search, youtube.com
                       only); netlify/lib/video-check.mjs checks it (oEmbed: vetted channel for the subject, embeddable, no Shorts, title blocks)
+netlify/functions/breakdown.mjs  POST /api/breakdown — Claude's breakdown of one missed question, written for the owner
 content/video-channels.js the 42 vetted YouTube channels + title block lists the tutor's videos must pass (owner-approved 2026-10-05)
 content/motivation.js Qur'an (Tanzil Uthmani 1.1 + Saheeh Intl, verbatim) + hadith (sunnah.com English, verbatim) the tutor may quote
                       by tag; owner-approved 2026-10-05. Built by script — never hand-type or edit these texts; ask the owner to change the list
@@ -79,7 +83,8 @@ students/{uid}/meta/live           { view, title, lesson, sub, stage, detail, po
 students/{uid}/meta/chat           { masterRead, studentRead }   (time of the last message each side has seen)
 students/{uid}/chat/{id}           { from: 'master'|'student', kind: 'msg'|'nudge', text, at }
 students/{uid}/log/{YYYY-MM-DD}    { entries: [{ t, k, d }] }   (activity log; read only on export, never watched)
-lessons/{key} also holds quizRun { at, graded, i, right, qs } (a quiz in progress) and realDraft (unsent real-life text)
+students/{uid}/misses/{id}         { at, lessonKey, lesson, subject, unit, q, choices[], picked, retryPick, retryOk, correct, why, sec, quizTry, qNum, of, analysis, analysisAt }
+lessons/{key} also holds quizRun { at, graded, i, right, retryUsed, qs } (a quiz in progress) and realDraft (unsent real-life text)
 Block ids count per subject (A1… Algebra, B1… Biology), so a plan changed mid-day keeps what he did.
 days/{date} also holds breakStart{R1..R5: ts} (break clock) and games{G1..G5: { start, bonus, done, played }} (bonus = seconds of break cashed in)
 ```
@@ -90,6 +95,8 @@ days/{date} also holds breakStart{R1..R5: ts} (break clock) and games{G1..G5: { 
 - `python3 tests/e2e_plan.py` changes the study plan from the master tab (presets, remove + Undo, add to 6, per-block subject, a change mid-block).
 - `python3 tests/e2e_focus.py` sends a lesson from the master tab and checks the student switches to it, then returns to normal once done.
 - `python3 tests/e2e_tutor.py` stubs /api/tutor and checks the tutor sheet, the clock pause, what is sent, and the quiz "What did I do wrong?".
+- `python3 tests/e2e_misses.py` one retry per quiz, the tutor explaining a final miss (and only then getting the answer), misses + breakdowns in the master view.
+- `node tests/breakdown.test.mjs` unit-tests /api/breakdown.
 - `node tests/tutor-video.test.mjs` unit-tests the video search + checks (wrong channel, anime, Shorts, embed off, blocked titles, subject).
 - `node tests/tutor-function.test.mjs` unit-tests the server function (sign-in check, rules, refusals) with no network.
 - Both need Playwright with a browser. WebKit is preferred: `p.webkit.launch()`. Screenshots go to `tests/screens/`.

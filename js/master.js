@@ -8,6 +8,7 @@ import factsDefault from '../content/facts.js';
 import { masterChat } from './chat.js';
 import { openLogSheet, closeLogSheet } from './log-export.js';
 import { drawPlanCard } from './plan-card.js';
+import { missesHTML, wireMisses, refreshMissSheet, fillMissing, closeMissSheet } from './misses.js';
 
 const FLAG_LABEL = {
   leftApp: 'Left the app',
@@ -26,7 +27,7 @@ function stepLabel(id) { const m = /^([ABFRG])(\d+)$/.exec(id || ''); return id 
 const TABS = [['overview', 'Overview'], ['lessons', 'Lessons'], ['chat', 'Chat'], ['settings', 'Settings']];
 
 export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStudent }) {
-  const S = { settings: {}, lessons: {}, days: {}, live: {}, err: {} };   // err = data that failed to load
+  const S = { settings: {}, lessons: {}, days: {}, live: {}, misses: [], err: {} };   // err = data that failed to load
   let cur = buildCurriculum({});
   let tab = 'overview';
   const open = new Set();
@@ -56,6 +57,8 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   unsubs.push(store.watchLessons(sid, (l, err) => { S.lessons = l || {}; S.err.lessons = err; rendered ? softRender() : gate('l'); }));
   unsubs.push(store.watchDays(sid, (d, err) => { S.days = d || {}; S.err.days = err; rendered ? softRender() : gate('d'); }));
   unsubs.push(store.watchLive(sid, (l, err) => { S.live = l || {}; S.err.live = err; updateLive(); }));
+  // missed quiz questions + Claude's breakdowns (js/misses.js); fills in any breakdown his app didn't finish
+  unsubs.push(store.watchMisses(sid, (m, err) => { S.misses = m || []; S.err.misses = err; refreshMissSheet(S.misses); fillMissing(store, sid, S.misses); if (rendered) softRender(); }));
   const liveTimer = setInterval(() => { if (tab === 'overview') softRender(); }, 30000);
   const cardTimer = setInterval(updateLive, 5000);   // keeps "on the app now" / "last seen" honest between saves
 
@@ -136,6 +139,8 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
         : row({ ic: 'check', label: 'No red flags today' })}</ul>
       ${d.practice ? `<p class="cg-foot">Extra practice: ${Object.entries(d.practice).map(([k, v]) => `${esc(k)} ${v.right}/${v.total}`).join(' · ')}</p>` : ''}
 
+      ${missesHTML(S.misses)}
+
       <p class="cg-caption">This weekend</p>
       <ul class="cg-group">${lastWeekend().map(([key, dd]) => row({
         ic: 'clock', label: dayName(key), sub: dd ? daySub(dd) : 'No study', value: hm((dd || {}).activeSec || 0),
@@ -155,6 +160,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       })).join('') || row({ label: 'Nothing flagged' })}</ul>`;
     body.querySelector('#nudgeBtn').onclick = () => chat.nudge();
     wireFocus(body);
+    wireMisses(body, S.misses, () => { if (tab === 'overview') render(); });
     body.querySelector('#logBtn').onclick = () => openLogSheet({ store, sid, state: () => ({ cur, days: S.days, lessons: S.lessons, msgs: chat.messages() }) });
     body.querySelector('#msgBtn').onclick = () => { tab = 'chat'; render(); window.scrollTo(0, 0); };
   }
@@ -429,5 +435,5 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     }
   }
 
-  return { destroy() { clearInterval(liveTimer); clearInterval(cardTimer); chat.destroy(); closeLogSheet(); unsubs.forEach((u) => { try { u && u(); } catch {} }); } };
+  return { destroy() { clearInterval(liveTimer); clearInterval(cardTimer); chat.destroy(); closeLogSheet(); closeMissSheet(); unsubs.forEach((u) => { try { u && u(); } catch {} }); } };
 }

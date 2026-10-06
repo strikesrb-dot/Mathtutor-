@@ -30,7 +30,7 @@ function quoteCard(q) {
 function inline(t) {
   return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<span class="sc-math">$1</span>').replace(/\[quote:[\w-]+\]/g, '');
 }
-function renderText(text) {
+export function renderText(text) {
   const out = []; let para = [], list = null;
   const flushPara = () => { if (para.length) { out.push(`<p class="cg-text">${para.join(' ')}</p>`); para = []; } };
   const flushList = () => { if (list) { out.push(`<${list.tag} class="sc-tlist">${list.items.map((i) => `<li class="cg-text">${i}</li>`).join('')}</${list.tag}>`); list = null; } };
@@ -97,6 +97,7 @@ export function createTutor({ store, tracker }) {
   }
   function opener(c) {
     const q = c.question;
+    if (q && q.picked && q.wrong && q.final) return `You picked "${q.picked}". Let's look at why that's not it.`;
     if (q && q.picked && q.wrong) return `Let's work this one out together. You picked "${q.picked}". How did you decide on that?`;
     if (q) return 'What part of this question is tripping you up? Tell me what you\'re thinking so far.';
     if (c.stage === 'real') return 'Let\'s think it through together. I won\'t write it for you, but I\'ll help you figure out what to say. Which part of the question are you unsure about?';
@@ -150,11 +151,15 @@ export function createTutor({ store, tracker }) {
     // c = { lesson: lessonInfo(...), lessonKey, subject: 'algebra'|'biology', stage: 'watch'|'learn'|'quiz'|'real'|'practice', question?: { q, choices, picked, wrong } }
     open(c) {
       ctx = c; note = '';
-      const key = `${c.lessonKey}|${c.stage}|${c.question ? c.question.q + '|' + (c.question.picked || '') : ''}`;
+      const q = c.question, final = !!(q && q.final && q.wrong);
+      const key = `${c.lessonKey}|${c.stage}|${q ? `${q.q}|${q.picked || ''}|${final ? 'final' : ''}` : ''}`;
+      const fresh = !threads[key];
       thread = threads[key] = threads[key] || [{ role: 'assistant', content: opener(c) }];
       sheet.querySelector('#tutorSub').textContent = c.lesson.title;
       paint();
       if (window.CalmGlass) window.CalmGlass.open(sheet);
+      // A final miss: his brother wants him to see what went wrong, so the explanation starts right away (owner 2026-10-05).
+      if (fresh && final) { tracker.log('tutor', `asked why "${q.picked}" was wrong (answer final — the tutor gives the right answer)`); ask('Why is my answer wrong?'); }
     },
     destroy() { if (isOpen && window.CalmGlass) window.CalmGlass.close(sheet); tracker.hold(false); sheet.remove(); },
   };

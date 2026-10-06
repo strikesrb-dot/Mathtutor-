@@ -99,6 +99,16 @@ and khanacademy.org/science/hs-bio if needed.
   All biology / Mix, saved as settings.plan (js/plan.js builds the day; js/plan-card.js is the card). Saves right away with Undo;
   his screens follow live. Rows show Done / On it now · m of N min / Up next. Removing the block he's in sends him home and on to
   the next one ("cut his day short"). Block ids count per subject, so mid-day changes keep his finished blocks. tests/e2e_plan.py.
+- Missed questions (owner request 2026-10-05: "if he fails a question give me a full breakdown … give him the answer eventually and
+  explain why his answer is wrong"; he chose: answer only after his answer is wrong and final; Claude's analysis automatic for every
+  miss; one retry on one question per quiz).
+  - Quiz: after a miss he may use the quiz's ONE retry on that question, ask "What did I do wrong?", or tap Next. Asking the tutor
+    (or Next, or the retry's result) makes the question final; the quiz screen still never shows the right answer.
+  - Tutor: final + wrong → the app sends final: true + the right answer; the tutor starts by itself ("Why is my answer wrong?"):
+    why his pick is wrong → the right answer and why → a similar question to try. Open questions: still no answers, ever.
+  - Every final graded miss (retry-fixed ones too) → students/{uid}/misses + /api/breakdown (Claude, written to the owner: what he
+    likely thought, why wrong, right answer, how to explain it, a check question). His app asks right away; the master app fills in
+    any it couldn't (after 60 s). Master Overview → "Missed quiz questions" → tap for the full breakdown. tests/e2e_misses.py.
 - Tutor videos (owner request 2026-10-05: "videos related to the topic, no anime"): chip "Show me a video", or the tutor decides.
   The reply carries a [video-search: …] line → /api/tutor-video (Claude Haiku 4.5 + web search, youtube.com only, ≤2 searches;
   falls back to Sonnet 5.5 if Haiku is refused) → every candidate checked by netlify/lib/video-check.mjs → the first that passes

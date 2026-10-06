@@ -11,6 +11,7 @@ import { practiceFor } from './practice.js';
 import { questionHTML, wireAnswer, stageQuiz } from './quiz.js';
 import { studentChat } from './chat.js';
 import { createTutor, tutorButtonHTML, lessonInfo } from './tutor.js';
+import { recordMiss } from './misses.js';
 import { SUBJECT, renderHome as drawHome } from './home.js';
 import { renderBreak as drawBreak } from './break.js';
 
@@ -92,7 +93,10 @@ export function startStudent(root, { store, sid, onSignOut }) {
   function quizApp() {
     return { rules: cur.rules, tracker, prog: (k) => S.lessons[k] || {}, owesReview, patchLesson, chosen: view.stage === 'quiz',
       onClean: (fn) => cleanups.push(fn), goStage: (stage) => { clean(); view.stage = stage; renderStep(); },
-      askTutor: (lesson, question) => openTutor(lesson, 'quiz', question) };
+      askTutor: (lesson, question) => openTutor(lesson, 'quiz', question),
+      // a graded miss → saved for his brother with Claude's breakdown (js/misses.js)
+      onMiss: (lesson, m) => recordMiss(store, sid, { lessonKey: lesson.key, lesson: lesson.title, subject: isAlgebra(lesson) ? 'algebra' : 'biology',
+        unit: lesson.u ? `Unit ${lesson.u.n}: ${lesson.u.title}` : '', ...m }) };
   }
   // The tutor for this lesson (and step, and question if any). Buttons made by tutorButtonHTML() carry data-tutor.
   // Match by key: the curriculum is rebuilt on every settings change, so lesson objects aren't the same objects.
@@ -395,7 +399,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
         tracker.log('answer', `practice ${ok ? 'right' : 'WRONG'} — "${String(item.q).slice(0, 100)}"${ok ? '' : ` — picked "${String(picked).slice(0, 60)}"`}`);
         patchDay({ practice: { [step.subject]: { right: inc(ok ? 1 : 0), total: inc(1) } } });
       }, 'Next', () => { nextQ(); window.scrollTo(0, 0); }, true,
-      (picked, wrong) => openTutor(l, 'practice', { q: item.q, choices: opts.map((o) => o.text), picked, wrong }));
+      (picked, wrong, final) => openTutor(l, 'practice', { q: item.q, choices: opts.map((o) => o.text), picked, wrong,
+        ...(final && picked && wrong ? { final: true, correct: item.c[0] } : {}) }));
     };
     nextQ();
   }

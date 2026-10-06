@@ -1,6 +1,8 @@
 // The graded lesson quiz (start / locked-after-fail screen → questions → score), plus the question widget
-// that review practice also uses. Rules: a miss keeps the right answer hidden until he passes; after a fail he
-// must review (Learn or a video), then wait rules.retryWaitMin minutes before the next try.
+// that review practice also uses. Rules: a miss keeps the right answer hidden on the quiz screen (the tutor explains it and
+// gives it once the miss is final); one retry on one question per quiz (owner 2026-10-05); after a failed quiz he must review
+// (Learn or a video), then wait rules.retryWaitMin minutes before the next try. Every final miss goes to app.onMiss
+// (js/misses.js: saved for his brother with Claude's breakdown).
 
 import { union } from './store.js';
 import { esc, mmss, shuffle, icon, bar } from './ui.js';
@@ -20,32 +22,73 @@ export function questionHTML(item, opts, top, withTutor = false) {
     </div>`;
 }
 
-// reveal = show the right answer + explanation after a miss (practice). Graded quizzes keep it hidden.
-// askTutor(picked, wrong): opens the tutor about this question (it never gives the answer). Optional.
-export function wireAnswer(el, item, opts, onAnswer, nextLabel, onNext, reveal = true, askTutor = null) {
+// reveal = show the right answer + explanation after a miss (practice). Graded quizzes keep it hidden on screen.
+// askTutor(picked, wrong, final): opens the tutor about this question. final = his answer can't change any more, so the tutor
+//   may explain why it's wrong and give the right answer. Optional.
+// more (graded quiz): { canRetry(), onRetry(), onRetryAnswer(ok, picked), onFinal(firstOk, firstPick, retryPick, retryOk) }.
+//   After a miss he may use the quiz's one retry on this question, or ask the tutor (which makes this question final).
+export function wireAnswer(el, item, opts, onAnswer, nextLabel, onNext, reveal = true, askTutor = null, more = {}) {
   const qt = el.querySelector('[data-qtutor]');
-  if (qt && askTutor) qt.onclick = () => askTutor(null, false);
+  if (qt && askTutor) qt.onclick = () => askTutor(null, false, false);
+  const fb = el.querySelector('#fb');
+  let first = null, retrying = false, finalDone = false;
+  const final = (retryPick = null, retryOk = false) => {
+    if (finalDone || !first) return;
+    finalDone = true;
+    if (more.onFinal) more.onFinal(first.ok, first.text, retryPick, retryOk);
+  };
+  const markPick = (b, o, label) => {
+    if (o.ok) return;
+    b.classList.add('sc-wrong');
+    b.querySelector('.cg-row-text').insertAdjacentHTML('beforeend', `<span class="cg-row-sub">${label}</span>`);
+    b.querySelector('.cg-check').outerHTML = `<span class="sc-x">${icon('wrong')}</span>`;
+  };
+  const lockAll = (showRight) => el.querySelectorAll('.opt').forEach((x, k) => {
+    x.disabled = true;
+    if (opts[k].ok && showRight) { x.setAttribute('aria-checked', 'true'); x.classList.add('cg-row-accent'); }
+  });
+  // buttons: 'retry' (use the quiz's one retry), 'why' (ask the tutor: final), then Next
+  const showFeedback = (head, body, buttons) => {
+    fb.innerHTML = `<div class="cg-card sc-why"><p class="cg-headline">${head}</p><p class="cg-text">${body}</p></div>
+      <div class="sc-actions">${buttons.includes('retry') ? '<button class="cg-btn cg-btn-glass" id="tryAgain">Try again</button>' : ''}${buttons.includes('why') && askTutor ? '<button class="cg-btn cg-btn-glass" id="askWhy">What did I do wrong?</button>' : ''}<button class="cg-btn cg-btn-strong" id="nx">${nextLabel}</button></div>`;
+    fb.querySelector('#nx').onclick = () => { final(); onNext(); };
+    const why = fb.querySelector('#askWhy');
+    if (why) why.onclick = () => { final(); hideRetry(); askTutor(first.text, true, true); };
+    const again = fb.querySelector('#tryAgain');
+    if (again) again.onclick = startRetry;
+    fb.querySelector('#nx').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+  const hideRetry = () => { const t = fb.querySelector('#tryAgain'); if (t) t.remove(); };
+  function startRetry() {
+    retrying = true;
+    if (more.onRetry) more.onRetry();
+    el.querySelectorAll('.opt').forEach((x, k) => { if (opts[k].text !== first.text) x.disabled = false; });
+    fb.innerHTML = '<p class="cg-meta sc-retry-note">One more try on this question. Pick again.</p>';
+  }
   el.querySelectorAll('.opt').forEach((b) => {
     b.onclick = () => {
       const o = opts[Number(b.dataset.k)];
-      el.querySelectorAll('.opt').forEach((x, k) => {
-        x.disabled = true;
-        if (opts[k].ok && (reveal || o.ok)) { x.setAttribute('aria-checked', 'true'); x.classList.add('cg-row-accent'); }
-      });
-      if (!o.ok) {
-        b.classList.add('sc-wrong');
-        b.querySelector('.cg-row-text').insertAdjacentHTML('beforeend', '<span class="cg-row-sub">Your answer</span>');
-        b.querySelector('.cg-check').outerHTML = `<span class="sc-x">${icon('wrong')}</span>`;
+      if (qt) qt.hidden = true;
+      if (retrying) {   // his second pick on this question (the quiz's one retry)
+        retrying = false;
+        lockAll(o.ok);
+        markPick(b, o, 'Your second try');
+        if (more.onRetryAnswer) more.onRetryAnswer(o.ok, o.text);
+        final(o.text, o.ok);
+        return showFeedback(o.ok ? 'Correct on your retry' : 'Not quite again',
+          o.ok ? esc(item.why) : 'Tap "What did I do wrong?" and the tutor will show you why, and the right answer.', ['why']);
       }
+      first = { ok: o.ok, text: o.text };
+      lockAll(o.ok || reveal);
+      markPick(b, o, 'Your answer');
       onAnswer(o.ok, o.text);
-      const body = o.ok || reveal ? esc(item.why) : 'The right answer stays hidden until you pass. If you\'re stuck, the Learn page and the videos have it.';
-      el.querySelector('#fb').innerHTML = `
-        <div class="cg-card sc-why"><p class="cg-headline">${o.ok ? 'Correct' : 'Not quite'}</p><p class="cg-text">${body}</p></div>
-        <div class="sc-actions">${!o.ok && askTutor ? '<button class="cg-btn cg-btn-glass" id="askWhy">What did I do wrong?</button>' : ''}<button class="cg-btn cg-btn-strong" id="nx">${nextLabel}</button></div>`;
-      el.querySelector('#nx').onclick = onNext;
-      if (qt && askTutor) qt.onclick = () => askTutor(o.text, !o.ok);
-      const why = el.querySelector('#askWhy'); if (why) why.onclick = () => askTutor(o.text, true);
-      el.querySelector('#nx').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (o.ok) { final(); return showFeedback('Correct', esc(item.why), []); }
+      if (reveal) { final(); return showFeedback('Not quite', esc(item.why), ['why']); }
+      if (more.canRetry && more.canRetry()) {
+        return showFeedback('Not quite', 'You get one retry in this quiz. Use it here, or ask the tutor what went wrong (asking uses up your retry on this question).', ['retry', 'why']);
+      }
+      final();
+      showFeedback('Not quite', 'Tap "What did I do wrong?" and the tutor will show you why, and the right answer.', ['why']);
     };
   });
 }
@@ -64,9 +107,9 @@ export function buildQuiz(lesson, size) {
 const withOpts = (item, order) => ({ q: item.q, c: item.c, why: item.why, order, opts: order.map((k) => ({ text: item.c[k], ok: k === 0 })) });
 const toSaved = (it) => ({ q: it.q, c: it.c, why: it.why || '', order: it.order });
 
-// app = { rules, tracker, prog(key), owesReview(lesson), patchLesson(key, patch), onClean(fn), goStage(stage), chosen }
+// app = { rules, tracker, prog(key), owesReview(lesson), patchLesson(key, patch), onClean(fn), goStage(stage), chosen, askTutor?, onMiss? }
 //   chosen = he tapped the Quiz tab himself (so a passed quiz shows "take it again" instead of moving on).
-// A quiz in progress is saved on the lesson as quizRun { at, graded, i, right, qs }: closing the app mid-quiz brings him
+// A quiz in progress is saved on the lesson as quizRun { at, graded, i, right, retryUsed, qs }: closing the app mid-quiz brings him
 // back to the same question with the same questions (and closing it can't get him a fresh, easier quiz).
 export function stageQuiz({ lesson, el, advance }, app) {
   const { rules, tracker } = app;
@@ -126,26 +169,42 @@ export function stageQuiz({ lesson, el, advance }, app) {
   function run(resume) {
     const qs = resume ? resume.qs.map((it) => withOpts(it, it.order)) : buildQuiz(lesson, size);
     const graded = resume ? resume.graded !== false : !q.passed;
-    let i = resume ? resume.i : 0, right = resume ? resume.right || 0 : 0;
+    let i = resume ? resume.i : 0, right = resume ? resume.right || 0 : 0, retryUsed = resume ? !!resume.retryUsed : false;
     if (!resume) app.patchLesson(lesson.key, { quizRun: { at: Date.now(), graded, i: 0, right: 0, qs: qs.map(toSaved) } });
     else tracker.setLive({ pos: 'Picked the quiz back up where he left off' });
     tracker.log('quiz', resume ? `picked the quiz back up at question ${i + 1} (${right} right so far)` : `started ${graded ? `try ${attempts + 1}` : 'a practice retake'} — ${qs.length} questions`);
     let shownAt = Date.now();
     const show = () => {
       const it = qs[i];
-      el.innerHTML = questionHTML(it, it.opts, `Question ${i + 1} of ${qs.length} · ${right} right`, !!app.askTutor);
+      el.innerHTML = questionHTML(it, it.opts, `Question ${i + 1} of ${qs.length} · ${right} right${graded && !retryUsed ? ' · 1 retry left' : ''}`, !!app.askTutor);
       el.querySelector('.sc-qtop').insertAdjacentHTML('afterend', bar((i / qs.length) * 100));
       tracker.setLive({ detail: graded ? `Taking the quiz (try ${attempts + 1})` : 'Retaking a passed quiz for practice',
         pos: `Question ${i + 1} of ${qs.length}${i ? ` · ${right} of ${i} right so far` : ''}` }, true);
       tracker.screen({ cap: rules.capQuestionMin * 60, label: 'Quiz question' });
       shownAt = Date.now();
+      let sec = 0;
       wireAnswer(el, it, it.opts, (ok, picked) => {
         if (ok) right += 1;
+        sec = Math.round((Date.now() - shownAt) / 1000);
         app.patchLesson(lesson.key, { quizRun: { i: i + 1, right } });
-        tracker.log('answer', `Q${i + 1} ${ok ? 'right' : 'WRONG'} in ${Math.round((Date.now() - shownAt) / 1000)}s — "${String(it.q).slice(0, 100)}"${ok ? '' : ` — picked "${String(picked).slice(0, 60)}"`}`);
+        tracker.log('answer', `Q${i + 1} ${ok ? 'right' : 'WRONG'} in ${sec}s — "${String(it.q).slice(0, 100)}"${ok ? '' : ` — picked "${String(picked).slice(0, 60)}"`}`);
       }, i < qs.length - 1 ? 'Next' : 'See my score',
         () => { i += 1; if (i < qs.length) { show(); window.scrollTo(0, 0); } else finish(); }, !graded,
-        app.askTutor ? (picked, wrong) => app.askTutor(lesson, { q: it.q, choices: it.opts.map((o) => o.text), picked, wrong }) : null);
+        app.askTutor ? (picked, wrong, final) => app.askTutor(lesson, { q: it.q, choices: it.opts.map((o) => o.text), picked, wrong,
+          ...(final && picked && wrong ? { final: true, correct: it.c[0] } : {}) }) : null,
+        !graded ? {} : {
+          canRetry: () => !retryUsed,
+          onRetry: () => { retryUsed = true; app.patchLesson(lesson.key, { quizRun: { retryUsed: true } }); tracker.log('answer', `Q${i + 1} used his one retry for this quiz`); },
+          onRetryAnswer: (ok, picked) => {
+            if (ok) { right += 1; app.patchLesson(lesson.key, { quizRun: { right } }); }
+            tracker.log('answer', `Q${i + 1} retry ${ok ? 'right' : 'WRONG'} — picked "${String(picked).slice(0, 60)}"`);
+          },
+          onFinal: (firstOk, firstPick, retryPick, retryOk) => {
+            if (firstOk || !app.onMiss) return;
+            app.onMiss(lesson, { q: it.q, choices: it.opts.map((o) => o.text), picked: firstPick, retryPick: retryPick || '', retryOk: !!retryOk,
+              correct: it.c[0], why: it.why || '', sec, quizTry: attempts + 1, qNum: i + 1, of: qs.length });
+          },
+        });
     };
     const finish = () => {
       const pct = Math.round((right / qs.length) * 100);
