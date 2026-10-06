@@ -1,7 +1,7 @@
 // POST /api/tutor — the study tutor (Claude). Only the master or the student, signed in with Firebase, may use it.
 // Needs the Netlify environment variable ANTHROPIC_API_KEY (Site configuration → Environment variables). Optional: TUTOR_MODEL.
 // Body: { lesson: { title, subject, unit, learn, realLifePrompt, videos[] }, stage, question?: { q, choices[], picked, wrong }, messages: [{ role, content }] }
-// Reply: { reply } — or { error } with 401/403 (not signed in / not allowed), 503 (no API key yet), 502 (Claude didn't answer).
+// Reply: { reply, videoQuery } (videoQuery: the app should look for a video, see tutor-video.mjs) — or { error } with 401/403 (not signed in / not allowed), 503 (no API key yet), 502 (Claude didn't answer).
 import { verifyIdToken } from '../lib/firebase-auth.mjs';
 import { rulesPrompt, contextPrompt, cleanMessages } from '../lib/tutor-prompt.mjs';
 import { firebase as FB, MASTER_UID, STUDENT_UID, STUDENT_NAME } from '../../js/config.js';
@@ -44,8 +44,12 @@ export async function handle(req, env = process.env, fetchImpl = fetch) {
   if (!r.ok) { console.error('anthropic error', r.status, (await r.text()).slice(0, 500)); return json({ error: 'upstream', status: r.status }, 502); }
   const data = await r.json();
   let reply = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+  // A [video-search: …] line asks the app to find a video (/api/tutor-video); it is never shown. Links are never shown either.
+  let videoQuery = '';
+  reply = reply.replace(/^[ \t]*\[video-search:\s*([^\]\n]{2,120})\][ \t]*$/gim, (m, q) => { if (!videoQuery) videoQuery = q.trim(); return ''; })
+    .replace(/https?:\/\/(?:www\.|m\.)?(?:youtube\.com|youtu\.be)\/\S+/gi, '').replace(/\n{3,}/g, '\n\n').trim();
   if (data.stop_reason === 'max_tokens') reply += '\n\n(I ran out of room there. Ask me to keep going.)';
-  return json({ reply: reply || 'Sorry, I lost my train of thought. Can you ask that again?', stop: data.stop_reason || '' });
+  return json({ reply: reply || 'Sorry, I lost my train of thought. Can you ask that again?', videoQuery, stop: data.stop_reason || '' });
 }
 
 export default (req) => handle(req);

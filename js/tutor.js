@@ -2,13 +2,15 @@
 // /api/tutor → netlify/functions/tutor.mjs) asks what part, teaches with its own examples, and never gives the answer.
 // His study clock pauses while the tutor is open (the owner's choice). Every question and reply goes to the activity log.
 // Motivation quotes arrive as tags like [quote:q94-5] and are shown from content/motivation.js — only once the owner approves it.
+// Videos: when the tutor asks for one (reply.videoQuery), /api/tutor-video finds one from the owner's vetted channels and it plays
+// right here in the chat (youtube-nocookie embed). His clock stays paused, like the rest of the tutor.
 
 import { esc, icon } from './ui.js';
 import QUOTES, { approved } from '../content/motivation.js';
 import { STUDENT_NAME } from './config.js';
 
 const QMAP = Object.fromEntries(QUOTES.map((q) => [q.id, q]));
-const CHIPS = ['I don\'t get this part', 'Give me another example', 'Explain it more simply', 'I\'m losing motivation'];
+const CHIPS = ['I don\'t get this part', 'Give me another example', 'Explain it more simply', 'Show me a video', 'I\'m losing motivation'];
 
 // Shows the text exactly as stored. Tanzil's licence asks that the source is named with a link to tanzil.net wherever a verse is shown.
 function quoteCard(q) {
@@ -49,6 +51,15 @@ function renderText(text) {
   flushPara(); flushList();
   return out.join('');
 }
+// A video the server checked (id is 11 safe characters; title and channel are escaped).
+function videoHTML(v) {
+  if (!v) return '';
+  if (v.state === 'loading') return '<p class="cg-meta sc-tvideo-note">Finding a short video…</p>';
+  if (v.state !== 'ok') return '<p class="cg-meta sc-tvideo-note">I couldn\'t find a good video for that one.</p>';
+  return `<figure class="sc-tvideo"><div class="sc-tvideo-frame"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.id)}?rel=0&playsinline=1&modestbranding=1"
+    title="${esc(v.title)}" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe></div>
+    <figcaption class="cg-meta">${esc(v.title)} · ${esc(v.channel)}</figcaption></figure>`;
+}
 const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html || ''; return d.textContent.replace(/\s+/g, ' ').trim(); };
 
 // What the tutor knows about the lesson (sent with each question; the server puts it after its own rules).
@@ -78,7 +89,7 @@ export function createTutor({ store, tracker }) {
   const list = sheet.querySelector('#tutorList'), body = sheet.querySelector('.cg-sheet-body'), input = sheet.querySelector('input');
 
   function paint() {
-    list.innerHTML = thread.map((m) => `<div class="sc-msg ${m.role === 'user' ? 'is-me' : ''}">${m.role === 'user' ? `<p class="cg-text">${esc(m.content)}</p>` : renderText(m.content)}</div>`).join('')
+    list.innerHTML = thread.map((m) => `<div class="sc-msg ${m.role === 'user' ? 'is-me' : ''}">${m.role === 'user' ? `<p class="cg-text">${esc(m.content)}</p>` : renderText(m.content) + videoHTML(m.video)}</div>`).join('')
       + (busy ? '<div class="sc-msg sc-typing"><p class="cg-meta">The tutor is thinking…</p></div>' : '')
       + (note ? `<p class="cg-meta sc-tutor-note">${esc(note)}</p>` : '');
     sheet.querySelector('[type=submit]').disabled = busy;
@@ -96,19 +107,34 @@ export function createTutor({ store, tracker }) {
     if (status === 401 || status === 403) return 'The tutor couldn\'t check your sign-in. Close the app, open it again, and retry.';
     return 'The tutor couldn\'t answer just now. Check the Wi-Fi and try again.';
   }
+  // What the server sees of the chat: each video the app showed is noted so the tutor knows about it.
+  const forServer = (t) => t.map((m) => ({ role: m.role, content: m.content + (m.video && m.video.state === 'ok' ? `\n(The app showed him a video: "${m.video.title}" by ${m.video.channel}.)` : '') }));
+  async function authHeaders() { const token = await store.idToken(); return { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }; }
+  async function findVideo(msg, query) {
+    tracker.log('tutor', `looking for a video: ${query}`);
+    try {
+      const r = await fetch('/api/tutor-video', { method: 'POST', headers: await authHeaders(),
+        body: JSON.stringify({ query, subject: ctx.subject, lesson: ctx.lesson.title }) });
+      const j = await r.json().catch(() => ({}));
+      msg.video = r.ok && j.video ? { state: 'ok', ...j.video } : { state: 'none' };
+    } catch { msg.video = { state: 'none' }; }
+    tracker.log('tutor', msg.video.state === 'ok' ? `showed a video: "${msg.video.title}" (${msg.video.channel})` : 'no video passed the checks');
+    if (isOpen) paint();
+  }
   async function ask(text) {
     text = String(text || '').trim();
     if (!text || busy || !thread) return;
     note = ''; thread.push({ role: 'user', content: text }); busy = true; paint();
     tracker.log('tutor', `he asked (${ctx.lesson.title}, ${ctx.stage}${ctx.question ? ', about a question' : ''}): ${text}`);
     try {
-      const token = await store.idToken();
-      const r = await fetch('/api/tutor', { method: 'POST', headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ lesson: ctx.lesson, stage: ctx.stage, question: ctx.question || null, messages: thread }) });
+      const r = await fetch('/api/tutor', { method: 'POST', headers: await authHeaders(),
+        body: JSON.stringify({ lesson: ctx.lesson, stage: ctx.stage, question: ctx.question || null, messages: forServer(thread) }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.reply) throw Object.assign(new Error('tutor'), { status: r.status });
-      thread.push({ role: 'assistant', content: j.reply });
+      const msg = { role: 'assistant', content: j.reply, video: j.videoQuery && ctx.subject ? { state: 'loading' } : null };
+      thread.push(msg);
       tracker.log('tutor', `tutor: ${j.reply}`);
+      if (msg.video) findVideo(msg, String(j.videoQuery).slice(0, 120));
     } catch (e) {
       thread.pop(); input.value = text; note = errorText(e.status);
       tracker.log('tutor', `no answer (${e.status || 'network'})`);
@@ -117,10 +143,11 @@ export function createTutor({ store, tracker }) {
   sheet.querySelector('form').onsubmit = (e) => { e.preventDefault(); const t = input.value; input.value = ''; ask(t); };
   sheet.querySelectorAll('[data-chip]').forEach((b) => { b.onclick = () => ask(b.textContent); });
   sheet.addEventListener('cg-open', () => { isOpen = true; openedAt = Date.now(); tracker.hold(true); tracker.log('tutor', `opened the tutor (${ctx.lesson.title}, ${ctx.stage}) — clock paused`); paint(); });
-  sheet.addEventListener('cg-close', () => { isOpen = false; tracker.hold(false); tracker.log('tutor', `closed the tutor after ${Math.round((Date.now() - openedAt) / 1000)}s`); });
+  // Closing the tutor stops any video (the chat is drawn again when it opens).
+  sheet.addEventListener('cg-close', () => { isOpen = false; list.innerHTML = ''; tracker.hold(false); tracker.log('tutor', `closed the tutor after ${Math.round((Date.now() - openedAt) / 1000)}s`); });
 
   return {
-    // c = { lesson: lessonInfo(...), lessonKey, stage: 'watch'|'learn'|'quiz'|'real'|'practice', question?: { q, choices, picked, wrong } }
+    // c = { lesson: lessonInfo(...), lessonKey, subject: 'algebra'|'biology', stage: 'watch'|'learn'|'quiz'|'real'|'practice', question?: { q, choices, picked, wrong } }
     open(c) {
       ctx = c; note = '';
       const key = `${c.lessonKey}|${c.stage}|${c.question ? c.question.q + '|' + (c.question.picked || '') : ''}`;

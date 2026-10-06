@@ -99,6 +99,15 @@ and khanacademy.org/science/hs-bio if needed.
   All biology / Mix, saved as settings.plan (js/plan.js builds the day; js/plan-card.js is the card). Saves right away with Undo;
   his screens follow live. Rows show Done / On it now · m of N min / Up next. Removing the block he's in sends him home and on to
   the next one ("cut his day short"). Block ids count per subject, so mid-day changes keep his finished blocks. tests/e2e_plan.py.
+- Tutor videos (owner request 2026-10-05: "videos related to the topic, no anime"): chip "Show me a video", or the tutor decides.
+  The reply carries a [video-search: …] line → /api/tutor-video (Claude Haiku 4.5 + web search, youtube.com only, ≤2 searches;
+  falls back to Sonnet 5.5 if Haiku is refused) → every candidate checked by netlify/lib/video-check.mjs → the first that passes
+  plays in the chat (youtube-nocookie). Clock stays paused (owner's choice). Log lines: "looking for a video", "showed a video …".
+  Channels: content/video-channels.js — 42 channels, each approved by every one of 10 vetting agents that looked at it (raw
+  reports were in the session scratchpad). Held back (disagreement / UK maths wording): Corbettmaths, HegartyMaths, Dr Frost,
+  Cognito, FuseSchool, JensenMath, MathHelp.com, Mr H Tutoring, Stated Clearly, PBS Eons, Deep Look, NHM, Cal Academy.
+  Rejected incl. TED-Ed (owner had picked it) and Kurzgesagt. Human-evolution, religion and holiday titles are blocked by default.
+  NOT YET TRIED LIVE with the real API (needs his sign-in): if no video ever shows, check Netlify function logs for "video search".
 - Send a lesson (owner request 2026-10-05): master Lessons tab → open a lesson → "Send to him". Saved as settings.focus { key, at }.
   Until that lesson is done (curriculum.js focusLesson) every study block, and the bonus "extra" time, opens it whatever the block's
   subject; breaks, game time and fun videos stay on schedule. If he's in a block when it's sent, his screen switches at once. A chat

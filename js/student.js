@@ -95,8 +95,13 @@ export function startStudent(root, { store, sid, onSignOut }) {
       askTutor: (lesson, question) => openTutor(lesson, 'quiz', question) };
   }
   // The tutor for this lesson (and step, and question if any). Buttons made by tutorButtonHTML() carry data-tutor.
-  function subjectOf(lesson) { return cur.algebra.units.some((u) => u.lessons.includes(lesson)) ? cur.algebra.name : cur.biology.name; }
-  function openTutor(lesson, stage, question) { tutor.open({ lesson: lessonInfo(lesson, subjectOf(lesson)), lessonKey: lesson.key, stage, question }); }
+  // Match by key: the curriculum is rebuilt on every settings change, so lesson objects aren't the same objects.
+  const isAlgebra = (lesson) => cur.algebra.units.some((u) => u.lessons.some((l) => l.key === lesson.key));
+  function subjectOf(lesson) { return isAlgebra(lesson) ? cur.algebra.name : cur.biology.name; }
+  function openTutor(lesson, stage, question) {
+    const subject = isAlgebra(lesson) ? 'algebra' : 'biology';
+    tutor.open({ lesson: lessonInfo(lesson, subjectOf(lesson)), lessonKey: lesson.key, subject, stage, question });
+  }
   function wireTutor(el, lesson, stage) { el.querySelectorAll('[data-tutor]').forEach((b) => { b.onclick = () => openTutor(lesson, stage); }); }
 
 

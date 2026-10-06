@@ -288,3 +288,10 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-plan-n { flex: 1 1 auto; min-width: 0; }
 .sc-plan-row .cg-seg { flex: none; width: auto; }
 .sc-plan-del:disabled, #planAdd:disabled { opacity: .4; cursor: default; }
+
+/* tutor videos (js/tutor.js): a 16:9 player inside his chat */
+.sc-tvideo { margin: 0; }
+.sc-tvideo-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--cg-r-ctl); overflow: hidden; background: var(--cg-group); }
+.sc-tvideo-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.sc-tvideo figcaption { margin-top: var(--cg-in-8); }
+.sc-tvideo-note { margin: 0; }

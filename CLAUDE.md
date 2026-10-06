@@ -38,6 +38,9 @@ js/break.js           the 7-minute break (wall clock; "cash it in" adds what's l
 js/tutor.js           the study tutor sheet (Claude via /api/tutor): asks what confuses him, never gives answers; pauses his clock
 netlify/functions/tutor.mjs  POST /api/tutor — checks the Firebase sign-in (master/student only), applies the tutor rules
                       (netlify/lib/tutor-prompt.mjs), calls Claude. Needs ANTHROPIC_API_KEY in Netlify env. No npm deps.
+netlify/functions/tutor-video.mjs  POST /api/tutor-video — finds one video for a [video-search: …] line (Claude web search, youtube.com
+                      only); netlify/lib/video-check.mjs checks it (oEmbed: vetted channel for the subject, embeddable, no Shorts, title blocks)
+content/video-channels.js the 42 vetted YouTube channels + title block lists the tutor's videos must pass (owner-approved 2026-10-05)
 content/motivation.js Qur'an (Tanzil Uthmani 1.1 + Saheeh Intl, verbatim) + hadith (sunnah.com English, verbatim) the tutor may quote
                       by tag; owner-approved 2026-10-05. Built by script — never hand-type or edit these texts; ask the owner to change the list
 js/games/             kit.js (the break games' kit) + slice.js + glide.js — ported from Repo-1 (Mithlayn), art in assets/games, font in assets/fonts
@@ -60,6 +63,8 @@ tests/                Playwright e2e tests in demo mode with a fake YouTube play
 - Write at a struggling-teen reading level. Define each technical term in parentheses the first time it appears.
 - **Every YouTube ID must be verified** before shipping. WebFetch `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<ID>&format=json` and check the title and channel. Prefer Khan Academy (US channel, not "Khan Academy India"), Amoeba Sisters, TED-Ed, Crash Course, and Kurzgesagt. Kid-safe only.
 - Recompute any math with code before adding a question.
+- Tutor videos come only from content/video-channels.js (10-agent vetting, 2026-10-05). TED-Ed and Kurzgesagt were rejected for automatic
+  use there (mixed adult topics, titles can't be filtered); single videos can still be hand-picked for lessons. Change the list only with the owner.
 - Qur'an text is Tanzil Uthmani (tanzil.net), copied byte-for-byte (NFC-normalize both sides only when comparing); credit Tanzil
   with a link wherever a verse shows.
   Shown in Scheherazade New (OFL). Never type Qur'an or hadith text by hand, and never use a font whose licence doesn't allow it.
@@ -85,6 +90,7 @@ days/{date} also holds breakStart{R1..R5: ts} (break clock) and games{G1..G5: { 
 - `python3 tests/e2e_plan.py` changes the study plan from the master tab (presets, remove + Undo, add to 6, per-block subject, a change mid-block).
 - `python3 tests/e2e_focus.py` sends a lesson from the master tab and checks the student switches to it, then returns to normal once done.
 - `python3 tests/e2e_tutor.py` stubs /api/tutor and checks the tutor sheet, the clock pause, what is sent, and the quiz "What did I do wrong?".
+- `node tests/tutor-video.test.mjs` unit-tests the video search + checks (wrong channel, anime, Shorts, embed off, blocked titles, subject).
 - `node tests/tutor-function.test.mjs` unit-tests the server function (sign-in check, rules, refusals) with no network.
 - Both need Playwright with a browser. WebKit is preferred: `p.webkit.launch()`. Screenshots go to `tests/screens/`.
 - Syntax check: `for f in js/*.js content/*.js; do node --check $f; done`.
