@@ -30,7 +30,7 @@ export function pointsCardHTML(points = {}, payouts = {}, rules) {
       </form>
     </section>
     <p class="cg-caption">Recent</p>
-    <ul class="cg-group">${hist.map((h) => `<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">${esc(h.label)}</span><span class="cg-row-sub">${when(h.at)}</span></span><span class="cg-row-value cg-num">${h.value}</span></li>`).join('')
+    <ul class="cg-group sc-points-recent">${hist.map((h) => `<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">${esc(h.label)}</span><span class="cg-row-sub">${when(h.at)}</span></span><span class="cg-row-value cg-num">${h.value}</span></li>`).join('')
       || '<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">No points yet</span><span class="cg-row-sub">He earns them as he finishes lessons, quizzes and full days</span></span></li>'}</ul>
     <p class="cg-caption">His badges</p>
     <div class="cg-chips sc-badges">${badges(points, P).map((x) => `<span class="cg-chip ${x.got ? 'is-on' : ''}">${x.got ? icon('star') : ''}${esc(x.name)}</span>`).join('')}</div>
