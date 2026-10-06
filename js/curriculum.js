@@ -5,6 +5,7 @@ import algebraCourse from '../content/algebra/index.js';
 import biologyCourse from '../content/biology/index.js';
 import facts from '../content/facts.js';
 import schedule from '../content/schedule.js';
+import { normPlan, planSteps } from './plan.js';
 
 export const COURSES = { algebra: algebraCourse, biology: biologyCourse };
 
@@ -34,6 +35,8 @@ export function buildCurriculum(settings = {}) {
     focus: settings.focus && settings.focus.key ? settings.focus : null,   // a lesson the master sent: { key, at }
     rules: {
       ...schedule,
+      plan: normPlan(settings.plan),          // the master's study plan (Settings → Study plan)
+      steps: planSteps(settings.plan),        // blocks with breaks, game time and fun videos fitted in
       blockMinutes: Number(settings.blockMinutes) || schedule.blockMinutes,
       passPct: Number(settings.passPct) || schedule.passPct,
     },

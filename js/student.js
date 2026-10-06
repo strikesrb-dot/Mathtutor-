@@ -54,6 +54,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
     const fk = cur.focus ? cur.focus.key : null, changed = fk !== focusKey; focusKey = fk;
     if (!rendered) return;
     if (view.name === 'home') return render();
+    // His brother changed the study plan and the step he's on is gone (say a Biology block, now it's all math): back home.
+    if (view.name === 'step' && view.stepId !== 'X' && !stepById(view.stepId)) { go({ name: 'home' }); toast('Your brother changed today\'s plan.'); return; }
     // A lesson sent while he's in a study block opens right away (his place in the other lesson is saved).
     if (changed && fk && view.name === 'step' && /^([AB]\d|X)$/.test(view.stepId)) {
       clean(); view.stage = null; view.videoIdx = null; render(); toast('Your brother sent you a lesson. It\'s up now.');
@@ -85,7 +87,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
   }
 
   function blockTitle(step) {
-    return step.id === 'X' ? 'Extra practice (bonus)' : `${SUBJECT[step.subject].name} · Block ${step.id.endsWith('1') ? 1 : 2} of 2`;
+    return step.id === 'X' ? 'Extra practice (bonus)' : `${SUBJECT[step.subject].name} · Block ${step.n} of ${step.of}`;
   }
   function quizApp() {
     return { rules: cur.rules, tracker, prog: (k) => S.lessons[k] || {}, owesReview, patchLesson, chosen: view.stage === 'quiz',
@@ -445,7 +447,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
       <p class="cg-meta sc-hint">Reward time. Same rules: keep it playing and stay on the screen.</p>
       <div class="sc-actions"><button class="cg-btn cg-btn-strong" id="done" disabled>Continue</button></div>`, { title: 'Did you know?', sub: 'Reward video' });
     tracker.set({ mode: 'video', stepId: step.id, subject: 'fact', lessonKey: null });
-    tracker.setLive({ view: 'fact', title: `Fun video ${step.id === 'F1' ? 1 : 2} of 2`, lesson: f.title, sub: f.cat || 'Fun fact', stage: 'Reward video', detail: 'Watching the reward video', pos: '' }, true);
+    tracker.setLive({ view: 'fact', title: `Fun video ${step.n || 1} of ${step.of || 1}`, lesson: f.title, sub: f.cat || 'Fun fact', stage: 'Reward video', detail: 'Watching the reward video', pos: '' }, true);
     const doneBtn = body.querySelector('#done');
     const vp = (day().factProg || {})[f.id] || 0;
     const player = mountVideo(body.querySelector('#player'), {

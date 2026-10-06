@@ -7,6 +7,7 @@ import { STUDENT_NAME } from './config.js';
 import factsDefault from '../content/facts.js';
 import { masterChat } from './chat.js';
 import { openLogSheet, closeLogSheet } from './log-export.js';
+import { drawPlanCard } from './plan-card.js';
 
 const FLAG_LABEL = {
   leftApp: 'Left the app',
@@ -19,7 +20,9 @@ const FLAG_LABEL = {
   stalled: 'Stalled on a screen (time limit hit)',
 };
 const STAGE_LABEL = { watch: 'Watching', learn: 'Reading', quiz: 'Quiz', real: 'Real-life answer', done: 'Done' };
-const STEP_LABEL = { A1: 'Algebra · Block 1', A2: 'Algebra · Block 2', F1: 'Fun video 1', B1: 'Biology · Block 1', B2: 'Biology · Block 2', F2: 'Fun video 2', X: 'Extra practice', G1: 'Game time 1', G2: 'Game time 2', G3: 'Game time 3' };
+// A1… Algebra blocks, B1… Biology blocks, F fun videos, R breaks, G game time (js/plan.js), X bonus practice.
+const STEP_KIND = { A: 'Algebra · Block ', B: 'Biology · Block ', F: 'Fun video ', R: 'Break ', G: 'Game time ' };
+function stepLabel(id) { const m = /^([ABFRG])(\d+)$/.exec(id || ''); return id === 'X' ? 'Extra practice' : m ? STEP_KIND[m[1]] + m[2] : esc(id || ''); }
 const TABS = [['overview', 'Overview'], ['lessons', 'Lessons'], ['chat', 'Chat'], ['settings', 'Settings']];
 
 export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStudent }) {
@@ -57,7 +60,8 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   const cardTimer = setInterval(updateLive, 5000);   // keeps "on the app now" / "last seen" honest between saves
 
   // Don't wipe the settings form or a half-typed message while you're typing.
-  function softRender() { if (tab !== 'settings' && tab !== 'chat') render(); else badge(); }
+  let planCard = null;   // Settings → Study plan; its Done / On it now labels follow his day
+  function softRender() { if (tab !== 'settings' && tab !== 'chat') render(); else { badge(); if (tab === 'settings' && planCard) planCard.refresh(); } }
   function tabLabel(t, label) { const n = t === 'chat' ? chat.unread() : 0; return n ? `${label} · ${n}` : label; }
   function badge() { const b = root.querySelector('.sc-tabs [data-t=chat]'); if (b) { b.textContent = tabLabel('chat', 'Chat'); refreshSegs(); } }
 
@@ -92,7 +96,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
   // ─────────────── Overview ───────────────
   function overview(body) {
     const d = S.days[todayKey()] || {};
-    const goal = cur.rules.blockMinutes * 60 * 4;
+    const blocks = cur.rules.plan.length, goal = cur.rules.blockMinutes * 60 * blocks;
     const st = dayStatus(cur.rules, d);
     const blocksDone = st.list.filter((s) => s.type === 'block' && s.done).length;
     const flags = d.flags || {};
@@ -112,7 +116,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
       <div class="sc-stats">
         <div class="cg-card sc-stat"><b class="cg-num">${d.openSec ? hm(d.openSec) : '—'}</b><span class="cg-meta">on the app</span></div>
         <div class="cg-card sc-stat"><b class="cg-num">${hm(d.activeSec || 0)}</b><span class="cg-meta">focused (counts)</span></div>
-        <div class="cg-card sc-stat"><b class="cg-num">${blocksDone}/4</b><span class="cg-meta">blocks done</span></div>
+        <div class="cg-card sc-stat"><b class="cg-num">${blocksDone}/${blocks}</b><span class="cg-meta">blocks done</span></div>
         <div class="cg-card sc-stat"><b class="cg-num">${flagTotal}</b><span class="cg-meta">red flags</span></div>
       </div>
       <ul class="cg-group sc-today">
@@ -121,7 +125,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
         ${st.list.filter((s) => s.type !== 'break').map((s) => row({
           ic: s.done ? 'check' : s.type === 'fact' ? 'globe' : s.type === 'game' ? 'play' : s.subject === 'biology' ? 'biology' : 'algebra',
           cls: s.done ? 'sc-done' : '',
-          label: STEP_LABEL[s.id],
+          label: stepLabel(s.id),
           value: s.type === 'block' ? `${Math.floor(s.sec / 60)} / ${cur.rules.blockMinutes} min` : s.done ? (s.type === 'game' ? 'Played' : 'Watched') : '',
         })).join('')}
       </ul>
@@ -146,7 +150,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
 
       <p class="cg-caption">Today's activity log</p>
       <ul class="cg-group">${(d.events || []).slice().reverse().slice(0, 40).map((e) => row({
-        ic: 'flag', label: FLAG_LABEL[e.type] || esc(e.type), sub: e.step ? STEP_LABEL[e.step] || esc(e.step) : '',
+        ic: 'flag', label: FLAG_LABEL[e.type] || esc(e.type), sub: e.step ? stepLabel(e.step) : '',
         value: new Date(e.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
       })).join('') || row({ label: 'Nothing flagged' })}</ul>`;
     body.querySelector('#nudgeBtn').onclick = () => chat.nudge();
@@ -155,7 +159,8 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     body.querySelector('#msgBtn').onclick = () => { tab = 'chat'; render(); window.scrollTo(0, 0); };
   }
 
-  function daySub(dd) { return `${dd.openSec ? hm(dd.openSec) + ' on the app · ' : ''}${Object.keys(dd.blocksDone || {}).length}/4 blocks · ${flagSum(dd)} flags`; }
+  function daySub(dd) { return `${dd.openSec ? hm(dd.openSec) + ' on the app · ' : ''}${plural(Object.keys(dd.blocksDone || {}).length, 'block')} done · ${flagSum(dd)} flags`; }
+  function plural(n, w) { return `${n} ${w}${n === 1 ? '' : 's'}`; }
   function allTime() {
     let a = 0, o = 0;
     for (const dd of Object.values(S.days)) { a += dd.activeSec || 0; o += dd.openSec || 0; }
@@ -193,7 +198,7 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     return `<ul class="cg-group sc-live ${live ? 'is-live' : ''}">
       <li class="cg-row has-icon"><span class="cg-row-icon"><i class="sc-live-dot"></i></span>
         <span class="cg-row-text"><span class="cg-row-label">${live ? 'Studying right now' : ago == null ? 'Hasn\'t started yet' : `Last active ${agoText(ago)}`}</span>
-        ${seen && seen.step ? `<span class="cg-row-sub">${STEP_LABEL[seen.step] || esc(seen.step)}${seen.lesson ? ' · ' + esc(lessonTitle(seen.lesson)) : ''}</span>` : ''}</span></li>
+        ${seen && seen.step ? `<span class="cg-row-sub">${stepLabel(seen.step)}${seen.lesson ? ' · ' + esc(lessonTitle(seen.lesson)) : ''}</span>` : ''}</span></li>
     </ul>`;
   }
   function updateLive() {
@@ -326,9 +331,10 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
     const stepper = (id, value, min, max, step) => `<div class="cg-stepper" data-id="${id}" data-min="${min}" data-max="${max}" data-step="${step}">
       <button type="button" class="sc-step-btn" data-d="-1" aria-label="Less">−</button><span class="cg-stepper-value" id="${id}">${value}</span><button type="button" class="sc-step-btn" data-d="1" aria-label="More">+</button></div>`;
     body.innerHTML = `
+      <div id="planCard"></div>
       <p class="cg-caption">Study rules</p>
       <div class="cg-group">
-        <div class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Minutes per block</span><span class="cg-row-sub">Focused time, plus a 10-minute break</span></span>${stepper('bm', cur.rules.blockMinutes, 10, 90, 5)}</div>
+        <div class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Minutes per block</span><span class="cg-row-sub">Focused time in each block</span></span>${stepper('bm', cur.rules.blockMinutes, 10, 90, 5)}</div>
         <div class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Quiz pass mark</span><span class="cg-row-sub">Percent needed to pass a lesson</span></span>${stepper('pp', cur.rules.passPct, 50, 100, 5)}</div>
         ${['algebra', 'biology'].map((subj) => `<label class="cg-row cg-row-tall"><span class="cg-row-text"><span class="cg-row-label">Start ${esc(cur[subj].name)} at</span><span class="cg-row-sub">Earlier units are skipped</span></span>
           <select id="start-${subj}" class="sc-select cg-row-block"><option value="0">Unit ${cur[subj].units[0] ? cur[subj].units[0].n : 1} (the beginning)</option>${cur[subj].units.slice(1).map((u) => `<option value="${u.n}" ${cur[subj].startUnit === u.n ? 'selected' : ''}>Unit ${u.n}: ${esc(u.title)}</option>`).join('')}</select></label>`).join('')}
@@ -358,6 +364,8 @@ export function startMaster(root, { store, sid, isDemo, onSignOut, onSwitchToStu
         <div class="cg-group"><button type="button" class="cg-row cg-row-danger" id="wipe"><span class="cg-row-text"><span class="cg-row-label">Wipe demo data</span></span></button></div>` : ''}
 
       <div class="cg-group sc-signout"><button type="button" class="cg-row cg-row-danger has-icon" id="out"><span class="cg-row-icon">${icon('out')}</span><span class="cg-row-text"><span class="cg-row-label">Sign out</span></span></button></div>`;
+
+    planCard = drawPlanCard(body.querySelector('#planCard'), { rules: () => cur.rules, save: (plan) => store.saveSettings({ plan }), today: () => S.days[todayKey()] });
 
     function vidRow(v) {
       return `<div class="sc-vid-row"><label class="cg-field"><input class="v-url" placeholder="YouTube link" aria-label="YouTube link" value="${v.id ? `https://youtu.be/${esc(v.id)}` : ''}"></label>

@@ -43,6 +43,8 @@ content/motivation.js Qur'an (Tanzil Uthmani 1.1 + Saheeh Intl, verbatim) + hadi
 js/games/             kit.js (the break games' kit) + slice.js + glide.js — ported from Repo-1 (Mithlayn), art in assets/games, font in assets/fonts
 js/master.js          master screens: Overview / Lessons / Settings
 js/curriculum.js      merges content + master overrides; lesson stage + day status logic
+js/plan.js            the study plan: settings.plan (1–6 blocks, Algebra/Biology each) → the day's steps (breaks, games, fun videos fitted in)
+js/plan-card.js       master Settings → "Study plan" card (presets, per-block subject, add/remove with Undo, Done / On it now labels)
 js/practice.js        endless algebra practice generators (biology reuses quiz banks)
 js/ui.js              escape, flash (red alert), toast, beep, helpers
 content/algebra.js    Algebra 1 unit: Functions & Graphs (8 lessons)
@@ -64,21 +66,23 @@ tests/                Playwright e2e tests in demo mode with a fake YouTube play
 
 ## Firestore data model
 ```
-settings/main                      { blockMinutes, passPct, startUnit{}, videoOverrides{lessonKey:[{id,title}]}, facts[], focus{key,at} (lesson sent to him) }
+settings/main                      { plan[] ('algebra'|'biology', 1–6; default 2+2), blockMinutes, passPct, startUnit{}, videoOverrides{lessonKey:[{id,title}]}, facts[], focus{key,at} (lesson sent to him) }
 students/{uid}/lessons/{key}       { videos{id:{max,dur,done}}, learnDone, quiz{attempts[],best,passed}, realLife{answer,at}, timeSec, completedAt }
-students/{uid}/days/{YYYY-MM-DD}   { activeSec, openSec, steps{A1..F2:sec}, bySubject{}, blocksDone{}, breaks{}, factsDone{}, factPick{}, factProg{}, flags{}, events[], practice{}, lastSeen, lastStep, lastLesson }
+students/{uid}/days/{YYYY-MM-DD}   { activeSec, openSec, steps{A1..A6,B1..B6,F1,F2:sec}, bySubject{}, blocksDone{}, breaks{}, factsDone{}, factPick{}, factProg{}, flags{}, events[], practice{}, lastSeen, lastStep, lastLesson }
 students/{uid}/meta/state          { factIdx }
 students/{uid}/meta/live           { view, title, lesson, sub, stage, detail, pos, at, visible, counting, flashing, sessionStart, sessionOpen, sessionFocus }
 students/{uid}/meta/chat           { masterRead, studentRead }   (time of the last message each side has seen)
 students/{uid}/chat/{id}           { from: 'master'|'student', kind: 'msg'|'nudge', text, at }
 students/{uid}/log/{YYYY-MM-DD}    { entries: [{ t, k, d }] }   (activity log; read only on export, never watched)
 lessons/{key} also holds quizRun { at, graded, i, right, qs } (a quiz in progress) and realDraft (unsent real-life text)
-days/{date} also holds breakStart{R1..R3: ts} (break clock) and games{G1..G3: { start, bonus, done, played }} (bonus = seconds of break cashed in)
+Block ids count per subject (A1… Algebra, B1… Biology), so a plan changed mid-day keeps what he did.
+days/{date} also holds breakStart{R1..R5: ts} (break clock) and games{G1..G5: { start, bonus, done, played }} (bonus = seconds of break cashed in)
 ```
 
 ## Testing
 - `python3 tests/e2e_lesson.py` runs one full lesson, including the skip, leave-app, and missed-check flags, then checks the master view.
 - `python3 tests/e2e_day.py` sets 10-minute blocks and runs block → break → block → fact video → biology.
+- `python3 tests/e2e_plan.py` changes the study plan from the master tab (presets, remove + Undo, add to 6, per-block subject, a change mid-block).
 - `python3 tests/e2e_focus.py` sends a lesson from the master tab and checks the student switches to it, then returns to normal once done.
 - `python3 tests/e2e_tutor.py` stubs /api/tutor and checks the tutor sheet, the clock pause, what is sent, and the quiz "What did I do wrong?".
 - `node tests/tutor-function.test.mjs` unit-tests the server function (sign-in check, rules, refusals) with no network.

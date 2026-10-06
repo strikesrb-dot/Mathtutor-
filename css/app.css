@@ -281,3 +281,10 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-tlist li::marker { color: var(--cg-ink2); font-variant-numeric: tabular-nums; }
 .sc-math { font-family: var(--cg-mono); font-size: var(--cg-t-min); white-space: nowrap; padding: 0 var(--cg-in-6); border-radius: var(--cg-r-icon); background: var(--cg-fill); color: var(--cg-ink-strong); }
 .sc-tutor-sheet b { font-weight: var(--cg-w-semi); color: var(--cg-ink-strong); }
+
+/* master → Settings → Study plan (js/plan-card.js) */
+.sc-plan-quick { margin: 0 var(--cg-inset) var(--cg-sp); padding: 0 var(--cg-row-px); }
+.sc-plan-row { gap: var(--cg-in-8); }
+.sc-plan-n { flex: 1 1 auto; min-width: 0; }
+.sc-plan-row .cg-seg { flex: none; width: auto; }
+.sc-plan-del:disabled, #planAdd:disabled { opacity: .4; cursor: default; }

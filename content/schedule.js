@@ -2,21 +2,9 @@
 // Master can override blockMinutes and passPct from the Master view → Settings.
 
 export default {
-  // One day = 2 Algebra blocks, a fun-fact video, 2 Biology blocks, a fun-fact video. After each break: game time (G1–G3).
-  steps: [
-    { id: 'A1', type: 'block', subject: 'algebra' },
-    { id: 'R1', type: 'break' },
-    { id: 'G1', type: 'game' },
-    { id: 'A2', type: 'block', subject: 'algebra' },
-    { id: 'F1', type: 'fact' },
-    { id: 'R2', type: 'break' },
-    { id: 'G2', type: 'game' },
-    { id: 'B1', type: 'block', subject: 'biology' },
-    { id: 'R3', type: 'break' },
-    { id: 'G3', type: 'game' },
-    { id: 'B2', type: 'block', subject: 'biology' },
-    { id: 'F2', type: 'fact' },
-  ],
+  // The day's study blocks, in order. The master can change this in Master view → Settings → Study plan (settings.plan:
+  // 1–6 blocks, each Algebra or Biology). js/plan.js fits the breaks, game time (G1…) and the 2 fun-fact videos around them.
+  plan: ['algebra', 'algebra', 'biology', 'biology'],
   studyDays: [6, 0],        // Saturday, Sunday (JS getDay numbers). Other days are "bonus" days.
   blockMinutes: 50,         // active minutes per block (plus a 10-min break = 1 hour)
   breakMinutes: 7,          // he can cash in what's left of a break as extra game time (owner request 2026-10-05)

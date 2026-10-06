@@ -23,15 +23,15 @@ export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, 
   const st = dayStatus(cur.rules, day);
   const d = new Date();
   const isStudyDay = cur.rules.studyDays.includes(d.getDay());
-  const goal = cur.rules.blockMinutes * 60 * 4;
+  const blocks = cur.rules.plan.length, facts = cur.rules.steps.filter((s) => s.type === 'fact').length;
+  const goal = cur.rules.blockMinutes * 60 * blocks;
   const active = day.activeSec || 0;
   const pct = Math.min(100, Math.round((active / goal) * 100));
-  const blockNo = { A1: 1, A2: 2, B1: 1, B2: 2 };
 
   const stepRow = (s) => {
     const isCur = st.current && st.current.id === s.id;
     let label, sub = '', ic;
-    if (s.type === 'block') { ic = SUBJECT[s.subject].icon; label = `${SUBJECT[s.subject].name} · Block ${blockNo[s.id]}`; sub = s.done ? 'Done' : `${Math.floor(s.sec / 60)} of ${cur.rules.blockMinutes} min`; }
+    if (s.type === 'block') { ic = SUBJECT[s.subject].icon; label = `${SUBJECT[s.subject].name} · Block ${s.n}`; sub = s.done ? 'Done' : `${Math.floor(s.sec / 60)} of ${cur.rules.blockMinutes} min`; }
     if (s.type === 'break') { ic = 'cup'; label = `Break · ${cur.rules.breakMinutes} min`; sub = s.done ? 'Done' : ''; }
     if (s.type === 'fact') { ic = 'globe'; label = 'Did you know? video'; sub = s.done ? 'Done' : 'Reward video'; }
     if (s.type === 'game') { ic = 'play'; label = `Game time · ${cur.rules.gameMinutes} min`; sub = s.done ? 'Done' : 'Slice or Glide'; }
@@ -64,7 +64,7 @@ export function renderHome(root, { cur, lessons, day, chat, tracker, onSignOut, 
         <div class="sc-ring" style="--p:${pct}" role="img" aria-label="${hm(active)} of ${hm(goal)} focused time"><div><b class="cg-num">${hm(active)}</b><span class="cg-meta">of ${hm(goal)}</span></div></div>
         <div class="sc-hero-text">
           <h3 class="cg-title2">${st.allDone ? 'MashaAllah — today is done' : focus ? 'Your brother sent you a lesson' : st.current ? nextLabel(st.current) : ''}</h3>
-          <p class="cg-meta">${focus ? `"${esc(focus.lesson.title)}" is your only focus until it's done. Every study block opens it.` : st.allDone ? 'All 4 blocks and both fun videos are finished. Proud of you.' : 'Only real, focused time counts. Stay on the app and keep the video playing.'}</p>
+          <p class="cg-meta">${focus ? `"${esc(focus.lesson.title)}" is your only focus until it's done. Every study block opens it.` : st.allDone ? `${blocks === 1 ? 'Your block' : `All ${blocks} blocks`} and ${facts === 1 ? 'the fun video' : 'both fun videos'} are finished. Proud of you.` : 'Only real, focused time counts. Stay on the app and keep the video playing.'}</p>
           ${st.allDone ? `<button class="cg-btn cg-btn-strong cg-btn-block" id="extra">${focus ? 'Finish the lesson he sent (bonus)' : 'Extra practice (bonus)'}</button>` : `<button class="cg-btn cg-btn-strong cg-btn-block" id="go">${active > 0 ? 'Continue' : 'Start'}</button>`}
         </div>
       </section>

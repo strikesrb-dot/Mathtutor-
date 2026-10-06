@@ -95,6 +95,10 @@ and khanacademy.org/science/hs-bio if needed.
   Khan; Muslim 2699a and 2664: Siddiqui), each with the narrator line as published. Two independent reviewers checked every entry first.
   The owner left out Ibn Majah 224, Muslim 1631, al-Hakim 7846 and 13:11, 3:139. Font: Scheherazade New 4.500 (SIL, OFL, unmodified), assets/fonts.
   (The earlier Arabic was really the King Fahd/QPC encoding, not Tanzil: same letters, different marks. Replaced.)
+- Study plan (owner request 2026-10-05): master Settings → "Study plan". 1–6 blocks, each Algebra or Biology, quick All math /
+  All biology / Mix, saved as settings.plan (js/plan.js builds the day; js/plan-card.js is the card). Saves right away with Undo;
+  his screens follow live. Rows show Done / On it now · m of N min / Up next. Removing the block he's in sends him home and on to
+  the next one ("cut his day short"). Block ids count per subject, so mid-day changes keep his finished blocks. tests/e2e_plan.py.
 - Send a lesson (owner request 2026-10-05): master Lessons tab → open a lesson → "Send to him". Saved as settings.focus { key, at }.
   Until that lesson is done (curriculum.js focusLesson) every study block, and the bonus "extra" time, opens it whatever the block's
   subject; breaks, game time and fun videos stay on schedule. If he's in a block when it's sent, his screen switches at once. A chat
