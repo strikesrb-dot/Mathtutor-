@@ -30,13 +30,14 @@ js/app.js             boot, sign-in, role routing
 js/store.js           data layer: Firebase adapter + localStorage demo adapter (same interface; inc()/union() markers)
 js/tracker.js         focused-time + on-app meter, red flags, 15s flush, live "right now" status (setLive)
 js/video.js           YouTube IFrame API wrapper: no-skip, speed cap, "Still watching?" checks, pause nag
-js/student.js         student screens: home plan → blocks (Watch → Learn → Quiz → Real life) → breaks → fact videos
+js/student.js         student screens: home (tabs) → blocks (Watch → Learn → Quiz → Real life) → breaks → fact videos
 js/quiz.js            graded quiz (anti-cheat lock, review, retry wait, resume mid-quiz, one retry per quiz) + the question widget practice reuses
-js/points.js          points game: rules (pure, unit-tested), awards (fixed ids, pay once), levels, streaks, badges, his home card
-js/points-card.js     master Overview "Points" card: owed, Mark paid (+Undo), add/take away points, history
-js/misses.js          missed quiz questions: saved per miss with Claude's breakdown (/api/breakdown); master Overview list + full-breakdown sheet
-js/home.js            student home screen (plan, courses, messages row)
-js/chat.js            master ↔ student messages + nudges (student sheet pauses his clock; master Chat tab)
+js/points.js          points game: rules (pure, unit-tested), awards (fixed ids, pay once), levels, streaks, badges, his Today row + Points tab
+js/points-card.js     master Points tab: owed, Mark paid (+Undo), add/take away points, recent, his badges
+js/misses.js          missed quiz questions: saved per miss with Claude's breakdown (/api/breakdown); master Progress → Missed list + full-breakdown sheet
+js/home.js            student home, 4 tabs: Today (ring + Start, points row, plan with breaks folded in) · Courses (units › lessons,
+                      read-only) · Points · Chat. The Chat tab never redraws on new data (keeps a half-typed message)
+js/chat.js            master ↔ student messages + nudges (his Chat tab + a sheet in lessons that pauses his clock; master Chat tab)
 js/log-export.js      master's "Activity log for Claude" export (instructions + totals + lessons + every logged event)
 js/game-time.js       7-minute game time after each break (Slice or Glide; a round in progress is finished first)
 js/break.js           the 7-minute break (wall clock; "cash it in" adds what's left to game time)
@@ -50,7 +51,11 @@ content/video-channels.js the 42 vetted YouTube channels + title block lists the
 content/motivation.js Qur'an (Tanzil Uthmani 1.1 + Saheeh Intl, verbatim) + hadith (sunnah.com English, verbatim) the tutor may quote
                       by tag; owner-approved 2026-10-05. Built by script — never hand-type or edit these texts; ask the owner to change the list
 js/games/             kit.js (the break games' kit) + slice.js + glide.js — ported from Repo-1 (Mithlayn), art in assets/games, font in assets/fonts
-js/master.js          master screens: Overview / Lessons / Settings
+js/master.js          master shell: data watchers, header (⚙ = Settings), tabs Today · Progress · Points · Chat; never redraws over typing
+js/master-today.js    master Today: live card + Nudge/Message, sent lesson, today's stats + plan, shortcuts (missed today, points today), red flags
+js/master-progress.js master Progress: Lessons (Send to him / Reset) · Missed · History (log export, weekend, past days, today's flags)
+js/master-settings.js master Settings (pushed screen with a back key): plan card, rules, videos, fun facts, demo tools, sign out
+js/master-shared.js   labels, row(), dates, the "Sent to him" card shared by the master files
 js/curriculum.js      merges content + master overrides; lesson stage + day status logic
 js/plan.js            the study plan: settings.plan (1–6 blocks, Algebra/Biology each) → the day's steps (breaks, games, fun videos fitted in)
 js/plan-card.js       master Settings → "Study plan" card (presets, per-block subject, add/remove with Undo, Done / On it now labels)
@@ -101,7 +106,9 @@ days/{date} also holds breakStart{R1..R5: ts} (break clock) and games{G1..G5: { 
 - `python3 tests/e2e_focus.py` sends a lesson from the master tab and checks the student switches to it, then returns to normal once done.
 - `python3 tests/e2e_tutor.py` stubs /api/tutor and checks the tutor sheet, the clock pause, what is sent, and the quiz "What did I do wrong?".
 - `python3 tests/e2e_misses.py` one retry per quiz, the tutor explaining a final miss (and only then getting the answer), misses + breakdowns in the master view.
-- `python3 tests/e2e_points.py` earns points (perfect quiz, lesson, full day + focus), his card, the master's card (paid + Undo, add points).
+- `python3 tests/e2e_points.py` earns points (perfect quiz, lesson, full day + focus), his Points tab, the master's Points tab (paid + Undo, add points).
+- `python3 tests/e2e_tabs.py` both tab layouts (his 4 tabs, master 4 tabs + gear + Progress parts), chat between the Chat tabs, and that new
+  data never wipes his half-typed message or the master's half-typed points.
 - `node tests/points.test.mjs` unit-tests every points rule on real calendar dates (streaks across weekends, full weekend, unit, weekday).
 - `node tests/breakdown.test.mjs` unit-tests /api/breakdown.
 - `node tests/tutor-video.test.mjs` unit-tests the video search + checks (wrong channel, anime, Shorts, embed off, blocked titles, subject).

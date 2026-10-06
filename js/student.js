@@ -27,6 +27,7 @@ export function startStudent(root, { store, sid, onSignOut }) {
   const tutor = createTutor({ store, tracker });       // the study tutor (Claude): asks, explains, never answers
   let cleanups = [];
   let view = { name: 'home' };
+  let homeTab = 'today';   // home screen tab: today · courses · points · chat (js/home.js)
   const unsubs = [];
 
   const today = () => todayKey();
@@ -51,13 +52,15 @@ export function startStudent(root, { store, sid, onSignOut }) {
   const slow = setTimeout(() => { if (!rendered) { rendered = true; render(); toast('Slow connection — showing saved progress'); } }, 6000);
   unsubs.push(() => clearTimeout(slow));
   // points, streaks, levels, badges (js/points.js); his home card redraws when they change
-  const points = createPoints({ store, sid, tracker, rules: () => cur.rules, onChange: () => { if (rendered && view.name === 'home') render(); } });
+  const points = createPoints({ store, sid, tracker, rules: () => cur.rules, onChange: () => homeRefresh() });
+  // New data redraws the home screen, except the Chat tab (it updates itself and keeps a half-typed message).
+  function homeRefresh() { if (rendered && view.name === 'home' && homeTab !== 'chat') render(); }
   let focusKey = null;   // the lesson his brother sent (settings.focus)
   unsubs.push(store.watchSettings((s) => {
     S.settings = s; cur = buildCurriculum(s);
     const fk = cur.focus ? cur.focus.key : null, changed = fk !== focusKey; focusKey = fk;
     if (!rendered) return;
-    if (view.name === 'home') return render();
+    if (view.name === 'home') return homeRefresh();
     // His brother changed the study plan and the step he's on is gone (say a Biology block, now it's all math): back home.
     if (view.name === 'step' && view.stepId !== 'X' && !stepById(view.stepId)) { go({ name: 'home' }); toast('Your brother changed today\'s plan.'); return; }
     // A lesson sent while he's in a study block opens right away (his place in the other lesson is saved).
@@ -70,12 +73,12 @@ export function startStudent(root, { store, sid, onSignOut }) {
     if (err) toast('Couldn\'t load today\'s progress — check the Wi-Fi');
     S.days = d || {};
     tracker.setDay(day());
-    if (!rendered) gate('d'); else if (view.name === 'home') render();
+    if (!rendered) gate('d'); else homeRefresh();
   }));
   unsubs.push(store.watchMeta(sid, (m) => { S.meta = m || {}; }));
 
   function clean() { cleanups.forEach((fn) => { try { fn(); } catch {} }); cleanups = []; tracker.off(); }
-  function go(v) { clean(); view = v; render(); window.scrollTo(0, 0); }
+  function go(v) { clean(); view = v; if (v.name === 'home') homeTab = 'today'; render(); window.scrollTo(0, 0); }
   function render() {
     document.body.classList.toggle('cg-has-island', view.name === 'step');
     if (view.name === 'home') return renderHome();
@@ -87,7 +90,8 @@ export function startStudent(root, { store, sid, onSignOut }) {
   function renderHome() {
     clean();
     points.dayDone(dayStatus(cur.rules, day()));   // full day → day, focus, streak and weekend bonuses (each pays once)
-    drawHome(root, { cur, lessons: S.lessons, day: day(), chat, tracker, onSignOut, points, focus: focusLesson(cur, S.lessons),
+    drawHome(root, { cur, lessons: S.lessons, day: day(), chat, tracker, onSignOut, points, focus: focusLesson(cur, S.lessons), tab: homeTab,
+      setTab: (t, keepScroll) => { homeTab = t; render(); if (!keepScroll) window.scrollTo(0, 0); },
       start: (id) => go({ name: 'step', stepId: id }), extra: () => go({ name: 'step', stepId: 'X', extra: true }) });
   }
 

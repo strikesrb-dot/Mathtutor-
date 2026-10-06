@@ -77,9 +77,11 @@ try:
     m0 = bsent[0]['miss']
     check('the miss record has everything', all(k in m0 for k in ('q', 'choices', 'picked', 'correct', 'why', 'sec', 'quizTry', 'qNum', 'lesson', 'subject'))
       and m0['retryPick'] and m0['retryOk'] is True)
-    # master: Overview → Missed quiz questions → full breakdown
+    # master: Today → "Missed questions today" → Progress → Missed → full breakdown
     m = ctx.new_page(); m.on('pageerror', lambda e: errs.append('MASTER ' + str(e)))
-    m.goto(URL); m.click('[data-role=master]'); m.wait_for_selector('[data-miss]')
+    m.goto(URL); m.click('[data-role=master]'); m.wait_for_selector('[data-go="progress:missed"]')
+    check('Today shows the 3 misses as a shortcut', until(lambda: m.inner_text('[data-go="progress:missed"] .cg-row-value') == '3'))
+    m.click('[data-go="progress:missed"]'); m.wait_for_selector('[data-miss]')
     rows = m.query_selector_all('[data-miss]')
     check('master sees 3 missed questions, none still "Writing…"', len(rows) == 3 and 'Writing' not in m.inner_text('.cg-group:has([data-miss])'))
     check('the retry shows on the row', 'fixed it on his retry' in m.inner_text('.cg-group:has([data-miss])'))

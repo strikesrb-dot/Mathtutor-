@@ -135,9 +135,16 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 
 /* ── master ── */
 .sc-tabs { margin-top: var(--cg-in-4); }
-#mbody > * + * { margin-top: var(--cg-sp-2); }
-#mbody > .cg-caption { margin-top: var(--cg-sp-4); }
-#mbody > :first-child { margin-top: var(--cg-sp-3); }
+#mbody > * + *, #pbody > * + *, #hbody > * + * { margin-top: var(--cg-sp-2); }
+#mbody > .cg-caption, #pbody > .cg-caption, #hbody > .cg-caption { margin-top: var(--cg-sp-4); }
+#mbody > :first-child, #pbody > :first-child, #hbody > :first-child { margin-top: var(--cg-sp-3); }
+/* tabs size to their labels ("Progress", "Chat · 2" never cut off); Progress → Lessons · Missed · History */
+.sc-tabs { grid-auto-columns: auto; }
+.sc-subtabs { width: auto; margin-left: var(--cg-inset); margin-right: var(--cg-inset); }
+/* the Chat tabs (master and his home): keep the bubbles, the box and the buttons off the screen edges */
+#mbody > .sc-chat-box, #mbody > .sc-composer, #mbody > .sc-chat-actions, #hbody > .sc-chat-box, #hbody > .sc-composer, .sc-live-btns {
+  margin-left: var(--cg-inset); margin-right: var(--cg-inset); }
+.sc-plan .cg-row-value { flex: none; }
 .sc-live-dot { display: block; width: var(--cg-sp); height: var(--cg-sp); border-radius: var(--cg-r-circle); background: var(--cg-ink3); }
 .sc-live.is-live .sc-live-dot { background: var(--cg-accent); animation: sc-pulse 1.6s ease-in-out infinite; }
 .sc-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--cg-sp); }
@@ -313,8 +320,7 @@ code { font-family: var(--cg-mono); background: var(--cg-fill); padding: 0 var(-
 .sc-points-big { font-size: var(--cg-t-t1); line-height: 1.1; color: var(--cg-ink-strong); }
 .sc-points-line { display: flex; align-items: flex-start; gap: var(--cg-in-8); }
 .sc-points-line svg { width: var(--cg-icon-size); height: var(--cg-icon-size); flex: none; margin-top: var(--cg-in-2); }
-.sc-points-sheet .cg-row-value { flex: none; max-width: none; overflow: visible; }
-.sc-points-have { margin: 0 var(--cg-inset) var(--cg-in-8); padding: 0 var(--cg-row-px); }
+.sc-points-how .cg-row-value, .sc-points-recent .cg-row-value { flex: none; max-width: none; overflow: visible; }
 .sc-points .cg-btn { align-self: flex-start; }
 .sc-points-adj { display: flex; flex-direction: column; gap: var(--cg-in-8); }
 .sc-badges { padding: 0 var(--cg-inset); }

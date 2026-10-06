@@ -20,7 +20,7 @@ try:
     page=ctx.new_page(); page.on('pageerror', lambda e: errs.append(str(e)))
     page.route('https://www.youtube.com/iframe_api', lambda r: r.fulfill(status=200, content_type='text/javascript', body=fake))
     page.clock.install(); page.add_init_script('window.__ytDur = 3000;')
-    page.goto('http://localhost:8766/index.html'); page.click('[data-role=master]'); page.click('[data-t=settings]')
+    page.goto('http://localhost:8766/index.html'); page.click('[data-role=master]'); page.click('#gear')
     [page.click('.cg-stepper[data-id=bm] [data-d="-1"]') for _ in range(8)]; page.click('#saveRules'); page.click('#toStudent'); page.wait_for_selector('#go')
     page.click('#go'); page.wait_for_selector('.video-frame'); page.clock.run_for(500)
     tick(page, 610)

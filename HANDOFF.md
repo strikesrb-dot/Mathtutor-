@@ -1,4 +1,4 @@
-# Handoff — Study Coach (updated 2026-10-03)
+# Handoff — Study Coach (updated 2026-10-06)
 
 Live: https://mbackestudy.netlify.app (Netlify auto-deploys `main`). Firebase project `study-tutor-45335`.
 Master = owner (strikesrb@…), student = his brother. UIDs and keys are in `js/config.js`.
@@ -56,7 +56,7 @@ and khanacademy.org/science/hs-bio if needed.
 - Cause: `watchDays` used `orderBy(documentId(), 'desc')`. That sort needs an index Firestore doesn't create by default, so the
   read failed from v1 onward. The error handler returned `{}`, so the master saw empty days and the student's block timers and done
   blocks reset on every reload. The writes were fine all along. Now it's a plain collection read (see the comment in store.js).
-- Failed reads now pass the error code to the callback. The master Overview shows a "Some of his data didn't load" card instead of zeros.
+- Failed reads now pass the error code to the callback. The master Today tab shows a "Some of his data didn't load" card instead of zeros.
 - Demo-mode tests can't catch Firestore index or rule errors. When the master looks empty, open `?debug=1`. "days FAILED: …" means a read error.
 
 ## Added 2026-10-05 (owner requests)
@@ -65,10 +65,10 @@ and khanacademy.org/science/hs-bio if needed.
   out the quiz retry doesn't count. The tracker's `screen()` sets the limits; `hold()` pauses the clock while chat is open.
 - Resume: a quiz in progress is saved as `quizRun` (same questions, same spot; closing the app can't get him a fresh quiz). The real-life
   draft saves as he types. The video spot saves when the app hides.
-- Chat + nudge (js/chat.js): master Chat tab and "Nudge him"/"Message him" on the Overview. The student sees a sheet (his clock pauses)
+- Chat + nudge (js/chat.js): master Chat tab and "Nudge him"/"Message him" on Today. The student sees a sheet (his clock pauses)
   from the chat key in the header, the break screen, or the home row. A nudge shows as the red alert with a beep.
 - Activity log (tracker `log()`, js/log-export.js): every screen, clock start/stop with the reason, video, quiz answers with seconds and
-  the pick, flags, chat. Saved per day in `log/{date}`. Master Overview → "Activity log for Claude" → Copy / Share / Download. The
+  the pick, flags, chat. Saved per day in `log/{date}`. Master Progress → History → "Activity log for Claude" → Copy / Share / Download. The
   export starts with instructions so Claude analyzes it with no extra prompt.
 - Student home screen moved to js/home.js (student.js was past 500 lines).
 - Game time (owner request 2026-10-05): steps G1–G3 after each break, `gameMinutes` 7. He picks Slice or Glide (can switch); the clock
@@ -104,7 +104,7 @@ and khanacademy.org/science/hs-bio if needed.
   day, no leftApp flag) +200 · streak (study days in a row: 2nd +50, 3rd +75, 4th+ +100) · full weekend +100 · unit +150 ·
   weekday session +50. No penalties, no cap (owner's choices). Strong weekend ≈ 1,960 pts ≈ $19.60. Cosmetic: levels every
   1,000 lifetime pts, 12 badges, streak flame. Awards are written by his app at the moment (fixed ids = can't pay twice);
-  counting starts 2026-10-05 (earlier lessons only by "Add points"). Master: Overview → Points → Mark $X paid (+Undo), add or
+  counting starts 2026-10-05 (earlier lessons only by "Add points"). Master: Points tab → Mark $X paid (+Undo), add or
   take away points with a reason (he sees it). Note: Firestore rules let his account write his own points (he'd need computer
   tools to fake any); tighten firestore.rules if that ever matters.
 - Missed questions (owner request 2026-10-05: "if he fails a question give me a full breakdown … give him the answer eventually and
@@ -116,7 +116,7 @@ and khanacademy.org/science/hs-bio if needed.
     why his pick is wrong → the right answer and why → a similar question to try. Open questions: still no answers, ever.
   - Every final graded miss (retry-fixed ones too) → students/{uid}/misses + /api/breakdown (Claude, written to the owner: what he
     likely thought, why wrong, right answer, how to explain it, a check question). His app asks right away; the master app fills in
-    any it couldn't (after 60 s). Master Overview → "Missed quiz questions" → tap for the full breakdown. tests/e2e_misses.py.
+    any it couldn't (after 60 s). Master Progress → Missed (or Today → "Missed questions today") → tap for the full breakdown. tests/e2e_misses.py.
 - Tutor videos (owner request 2026-10-05: "videos related to the topic, no anime"): chip "Show me a video", or the tutor decides.
   The reply carries a [video-search: …] line → /api/tutor-video (Claude Haiku 4.5 + web search, youtube.com only, ≤2 searches;
   falls back to Sonnet 5.5 if Haiku is refused) → every candidate checked by netlify/lib/video-check.mjs → the first that passes
@@ -126,13 +126,30 @@ and khanacademy.org/science/hs-bio if needed.
   Cognito, FuseSchool, JensenMath, MathHelp.com, Mr H Tutoring, Stated Clearly, PBS Eons, Deep Look, NHM, Cal Academy.
   Rejected incl. TED-Ed (owner had picked it) and Kurzgesagt. Human-evolution, religion and holiday titles are blocked by default.
   NOT YET TRIED LIVE with the real API (needs his sign-in): if no video ever shows, check Netlify function logs for "video search".
-- Send a lesson (owner request 2026-10-05): master Lessons tab → open a lesson → "Send to him". Saved as settings.focus { key, at }.
+- Send a lesson (owner request 2026-10-05): master Progress → Lessons → open a lesson → "Send to him". Saved as settings.focus { key, at }.
   Until that lesson is done (curriculum.js focusLesson) every study block, and the bonus "extra" time, opens it whatever the block's
   subject; breaks, game time and fun videos stay on schedule. If he's in a block when it's sent, his screen switches at once. A chat
   message tells him. Sending a lesson he already finished restarts it (replaceLesson keeps his old scores under `history`). The master
-  sees a "Sent to him" card (Overview + Lessons) with Cancel / Undo. tests/e2e_focus.py covers it.
+  sees a "Sent to him" card (Today + Progress → Lessons) with Cancel / Undo. tests/e2e_focus.py covers it.
 - Breaks are 7 minutes (was 10) and run on wall time from first opening (day.breakStart). "Cash it in" on the break screen adds
   whatever is left of the break to the next game time (games[G].bonus), so he can play up to 14 minutes instead of resting.
+
+## Tabs (owner request 2026-10-05: "make a tab for points and make the UI organized")
+- Master (owner picked "4 tabs + gear"): Today · Progress · Points · Chat, and ⚙ in the header opens Settings (back key returns).
+  - Today: right-now card + Nudge / Message, the lesson sent to him, today's 4 numbers + goal bar + blocks and fun videos,
+    two shortcuts (missed questions today → Progress → Missed; points earned today → Points), red flags only when there are some.
+  - Progress: Lessons (send / reset) · Missed (Claude's breakdowns) · History (activity log for Claude, this weekend, past days,
+    today's flags one by one).
+  - Points: what he's owed, Mark paid / add or take away (Undo), recent, his badges, the rules.
+  - New data redraws the open tab, but never Chat, Settings, or a tab while a box is focused (the points form keeps what you typed).
+- His home (owner picked "Today · Courses · Points · Chat"):
+  - Today: greeting, ring + Start, the sent lesson, one points row (→ Points), today's plan with each break + game folded into the
+    block before it ("then a 7-min break + game"). Courses and Messages left Today.
+  - Courses: each unit (the one he's in starts open) › lessons with Done / Now: <stage> / Sent by your brother. Read-only.
+  - Points: balance, level bar, streak, recent, badges, how to earn (replaces the "How to earn" sheet).
+  - Chat: messages + composer; read while it shows, no toast for a new message (a nudge still flashes). The chat key in a
+    lesson still opens the sheet that pauses his clock. Going home from a lesson always lands on Today.
+- tests/e2e_tabs.py covers both layouts; the other e2e tests were moved to the new tabs.
 
 ## Lesson order is forward-only (owner request 2026-10-04)
 - He can't go back to Watch or Learn once he has moved past them. That was the loophole: rewatching videos filled block time without doing the quiz.
@@ -152,7 +169,7 @@ and khanacademy.org/science/hs-bio if needed.
   (video position, quiz question, break countdown…), whether time is counting, and this session's on-app/focused time.
   A new session starts when the app opens or after 10+ minutes away.
 - `days/{date}.openSec` = seconds the app was open on screen (focused time is `activeSec`). Only tracked from 2026-10-03 on; older days show focused time only.
-- Master Overview: "Right now" card at the top (online = saved in the last 50 s and on screen), tiles for on-app vs focused time, focus rate, and on-app time in the weekend/history rows.
+- Master Today: "Right now" card at the top (online = saved in the last 50 s and on screen), tiles for on-app vs focused time, focus rate, and on-app time in the weekend/history rows.
 
 ## Not verified yet
 - Real iPhone/iPad (WebKit) run. Only Chromium was available in the build environment.

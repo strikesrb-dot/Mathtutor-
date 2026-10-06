@@ -33,7 +33,8 @@ try:
       const d = JSON.parse(localStorage.getItem('{K}')); const s = d.students['demo-student']; s.lessons = s.lessons || {{}};
       s.lessons[l.key] = Object.assign(s.lessons[l.key] || {{}}, {{ videos: Object.fromEntries(l.videos.map(v => [v.id, {{ done: true, max: 500 }}])), learnDone: true }});
       localStorage.setItem('{K}', JSON.stringify(d)); return l.key; }}""")
-    check('his home shows the points card at 0', until(lambda: st.query_selector('.sc-points') and st.inner_text('.sc-points-big') == '0'))
+    check('his Today tab shows his points in one row', until(lambda: st.inner_text('.sc-points-row .cg-row-label').startswith('0 points')))
+    st.click('.sc-points-row'); check('the row opens his Points tab, at 0', until(lambda: st.inner_text('.sc-points-big') == '0'))
     st.reload(); st.wait_for_selector('#go'); st.click('#go'); st.wait_for_selector('#start')
     st.evaluate("document.getElementById('start').scrollIntoView({block:'center'})"); st.click('#start'); st.wait_for_selector('.opt')
     # a perfect quiz on the first try
@@ -63,14 +64,17 @@ try:
     check('full day: +25' + (' and +200 focus day (never left the app)' if not left else ' (he left the app, so no focus bonus)'),
       until(lambda: f'day-{today}' in ledger()) and ((f'focus-{today}' in ledger()) == (not left)))
     total = sum(v['pts'] for v in ledger().values())
+    check('Today row shows the total', until(lambda: st.inner_text('.sc-points-row .cg-row-label').startswith(f'{total:,} points')))
+    st.click('.sc-tabs [data-t=points]')
     check('his card: points and dollars match the ledger, level and badges show', until(lambda: st.inner_text('.sc-points-big') == f'{total:,}' and f'${total / 100:.2f}' in st.inner_text('.sc-points')))
-    st.locator('.sc-points').scroll_into_view_if_needed(); time.sleep(0.5); st.screenshot(path=f'{SP}/80-points-home.png')
-    st.click('[data-points-how]'); st.wait_for_selector('.sc-points-sheet.is-open'); time.sleep(0.5)
-    check('"How to earn" lists the rules and badges', 'Focus day' in st.inner_text('.sc-points-sheet') and bool(st.query_selector('.sc-badges .cg-chip.is-on')))
-    st.screenshot(path=f'{SP}/81-points-how.png'); st.click('.sc-points-sheet [data-cg-close]'); time.sleep(0.4)
+    time.sleep(0.5); st.screenshot(path=f'{SP}/80-points-tab.png')
+    check('his Points tab lists how to earn and his badges', 'Focus day' in st.inner_text('.sc-points-how') and bool(st.query_selector('.sc-badges .cg-chip.is-on')))
+    st.locator('.sc-points-how').scroll_into_view_if_needed(); time.sleep(0.4); st.screenshot(path=f'{SP}/81-points-how.png')
     # master: owed, Mark paid + Undo, add points
     m = ctx.new_page(); m.on('pageerror', lambda e: errs.append('MASTER ' + str(e)))
-    m.goto(URL); m.click('[data-role=master]'); m.wait_for_selector('#ptsPaid')
+    m.goto(URL); m.click('[data-role=master]'); m.wait_for_selector('[data-go=points]')
+    check('master Today: points earned today', until(lambda: m.inner_text('[data-go=points] .cg-row-value') == f'+{total:,}'))
+    m.click('[data-go=points]'); m.wait_for_selector('#ptsPaid')
     check('master card shows what he is owed', m.inner_text('.sc-points-big') == f'${total / 100:.2f}')
     m.locator('.sc-points').first.scroll_into_view_if_needed(); time.sleep(0.4); m.screenshot(path=f'{SP}/82-points-master.png')
     m.click('#ptsPaid'); check('Mark paid → owed $0.00', until(lambda: m.inner_text('.sc-points-big') == '$0.00') and 'Paid him' in m.inner_text('.cg-group:below(.sc-points)'))

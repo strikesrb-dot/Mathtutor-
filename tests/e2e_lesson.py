@@ -147,7 +147,7 @@ try:
     shot(page, '15-student-chat'); shot(m, '16-master-chat')
     # export the activity log from the master view
     page.clock.run_for(16_000)   # let the student's app save its log (every 15 s)
-    m.click('.sc-tabs [data-t=overview]'); m.wait_for_selector('#logBtn'); m.click('#logBtn')
+    m.click('.sc-tabs [data-t=progress]'); m.click('.sc-subtabs [data-p=history]'); m.wait_for_selector('#logBtn'); m.click('#logBtn')
     m.wait_for_selector('.sc-log-sheet.is-open'); m.click('.sc-log-range [data-r=today]')
     until(lambda: 'END OF LOG' in m.eval_on_selector('#logText', 'e=>e.value'), 50)
     txt = m.eval_on_selector('#logText', 'e=>e.value'); open(f'{SP}/sample-log.txt', 'w').write(txt)

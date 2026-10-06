@@ -1,4 +1,4 @@
-// "Export his activity log for Claude" (master Overview). Builds one plain-text file: instructions for Claude, how the app
+// "Export his activity log for Claude" (master Progress → History). Builds one plain-text file: instructions for Claude, how the app
 // works, the settings in effect, per-day totals, lesson results (quiz tries, his written answers), messages, then every
 // logged event (tracker.js log(): screens, clock stops and why, video, quiz answers, flags, chat, games).
 // Pasting it into Claude is all it takes: the top of the file says what it is and what to analyze.

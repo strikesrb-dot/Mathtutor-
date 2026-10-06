@@ -2,7 +2,7 @@
 // Student side: recordMiss() saves each final graded miss to students/{uid}/misses/{id} — the question, every choice, his pick,
 // his retry, the right answer, the lesson's explanation, his time and which try — then asks /api/breakdown for Claude's
 // analysis and saves it on the same record.
-// Master side: missesHTML() + wireMisses() draw the "Missed questions" list on the Overview; a tap opens the full breakdown.
+// Master side: missesHTML() + wireMisses() draw the "Missed questions" list (master Progress → Missed); a tap opens the full breakdown.
 // fillMissing() asks for the analysis of any miss his app couldn't finish (closed too soon, no Wi-Fi).
 
 import { esc, icon, toast } from './ui.js';

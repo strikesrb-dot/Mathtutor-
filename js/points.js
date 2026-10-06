@@ -97,48 +97,42 @@ export function createPoints({ store, sid, rules, tracker, onChange = () => {} }
     for (const subj of [cur.algebra, cur.biology]) for (const u of subj.units) if (u.lessons.some((l) => l.key === lesson.key)) return u;
     return null;
   };
-  let sheet = null;
-  function openHow() {
-    const p = P(), t = totals(points, payouts), b = badges(points, p);
-    const rows = [['Lesson finished', p.lesson], ['Quiz passed on the 1st try', `+${p.quizFirst}`], ['Quiz passed on the 2nd try', `+${p.quizSecond}`], ['Perfect quiz', `+${p.perfect}`],
-      ['Full study day', `+${p.fullDay}`], ['Focus day: finish the day without leaving the app', `+${p.focusDay}`], ['2nd study day in a row', `+${p.streak[2]}`],
-      ['3rd study day in a row', `+${p.streak[3]}`], ['4th in a row and every one after', `+${p.streak[p.streak.length - 1]}`], ['Full weekend (Saturday + Sunday)', `+${p.weekend}`],
-      ['Finish a whole unit', `+${p.unit}`], ['Study on a weekday (finish a lesson)', `+${p.weekdaySession}`]];
-    const recent = Object.values(points).sort((a, c) => (c.at || 0) - (a.at || 0)).slice(0, 8);
-    if (!sheet) {
-      sheet = document.createElement('section'); sheet.className = 'cg-sheet sc-points-sheet'; sheet.setAttribute('aria-label', 'How to earn points'); sheet.hidden = true;
-      document.body.appendChild(sheet);
-    }
-    sheet.innerHTML = `<span class="cg-grabber"></span>
-      <header class="cg-header"><h2 class="cg-header-title">How to earn<small>${p.perDollar} points = $1</small></h2>
-        <button class="cg-key cg-key-end" type="button" data-cg-close aria-label="Close">${icon('close')}</button></header>
-      <div class="cg-sheet-body">
-        <p class="cg-text sc-points-have">You have <b>${fmt(t.owed)} points</b> (${money(t.owed, p.perDollar)}) to collect from your brother.</p>
-        <ul class="cg-group">${rows.map(([l, v]) => `<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">${esc(l)}</span></span><span class="cg-row-value cg-num">${esc(String(v))}</span></li>`).join('')}</ul>
-        <p class="cg-caption">Badges</p>
-        <div class="cg-chips sc-badges">${b.map((x) => `<span class="cg-chip ${x.got ? 'is-on' : ''}">${x.got ? icon('star') : ''}${esc(x.name)}</span>`).join('')}</div>
-        <p class="cg-caption">Recent</p>
-        <ul class="cg-group">${recent.map((e) => `<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">${esc(e.kind === 'adjust' ? `From your brother: ${e.label}` : e.label)}</span></span><span class="cg-row-value cg-num">${e.pts > 0 ? '+' : ''}${fmt(e.pts)}</span></li>`).join('') || '<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Finish a lesson to earn your first points</span></span></li>'}</ul>
-      </div>`;
-    if (window.CalmGlass) window.CalmGlass.open(sheet);
-  }
+  const now = () => { const p = P(), t = totals(points, payouts); return { p, t, lv: level(t.lifetime, p.levelEvery), streak: currentStreak(points, studyDays()) }; };
   return {
     lessonDone(cur, lesson, lessons) { give(lessonAwards({ lesson, unit: unitOf(cur, lesson), lessons, date: todayKey(), P: P(), studyDays: studyDays() })); },
     quizPassed(lesson, { tries, pct }) { give(quizAwards({ lesson, tries, pct, P: P() })); },
     dayDone(st) { if (st && st.allDone) give(dayAwards({ date: todayKey(), points, P: P(), studyDays: studyDays(), leftApp: tracker.flagCount('leftApp') })); },
-    // his home-screen card: points, money to collect, level bar, streak, badges
-    cardHTML() {
-      const p = P(), t = totals(points, payouts), lv = level(t.lifetime, p.levelEvery), streak = currentStreak(points, studyDays()), got = badges(points, p).filter((x) => x.got).length;
+    // one row on his Today tab; tapping it opens the Points tab (js/home.js wires [data-go])
+    rowHTML() {
+      const { p, t, lv, streak } = now();
+      return `<div class="cg-group"><button type="button" class="cg-row has-icon sc-points-row" data-go="points"><span class="cg-row-icon">${icon('star')}</span>
+        <span class="cg-row-text"><span class="cg-row-label">${fmt(t.owed)} points · ${money(t.owed, p.perDollar)} to collect</span>
+          <span class="cg-row-sub">Level ${lv.n} · ${esc(lv.name)}${streak ? ` · ${streak} day${streak === 1 ? '' : 's'} in a row` : ''}</span></span><span class="cg-chev"></span></button></div>`;
+    },
+    // his Points tab: balance, level, streak, badges, how to earn, recent points
+    pageHTML() {
+      const { p, t, lv, streak } = now(), b = badges(points, p), got = b.filter((x) => x.got).length;
+      const rows = [['Lesson finished', p.lesson], ['Quiz passed on the 1st try', `+${p.quizFirst}`], ['Quiz passed on the 2nd try', `+${p.quizSecond}`], ['Perfect quiz', `+${p.perfect}`],
+        ['Full study day', `+${p.fullDay}`], ['Focus day: finish the day without leaving the app', `+${p.focusDay}`], ['2nd study day in a row', `+${p.streak[2]}`],
+        ['3rd study day in a row', `+${p.streak[3]}`], ['4th in a row and every one after', `+${p.streak[p.streak.length - 1]}`], ['Full weekend (Saturday + Sunday)', `+${p.weekend}`],
+        ['Finish a whole unit', `+${p.unit}`], ['Study on a weekday (finish a lesson)', `+${p.weekdaySession}`]];
+      const recent = Object.values(points).sort((a, c) => (c.at || 0) - (a.at || 0)).slice(0, 10);
+      const line = (l, v) => `<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">${esc(l)}</span></span><span class="cg-row-value cg-num">${esc(String(v))}</span></li>`;
       return `<p class="cg-caption">Your points</p>
         <section class="cg-card sc-points">
           <div class="sc-points-top"><b class="cg-num sc-points-big">${fmt(t.owed)}</b><span class="cg-meta">points · <b>${money(t.owed, p.perDollar)}</b> to collect</span></div>
           <p class="cg-meta">Level ${lv.n} · ${esc(lv.name)} · ${fmt(lv.every - lv.into)} points to level ${lv.n + 1}</p>${bar((lv.into / lv.every) * 100)}
           <p class="cg-meta sc-points-line">${icon('flame')}<span>${streak ? `${streak} study day${streak === 1 ? '' : 's'} in a row` : 'Finish a full study day to start a streak'}</span></p>
-          <p class="cg-meta sc-points-line">${icon('star')}<span>${got} badge${got === 1 ? '' : 's'} earned</span></p>
-          <button type="button" class="cg-btn cg-btn-glass" data-points-how>How to earn</button>
-        </section>`;
+        </section>
+        <p class="cg-caption">Recent</p>
+        <ul class="cg-group sc-points-recent">${recent.map((e) => line(e.kind === 'adjust' ? `From your brother: ${e.label}` : e.label, `${e.pts > 0 ? '+' : ''}${fmt(e.pts)}`)).join('')
+          || '<li class="cg-row"><span class="cg-row-text"><span class="cg-row-label">Finish a lesson to earn your first points</span></span></li>'}</ul>
+        <p class="cg-caption">Badges · ${got} of ${b.length}</p>
+        <div class="cg-chips sc-badges">${b.map((x) => `<span class="cg-chip ${x.got ? 'is-on' : ''}">${x.got ? icon('star') : ''}${esc(x.name)}</span>`).join('')}</div>
+        <p class="cg-caption">How to earn</p>
+        <ul class="cg-group sc-points-how">${rows.map(([l, v]) => line(l, v)).join('')}</ul>
+        <p class="cg-foot">${p.perDollar} points = $1. Your brother pays you.</p>`;
     },
-    wire(root) { const b = root.querySelector('[data-points-how]'); if (b) b.onclick = openHow; },
-    destroy() { unsubs.forEach((u) => { try { u && u(); } catch {} }); if (sheet) sheet.remove(); },
+    destroy() { unsubs.forEach((u) => { try { u && u(); } catch {} }); },
   };
 }

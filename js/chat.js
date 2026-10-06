@@ -1,10 +1,10 @@
 // Messages between you (master) and him (student), plus nudges.
 // Stored in students/{uid}/chat/{id} { from: 'master'|'student', kind: 'msg'|'nudge', text, at }.
 // Read marks in students/{uid}/meta/chat { masterRead, studentRead } = the time of the last message each side has seen.
-// Student: a sheet over whatever he's doing (his study clock pauses while it's open); a nudge pops up as the red alert.
-// Master: the Chat tab, plus the Nudge button on the Overview.
+// Student: the Chat tab on his home screen, and a sheet over a lesson (his study clock pauses while it's open);
+// a nudge pops up as the red alert. Master: the Chat tab, plus the Nudge button on Today.
 
-import { esc, icon, toast, flash, beep } from './ui.js';
+import { esc, icon, toast, flash, beep, refreshSegs } from './ui.js';
 import { STUDENT_NAME } from './config.js';
 
 export const NUDGE_TEXT = 'Time to get back to studying!';
@@ -62,15 +62,23 @@ export function studentChat({ store, sid, tracker }) {
 
   const unread = () => msgs.filter((m) => m.from === 'master' && (m.at || 0) > (read.studentRead || 0)).length;
   const markRead = (at = lastAt(msgs)) => { if (at > (read.studentRead || 0)) { read = { ...read, studentRead: at }; store.saveChatRead(sid, { studentRead: at }).catch(() => {}); } };
+  let tabEl = null;   // the home screen's Chat tab, when it's showing (js/home.js)
+  const tabShown = () => !!tabEl && tabEl.isConnected;
+  const empty = 'No messages yet. Your brother can message you here.';
+  const tabLabel = () => { const n = unread(); return n ? `Chat · ${n}` : 'Chat'; };
 
   function paint() {
-    list.innerHTML = messagesHTML(msgs, 'student', read.masterRead || 0, 'No messages yet. Your brother can message you here.');
+    list.innerHTML = messagesHTML(msgs, 'student', read.masterRead || 0, empty);
     if (isOpen) { markRead(); body.scrollTop = body.scrollHeight; }
-    const n = unread(), last = msgs[msgs.length - 1];
+    if (tabShown()) {
+      const box = tabEl.querySelector('.sc-chat-box');
+      box.querySelector('.sc-msgs').innerHTML = messagesHTML(msgs, 'student', read.masterRead || 0, empty);
+      box.scrollTop = box.scrollHeight; markRead();
+    }
+    const n = unread();
     document.querySelectorAll('[data-chat-dot]').forEach((d) => { d.hidden = !n; });
-    const sub = document.getElementById('chatRowSub'), val = document.getElementById('chatRowVal');
-    if (sub) sub.textContent = last ? `${last.from === 'master' ? 'Your brother' : 'You'}: ${last.text || NUDGE_TEXT}` : 'Message your brother';
-    if (val) val.textContent = n ? `${n} new` : '';
+    const t = document.querySelector('.sc-tabs [data-t=chat]');
+    if (t && t.textContent !== tabLabel()) { t.textContent = tabLabel(); refreshSegs(); }
   }
 
   function alertFor(m) {
@@ -81,7 +89,7 @@ export function studentChat({ store, sid, tracker }) {
         tracker.log('chat', `tapped OK on the nudge after ${Math.round((Date.now() - shown) / 1000)}s`);
         markRead(Math.max(m.at || 0, read.studentRead || 0));
       });
-    } else if (!isOpen) {
+    } else if (!isOpen && !tabShown()) {
       beep();
       toast(`Your brother: ${m.text}`, { action: open, label: 'Open', time: 7000 });
     }
@@ -113,12 +121,21 @@ export function studentChat({ store, sid, tracker }) {
 
   return {
     open,
-    // The home-screen row. Call wire(root) after drawing it (also wires any [data-chat-open] key).
-    rowHTML() {
-      return `<p class="cg-caption">Messages</p><div class="cg-group">
-        <button type="button" class="cg-row has-icon" data-chat-open><span class="cg-row-icon">${icon('chat')}</span>
-          <span class="cg-row-text"><span class="cg-row-label">Your brother</span><span class="cg-row-sub" id="chatRowSub"></span></span>
-          <span class="cg-row-value" id="chatRowVal"></span><span class="cg-chev"></span></button></div>`;
+    tabLabel,
+    // The home screen's Chat tab: draw the messages + a composer into body. His clock isn't running on the home screen,
+    // so nothing pauses; messages count as read while it shows, and a new one doesn't pop a toast (a nudge still flashes).
+    panel(body) {
+      body.innerHTML = `
+        <p class="cg-caption">Messages with your brother</p>
+        <div class="sc-chat-box"><div class="sc-msgs"></div></div>
+        ${composerHTML('Message your brother…')}
+        <p class="cg-foot">During a lesson, the chat key at the top opens this too (your study clock pauses while it's open).</p>`;
+      tabEl = body;
+      wireComposer(body.querySelector('.sc-composer'), (text) => {
+        tracker.log('chat', `sent a message from the Chat tab (${text.length} characters)`);
+        store.sendChat(sid, { from: 'student', kind: 'msg', text, at: Date.now() }).catch(() => toast('Message didn\'t send — check the Wi-Fi'));
+      });
+      paint();
     },
     keyHTML(cls = 'cg-key cg-key-end') { return `<button type="button" class="${cls} sc-chat-key" data-chat-open aria-label="Messages">${icon('chat')}<i class="sc-dot" data-chat-dot hidden></i></button>`; },
     wire(root) { root.querySelectorAll('[data-chat-open]').forEach((b) => { b.onclick = open; }); paint(); },
